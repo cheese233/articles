@@ -1,0 +1,6 @@
+on: [push]
+jobs:
+  publish:
+    runs-on: codeberg-small
+    steps:
+      - run: echo test

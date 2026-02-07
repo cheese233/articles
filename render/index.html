@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+        <title></title>
+        <link
+            rel="alternate"
+            type="application/atom+xml"
+            title="RSS"
+            href="https://c23.me/atom.xml"
+        />
+        <script type="module">
+            import {
+                allComponents,
+                provideFluentDesignSystem,
+            } from "https://esm.sh/@fluentui/web-components";
+
+            provideFluentDesignSystem().register(allComponents);
+        </script>
+        <style>
+            body {
+                --seed-color: #ffb33f;
+                --primary-color: #805611;
+                --on-primary-color: #ffffff;
+                --secondary-color: #705b40;
+                --on-secondary-color: #ffffff;
+                --outline-color: #d3c4b4;
+            }
+            .sr-only {
+                display: none;
+            }
+            fluent-data-grid {
+                overflow-x: auto;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    --primary-color: #f5bc6f;
+                    --on-primary-color: #452b00;
+                    --secondary-color: #dec2a1;
+                    --on-secondary-color: #3e2d16;
+                    --outline-color: #4f4539;
+                }
+            }
+        </style>
+        <style>
+            .sidebar {
+                width: clamp(12rem, 20vw, 18rem);
+            }
+
+            @media (max-width: 768px) {
+                body {
+                    flex-direction: column;
+                }
+
+                .sidebar {
+                    width: 100%;
+                    border-bottom: 1px solid var(--outline-color);
+                }
+
+                .sidebar .sm-hidden {
+                    display: none;
+                }
+            }
+        </style>
+    </head>
+    <body
+        style="
+            margin: 0;
+            padding: 8px;
+            display: flex;
+            min-height: 100vh;
+            box-sizing: border-box;
+        "
+    >
+        <aside class="sidebar">
+            <header
+                style="
+                    height: 3rem;
+                    display: flex;
+                    align-items: center;
+                    user-select: none;
+                    pointer-events: none;
+                "
+            >
+                <img
+                    src="/imgs/avatar.png"
+                    style="
+                        height: 100%;
+                        object-fit: cover;
+                        border-radius: 50%;
+                        margin-right: 0.2rem;
+                    "
+                />
+                <div
+                    style="
+                        height: 100%;
+                        display: grid;
+                        line-height: 1.1;
+                        align-content: center;
+                    "
+                >
+                    <span style="font-size: 1.5rem">cheese233</span>
+                    <span
+                        style="font-size: 0.8rem; color: var(--secondary-color)"
+                        id="header-loc"
+                    ></span>
+                </div>
+            </header>
+        </aside>
+        <main style="flex: 1" id="main">
+            <fluent-skeleton
+                style="height: 100%; width: 100%"
+                shape="rect"
+                shimmer
+            ></fluent-skeleton>
+        </main>
+        <noscript>
+            <div
+                style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    backdrop-filter: blur(10px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                "
+            >
+                <dialog
+                    open
+                    style="
+                        border: none;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 24px #00000033;
+                        padding: 24px;
+                        max-width: 360px;
+                    "
+                >
+                    <h2
+                        style="
+                            margin: 0 0 12px;
+                            font-size: 18px;
+                            font-weight: 600;
+                            color: #242424;
+                        "
+                    >
+                        Oops
+                    </h2>
+                    <p
+                        style="
+                            margin: 0;
+                            font-size: 14px;
+                            color: #616161;
+                            line-height: 1.5;
+                        "
+                    >
+                        Looks like you haven't enabled JavaScript on this site.
+                        You now have three options:
+                    </p>
+                    <ul style="margin: 0; font-size: 14px">
+                        <li>Enable it in your browser settings</li>
+                        <li>
+                            Add a suffix like ".md" or ".html" to the address
+                            bar, if you can render it in your mind
+                        </li>
+                        <li>
+                            Or check our source code in the
+                            <a href="https://codeberg.org/cheese233/articles">
+                                git repository
+                            </a>
+                        </li>
+                    </ul>
+                </dialog>
+            </div>
+        </noscript>
+        <script async="true" type="module" src="/render/index.js"></script>
+    </body>
+</html>
