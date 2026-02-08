@@ -1,0 +1,389 @@
+/* migrate from https://github.com/microsoft/fluentui/blob/master/.storybook/docs-root.css */
+
+.markdown-body {
+    --base-size-4: 0.25rem;
+    --base-size-8: 0.5rem;
+    --base-size-16: 1rem;
+    --base-size-24: 1.5rem;
+    --base-size-40: 2.5rem;
+    --base-text-weight-normal: 400;
+    --base-text-weight-semibold: 600;
+    --base-text-weight-bold: 700;
+    --fontStack-sansSerif:
+        "Segoe UI", "Segoe UI Web (West European)", -apple-system,
+        BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    --fontStack-monospace:
+        "Cascadia Code", Menlo, "Courier New", Courier, monospace;
+}
+.markdown-body {
+    color: #000;
+    background: #fff;
+    font-family: var(--fontStack-sansSerif);
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body {
+        color: #f0f6fc;
+        background: #0d1117;
+    }
+}
+.markdown-body {
+    max-width: 1200px;
+    font-family: var(--fontStack-sansSerif);
+    font-size: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+.markdown-body h1 {
+    font-family: inherit;
+    font-size: 44px;
+    line-height: 60px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: #000;
+    margin-top: 49px;
+    margin-bottom: var(--base-size-24);
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #ebebeb;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body h1 {
+        color: #f0f6fc;
+        border-bottom-color: #3d444d;
+    }
+}
+.markdown-body h2 {
+    font-family: inherit;
+    font-size: 24px;
+    line-height: 28px;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+    color: #000;
+    border-top: 1px solid #ebebeb;
+    border-bottom: none;
+    margin: 48px 0 15px 0;
+    padding: 48px 0 0 0;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body h2 {
+        color: #f0f6fc;
+        border-top-color: #3d444d;
+    }
+}
+.markdown-body h2 code {
+    border-radius: 4px;
+    font-size: 20px;
+}
+.markdown-body h3 {
+    font-family: inherit;
+    font-size: 18px;
+    line-height: 24px;
+    margin: 25px 0 0 0 !important;
+    letter-spacing: -0.01em;
+    color: #000;
+    font-weight: 600;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body h3 {
+        color: #f0f6fc;
+    }
+}
+.markdown-body h3 code {
+    border-radius: 3px;
+    font-size: 16px;
+}
+.markdown-body [id] > h3::before {
+    content: "";
+    display: block;
+    height: 40px;
+    margin: -40px 0 0;
+}
+.markdown-body p {
+    font-family: inherit;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: -0.01em;
+    color: #000;
+    margin-top: 24px;
+    margin-bottom: 0.625rem;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body p {
+        color: #f0f6fc;
+    }
+}
+.markdown-body hr {
+    margin: 48px 0;
+    height: 0;
+    border-top: 1px solid #ebebeb;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body hr {
+        border-top-color: #3d444d;
+    }
+}
+.markdown-body ul,
+.markdown-body ol {
+    margin: 12px 0;
+}
+.markdown-body li {
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 150%;
+    letter-spacing: -0.01em;
+    color: #1b1a19;
+    margin-top: 8px;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body li {
+        color: #f0f6fc;
+    }
+}
+.markdown-body ul li {
+    list-style: none;
+    position: relative;
+}
+.markdown-body ul li::before {
+    position: absolute;
+    content: "•";
+    color: #8d8d8d;
+    top: 0;
+    left: -15px;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body ul li::before {
+        color: #9198a1;
+    }
+}
+.markdown-body ol li::marker {
+    color: #8d8d8d;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body ol li::marker {
+        color: #9198a1;
+    }
+}
+.markdown-body code {
+    font-family: var(--fontStack-monospace);
+    font-size: 14px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    padding: 1px 4px;
+    margin: 0 3px;
+    color: #000;
+    border: none;
+    line-height: 1.5;
+    font-weight: 400;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body code {
+        background: rgb(110 118 129 / 0.4);
+        color: #a5d6ff;
+    }
+}
+.markdown-body pre {
+    background: #11100f;
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body pre {
+        background: #11100f;
+    }
+}
+.markdown-body pre code {
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--fontStack-monospace);
+    font-size: 14px;
+    line-height: 1.4em;
+    padding: 0;
+    border-radius: 0;
+}
+.markdown-body pre > code {
+    background: #00000000;
+}
+
+.markdown-body table {
+    margin: 16px 0;
+    font-size: 14px;
+    line-height: 24px;
+    padding: 0;
+    border-collapse: collapse;
+}
+.markdown-body table tr {
+    border-top: 1px solid rgb(0 0 0 / 0.1);
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body table tr {
+        border-top-color: rgb(255 255 255 / 0.1);
+    }
+}
+.markdown-body table th {
+    font-weight: 600;
+    color: #333;
+    border: 1px solid rgb(0 0 0 / 0.1);
+    padding: 6px 13px;
+    letter-spacing: -0.01em;
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 150%;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body table th {
+        color: #f0f6fc;
+        border-color: rgb(255 255 255 / 0.1);
+        background: #0d1117;
+    }
+}
+.markdown-body table td {
+    border: 1px solid rgb(0 0 0 / 0.1);
+    padding: 6px 13px;
+    vertical-align: top;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body table td {
+        border-color: rgb(255 255 255 / 0.1);
+        color: #f0f6fc;
+    }
+}
+.markdown-body img.featured-image {
+    margin: 48px 0;
+    display: block;
+    border-radius: 24px;
+}
+.markdown-body img {
+    max-width: 100%;
+}
+.markdown-body a {
+    color: #0078d4;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body a {
+        color: #4493f8;
+    }
+}
+.markdown-body a:hover {
+    text-decoration: underline;
+}
+.markdown-body table.args-table {
+    width: 100%;
+    margin: 16px 0;
+}
+.markdown-body table.args-table tbody {
+    box-shadow: none;
+    border-left: none;
+    border-right: none;
+}
+.markdown-body table.args-table tr {
+    border: none;
+}
+.markdown-body table.args-table tr td {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 16px;
+}
+.markdown-body table.args-table tr td:nth-child(1) span {
+    font-weight: 400;
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 130%;
+    letter-spacing: -0.01em;
+    color: #616161;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body table.args-table tr td:nth-child(1) span {
+        color: #9198a1;
+    }
+}
+.markdown-body .wrapper {
+    background: #fff;
+    min-height: auto;
+}
+@media (prefers-color-scheme: dark) {
+    .markdown-body .wrapper {
+        background: #0d1117;
+    }
+}
+.markdown-body details:not(preview details) {
+    position: relative;
+    z-index: 99;
+}
+.markdown-body details summary {
+    cursor: pointer;
+}
+@font-face {
+    font-family: "Segoe UI";
+    src:
+        local("Segoe UI Light"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/light/latest.woff2)
+            format("woff2"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/light/latest.woff)
+            format("woff"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/light/latest.ttf)
+            format("truetype");
+    font-weight: 100;
+}
+@font-face {
+    font-family: "Segoe UI";
+    src:
+        local("Segoe UI Semilight"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semilight/latest.woff2)
+            format("woff2"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semilight/latest.woff)
+            format("woff"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semilight/latest.ttf)
+            format("truetype");
+    font-weight: 200;
+}
+@font-face {
+    font-family: "Segoe UI";
+    src:
+        local("Segoe UI"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff2)
+            format("woff2"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff)
+            format("woff"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.ttf)
+            format("truetype");
+    font-weight: 400;
+}
+@font-face {
+    font-family: "Segoe UI";
+    src:
+        local("Segoe UI Semibold"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semibold/latest.woff2)
+            format("woff2"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semibold/latest.woff)
+            format("woff"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semibold/latest.ttf)
+            format("truetype");
+    font-weight: 600;
+}
+@font-face {
+    font-family: "Segoe UI";
+    src:
+        local("Segoe UI Bold"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/bold/latest.woff2)
+            format("woff2"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/bold/latest.woff)
+            format("woff"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/bold/latest.ttf)
+            format("truetype");
+    font-weight: 700;
+}
+@font-face {
+    font-family: "Segoe UI";
+    src:
+        local("Segoe UI Black"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/black/latest.woff2)
+            format("woff2"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/black/latest.woff)
+            format("woff"),
+        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/black/latest.ttf)
+            format("truetype");
+    font-weight: 900;
+}

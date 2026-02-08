@@ -1,5 +1,7 @@
 import * as kaomoji from "./kaomoji.js";
 
+const cdn = (path) => "https://esm.sh/" + path;
+
 const requireOnce = (fn) => {
   let state = null;
 
@@ -56,16 +58,42 @@ try {
     case "md":
       document.querySelector("#header-loc").innerHTML = "blog";
       await requireOnce(async () => {
-        const { default: ZeroMd } = await import("https://esm.sh/zero-md@3");
+        const { default: ZeroMd, STYLES } = await import(
+          cdn("gh/cheese233/zero-md@b69b20d/src/lib/index.js")
+        );
         customElements.define(
           "zero-md",
           class extends ZeroMd {
             async load() {
-              await super.load();
+              const load = async (
+                /** @type {string} */ url,
+                name = "default",
+              ) => (await import(url))[name];
+              await super.load({
+                marked: async () => {
+                  const Marked = await load(cdn("marked@15"), "Marked");
+                  return new Marked({ async: true });
+                },
+                markedBaseUrl: () => load(cdn("marked-base-url@1"), "baseUrl"),
+                markedHighlight: () =>
+                  load(cdn("marked-highlight@2"), "markedHighlight"),
+                markedGfmHeadingId: () =>
+                  load(cdn("marked-gfm-heading-id@4"), "gfmHeadingId"),
+                markedAlert: () => load(cdn("marked-alert@2")),
+                hljs: () =>
+                  load(cdn("@highlightjs/cdn-assets@11/highlight.js")),
+                mermaid: () => load(cdn("mermaid@11")),
+                katex: () => load(cdn("katex@0")),
+              });
+              this.template = {
+                ...STYLES,
+                // TODO: replace all cdns with `cdn`
+                MARKDOWN: `<style>${await (await fetch("/render/fluent-ui-md.css")).text()}</style>`,
+              }.preset();
               this.setAttribute("no-shadow", "");
               this.marked.use(
                 (await import("./fluentify-marked.js")).default(this.marked),
-                (await import("https://esm.sh/marked-footnote")).default(),
+                (await import(cdn("marked-footnote"))).default(),
               );
             }
           },

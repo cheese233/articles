@@ -10,13 +10,28 @@
             title="RSS"
             href="https://c23.me/atom.xml"
         />
+        <link rel="preconnect" href="https://esm.sh" />
         <script type="module">
             import {
                 allComponents,
                 provideFluentDesignSystem,
+                baseLayerLuminance,
+                StandardLuminance,
             } from "https://esm.sh/@fluentui/web-components";
 
             provideFluentDesignSystem().register(allComponents);
+
+            const match = window.matchMedia("(prefers-color-scheme: dark)");
+            const setLuminance = () => {
+                baseLayerLuminance.setValueFor(
+                    document.body,
+                    match.matches
+                        ? StandardLuminance.DarkMode
+                        : StandardLuminance.LightMode,
+                );
+            };
+            setLuminance();
+            match.addEventListener("change", setLuminance);
         </script>
         <style>
             body {
@@ -27,12 +42,6 @@
                 --on-secondary-color: #ffffff;
                 --outline-color: #d3c4b4;
             }
-            .sr-only {
-                display: none;
-            }
-            fluent-data-grid {
-                overflow-x: auto;
-            }
             @media (prefers-color-scheme: dark) {
                 body {
                     --primary-color: #f5bc6f;
@@ -42,12 +51,20 @@
                     --outline-color: #4f4539;
                 }
             }
-        </style>
-        <style>
+
+            .sr-only {
+                display: none;
+            }
+            fluent-data-grid {
+                overflow-x: auto;
+            }
+            #crumb::part(list) {
+                flex-wrap: wrap;
+            }
+
             .sidebar {
                 width: clamp(12rem, 20vw, 18rem);
             }
-
             @media (max-width: 768px) {
                 body {
                     flex-direction: column;
@@ -91,6 +108,7 @@
                         border-radius: 50%;
                         margin-right: 0.2rem;
                     "
+                    class="sm-hidden"
                 />
                 <div
                     style="
@@ -104,9 +122,17 @@
                     <span
                         style="font-size: 0.8rem; color: var(--secondary-color)"
                         id="header-loc"
+                        class="sm-hidden"
                     ></span>
                 </div>
             </header>
+            <nav>
+                <fluent-breadcrumb id="crumb"
+                    ><fluent-breadcrumb-item href="/"
+                        >Home</fluent-breadcrumb-item
+                    ></fluent-breadcrumb
+                >
+            </nav>
         </aside>
         <main style="flex: 1" id="main">
             <fluent-skeleton

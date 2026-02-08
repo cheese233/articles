@@ -3,7 +3,7 @@ let markedLinkTitleUid = 0;
 export default (marked) => {
   return {
     renderer: {
-      hr(token) {
+      hr() {
         return `<fluent-divider></fluent-divider>`;
       },
       link(token) {
@@ -53,6 +53,16 @@ export default (marked) => {
               )
               .join("")}
           </fluent-data-grid>`;
+      },
+      listitem(token) {
+        if (token.checked == undefined) return false;
+        return `
+          <li>
+            <fluent-checkbox ${token.checked ? "checked" : ""} disabled style="opacity: 1">
+              ${marked.Parser.parseInline(token.tokens)}
+            </fluent-checkbox>
+          </li>
+        `;
       },
     },
   };
