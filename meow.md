@@ -1,3 +1,8 @@
+---
+title: meow meow
+
+---
+
 # meow meow meow
 
 meow meow meow meow meow meow meow meow meow meow meow meow
@@ -29,10 +34,12 @@ meow meow[^1]
 console.log("hi")
 ```
 
-$\LaTeX$
+$\LaTeX\ \KaTeX$
 
 ## cjk
 
 喵`喵`喵喵喵喵。
+
+<img src="meow://meow" onerror="console.log('meow')"/>
 
 [^1]: meow meow meow
