@@ -49,7 +49,7 @@ function route(url) {
 
 try {
   const { url, suffix } = route(
-    (location.pathname == "/") ? new URL("/index", location.origin) : location,
+    (location.pathname == "/") ? new URL("/main", location.origin) : location,
   );
   switch (suffix) {
     case "html":
