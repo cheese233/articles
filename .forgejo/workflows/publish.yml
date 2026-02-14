@@ -1,6 +1,30 @@
 on: [push]
+
 jobs:
   publish:
     runs-on: codeberg-small
     steps:
-      - run: echo test
+      - uses: actions/checkout@v4
+
+      - uses: https://github.com/denoland/setup-deno@v2
+        with:
+          deno-version: ^2
+
+      - name: Generate atom.xml and sitemap.xml
+        run: |
+          deno run -A scripts/gen/atom.ts --root "https://c23.me/" --title "cheese233's blog" . > atom.xml
+          deno run -A scripts/gen/sitemap.ts --root "https://c23.me/" . > sitemap.xml
+
+      - name: Modify .gitignore
+        run: |
+          sed -i '/^\.\/sitemap\.xml$/d' .gitignore
+          sed -i '/^\.\/atom\.xml$/d' .gitignore
+          sed -i '/^\.\/feed\.json$/d' .gitignore
+
+      - name: Commit and Push to pages
+        run: |
+          git config user.name "cheese233_bot"
+          git config user.email "bot+codeberg@c23.me"
+          git add .
+          git commit -m "publish website" || echo "No changes to commit"
+          git push --force origin HEAD:pages

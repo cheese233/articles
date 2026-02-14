@@ -1,14 +1,19 @@
-const load = async (
-  /** @type {string} */ url,
-  name = "default",
-) => (await import(url))[name];
+const load = async (/** @type {string} */ url, name = "default") =>
+  (await import(url))[name];
+
+export const shake = (text) =>
+  text
+    .replace(/^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/, "")
+    .replace(/^---[\s\S]*?---\s*/m, "");
 
 const cdn = (path) => "https://esm.sh/" + path;
+
+const basePath = "gh/cheese233/zero-md@0f86dd1/src/lib/";
 
 const extension = {
   markedBaseUrl: () => load(cdn("marked-base-url@1"), "baseUrl"),
   markedShiki: () => load(cdn("marked-shiki@1")),
-  shiki: () => import(cdn("shiki@1")),
+  shiki: () => import(cdn("shiki@3")),
   markedGfmHeadingId: () =>
     load(cdn("marked-gfm-heading-id@4"), "gfmHeadingId"),
   markedAlert: () => load(cdn("marked-alert@2")),
@@ -16,18 +21,13 @@ const extension = {
   katex: () => load(cdn("katex@0")),
 };
 
-const basePath = "gh/cheese233/zero-md@0f86dd1/src/lib/";
-
-const { STYLES } = await import(
-  cdn(basePath + "presets.js")
-);
+const { STYLES } = await import(cdn(basePath + "presets.js"));
 
 const { ZeroMdMixin } = await import(cdn(basePath + "zero-md-mixin.js"));
 
 export const BundleZeroMdMixin = (Base = class {}) =>
   class extends ZeroMdMixin(Base) {
-    async load(frontmatter = false) {
-      this.frontmatter = frontmatter;
+    async load() {
       await super.load({
         marked: async () => {
           const Marked = await load(cdn("marked@15"), "Marked");
@@ -37,9 +37,9 @@ export const BundleZeroMdMixin = (Base = class {}) =>
       });
       this.template = {
         ...STYLES,
-        KATEX: `<link rel="stylesheet" href="${
-          cdn("katex@0/dist/katex.min.css")
-        }"/>`,
+        KATEX: `<link rel="stylesheet" href="${cdn(
+          "katex@0/dist/katex.min.css",
+        )}"/>`,
         MARKDOWN: `<link rel="stylesheet" href="/render/fluent-ui-md.css"/>`,
       }.preset();
       if (this.setAttribute) this.setAttribute("no-shadow", "");
@@ -49,12 +49,7 @@ export const BundleZeroMdMixin = (Base = class {}) =>
       );
     }
     async parse(options) {
-      if (!this.frontmatter) {
-        options.text = options.text.replace(
-          /^---[\s\S]*?---\s*/m,
-          "",
-        );
-      }
+      options.text = shake(options.text);
       return await super.parse(options);
     }
   };

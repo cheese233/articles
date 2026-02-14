@@ -40,6 +40,4 @@ $\LaTeX\ \KaTeX$
 
 喵`喵`喵喵喵喵。
 
-<img src="meow://meow" onerror="console.log('meow')"/>
-
 [^1]: meow meow meow
