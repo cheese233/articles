@@ -1,5 +1,8 @@
 on: [push]
 
+env:
+  GIT_DEFAULT_HASH: sha256
+
 jobs:
   publish:
     runs-on: codeberg-small
