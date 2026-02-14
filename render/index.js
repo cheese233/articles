@@ -48,7 +48,9 @@ function route(url) {
 }
 
 try {
-  const { url, suffix } = route(location);
+  const { url, suffix } = route(
+    (location.pathname == "/") ? new URL("/index", location.origin) : location,
+  );
   switch (suffix) {
     case "html":
       main.innerHTML = await (await fetch(url.pathname + ".html")).text();

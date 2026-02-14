@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - 'main'
+      - "main"
 
 env:
   GIT_DEFAULT_HASH: sha256
@@ -16,7 +16,7 @@ jobs:
         with:
           deno-version: ^2
 
-      - name: Generate atom.xml and sitemap.xml
+      - name: Generate
         run: |
           deno run -A scripts/gen/atom.ts --root "https://c23.me/" --title "cheese233's blog" . > atom.xml
           deno run -A scripts/gen/sitemap.ts --root "https://c23.me/" . > sitemap.xml

@@ -27,7 +27,7 @@ const parse = (text: string) => {
   });
 
   if (titles.length > 1) {
-    console.warn("multiple title detected:", titles.join(", "));
+    console.error("multiple title detected:", titles.join(", "));
   }
 
   return {
