@@ -39,7 +39,8 @@ function route(url) {
     .map((e) => {
       return {
         url: new URL(e.getElementsByTagName("loc")[0].textContent),
-        suffix: e.getElementsByTagName("meta:suffix")[0]?.textContent ?? "html",
+        suffix: e.getElementsByTagName("meta:suffix")[0]?.textContent,
+        entrypoint: e.getElementsByTagName("meta:entrypoint")[0]?.textContent,
       };
     })
     .filter((e) => e.url.origin == url.origin);
@@ -47,16 +48,17 @@ function route(url) {
   throw new RouteNotFoundError(url.pathname);
 }
 
-try {
-  const { url, suffix } = route(
-    (location.pathname == "/") ? new URL("/main", location.origin) : location,
-  );
+/**
+ * @param {URL} url
+ * @param {string} suffix
+ * @param {string} [entrypoint]
+ */
+async function render(url, suffix, entrypoint) {
   switch (suffix) {
     case "html":
-      main.innerHTML = await (await fetch(url.pathname + ".html")).text();
+      main.innerHTML = await (await fetch(url.toString() + ".html")).text();
       break;
     case "md": {
-      document.querySelector("#header-loc").innerHTML = "blog";
       await requireOnce(async () => {
         customElements.define(
           "zero-md",
@@ -65,14 +67,37 @@ try {
       })();
 
       const article = document.createElement("zero-md");
-      article.setAttribute("src", url + ".md");
+      article.setAttribute("src", url.toString() + ".md");
+
+      article.style.display = "none";
+      main.appendChild(article);
+      await new Promise((resolve) =>
+        article.addEventListener("zero-md-rendered", resolve, { once: true })
+      );
       main.replaceChildren(article);
+      article.style.display = "";
+
       break;
     }
+    case "js": {
+      await (await import(url.pathname + ".js"))[entrypoint](main);
+      break;
+    }
+    default:
+      throw new RouteNotFoundError(url.pathname + "." + suffix);
   }
+}
+
+try {
+  const { url, suffix, entrypoint } = route(
+    (location.pathname == "/") ? new URL("/main", location) : location,
+  );
+
+  if (suffix == "md") document.querySelector("#header-loc").innerHTML = "blog";
+  render(url, suffix, entrypoint);
 } catch (e) {
   if (e instanceof RouteNotFoundError) {
     document.querySelector("#header-loc").innerHTML = ";(";
-    main.innerHTML = await (await fetch("/render/404.html")).text();
+    render(new URL("/render/404", location), "html");
   } else throw e;
 }

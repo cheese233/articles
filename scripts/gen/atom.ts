@@ -44,6 +44,8 @@ Deno.stdout.writeSync(
 
           const content = await load(p);
 
+          if (!content) return {};
+
           return {
             entry: [
               {
@@ -61,6 +63,7 @@ Deno.stdout.writeSync(
                 link: [],
               },
               { updated: [{ "#text": meta.mtime?.toISOString() }] },
+              { author: [{ name: [{ "#text": content.meta.author }] }] },
               { summary: [{ "#text": content.summary }] },
             ],
           };

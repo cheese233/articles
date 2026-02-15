@@ -31,7 +31,7 @@ const parse = (text: string) => {
   }
 
   return {
-    meta: { ...meta, title: (titles[0] as string | undefined) },
+    meta: { ...meta, title: (titles[0] as string | undefined), author: meta.author as string | undefined },
     summary: markedPlaintify.Parser.parse(body).substring(0, 100),
   };
 };

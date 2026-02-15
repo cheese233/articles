@@ -10,7 +10,7 @@
     --base-text-weight-semibold: 600;
     --base-text-weight-bold: 700;
     --fontStack-sansSerif:
-        "Segoe UI", "Segoe UI Web (West European)", -apple-system,
+        "Segoe UI", "Segoe UI Web (West European)", "Selawik", -apple-system,
         BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
     --fontStack-monospace:
         "Cascadia Code", Menlo, "Courier New", Courier, monospace;
@@ -127,7 +127,7 @@
 }
 .markdown-body li {
     font-family: inherit;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 150%;
     letter-spacing: -0.01em;
     color: #1b1a19;
@@ -165,10 +165,10 @@
 .markdown-body code {
     font-family: var(--fontStack-monospace);
     font-size: 14px;
-    background: #f0f0f0;
-    border-radius: 4px;
-    padding: 1px 4px;
-    margin: 0 3px;
+    background: rgba(17, 16, 15, 0.1);
+    border-radius: 2px;
+    padding: 0.1em 0.2em;
+    display: inline-block;
     color: #000;
     border: none;
     line-height: 1.5;
@@ -177,7 +177,7 @@
 @media (prefers-color-scheme: dark) {
     .markdown-body code {
         background: rgb(110 118 129 / 0.4);
-        color: #a5d6ff;
+        color: #e6edf3;
     }
 }
 .markdown-body pre {
@@ -187,11 +187,7 @@
     overflow-x: auto;
     margin: 16px 0;
 }
-@media (prefers-color-scheme: dark) {
-    .markdown-body pre {
-        background: #11100f;
-    }
-}
+
 .markdown-body pre code {
     margin: 0;
     overflow-x: auto;
@@ -221,14 +217,10 @@
     }
 }
 .markdown-body table th {
-    font-weight: 600;
+    font-weight: bold;
     color: #333;
     border: 1px solid rgb(0 0 0 / 0.1);
     padding: 6px 13px;
-    letter-spacing: -0.01em;
-    font-family: inherit;
-    font-size: 16px;
-    line-height: 150%;
 }
 @media (prefers-color-scheme: dark) {
     .markdown-body table th {
@@ -315,75 +307,48 @@
 .markdown-body details summary {
     cursor: pointer;
 }
+
 @font-face {
-    font-family: "Segoe UI";
+    font-family: "Selawik";
     src:
-        local("Segoe UI Light"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/light/latest.woff2)
-            format("woff2"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/light/latest.woff)
-            format("woff"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/light/latest.ttf)
+        local("Selawik Light"),
+        url("https://esm.sh/gh/winjs/winstrap/src/fonts/selawkl.ttf")
             format("truetype");
     font-weight: 100;
 }
+
 @font-face {
-    font-family: "Segoe UI";
+    font-family: "Selawik";
     src:
-        local("Segoe UI Semilight"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semilight/latest.woff2)
-            format("woff2"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semilight/latest.woff)
-            format("woff"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semilight/latest.ttf)
+        local("Selawik Semilight"),
+        url("https://esm.sh/gh/winjs/winstrap/src/fonts/selawksl.ttf")
             format("truetype");
     font-weight: 200;
 }
+
 @font-face {
-    font-family: "Segoe UI";
+    font-family: "Selawik";
     src:
-        local("Segoe UI"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff2)
-            format("woff2"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff)
-            format("woff"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.ttf)
+        local("Selawik"),
+        url("https://esm.sh/gh/winjs/winstrap/src/fonts/selawk.ttf")
             format("truetype");
     font-weight: 400;
 }
+
 @font-face {
-    font-family: "Segoe UI";
+    font-family: "Selawik";
     src:
-        local("Segoe UI Semibold"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semibold/latest.woff2)
-            format("woff2"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semibold/latest.woff)
-            format("woff"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/semibold/latest.ttf)
+        local("Selawik Semibold"),
+        url("https://esm.sh/gh/winjs/winstrap/src/fonts/selawksb.ttf")
             format("truetype");
     font-weight: 600;
 }
+
 @font-face {
-    font-family: "Segoe UI";
+    font-family: "Selawik";
     src:
-        local("Segoe UI Bold"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/bold/latest.woff2)
-            format("woff2"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/bold/latest.woff)
-            format("woff"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/bold/latest.ttf)
+        local("Selawik Bold"),
+        url("https://esm.sh/gh/winjs/winstrap/src/fonts/selawkb.ttf")
             format("truetype");
     font-weight: 700;
-}
-@font-face {
-    font-family: "Segoe UI";
-    src:
-        local("Segoe UI Black"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/black/latest.woff2)
-            format("woff2"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/black/latest.woff)
-            format("woff"),
-        url(https://c.s-microsoft.com/static/fonts/segoe-ui/west-european/black/latest.ttf)
-            format("truetype");
-    font-weight: 900;
 }

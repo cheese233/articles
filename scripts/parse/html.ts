@@ -11,7 +11,11 @@ const parse = (text: string) => {
     tokens.querySelector('meta[name="description"]'))
     ?.getAttribute("content") ?? "";
 
-  return { meta: { title }, summary };
+  const author = (tokens.querySelector('meta[name="author"]') ??
+    tokens.querySelector('meta[property="article:author"]'))
+    ?.getAttribute("content") ?? undefined;
+
+  return { meta: { title, author }, summary };
 };
 
 export default parse;

@@ -3,7 +3,7 @@
 import { parseArgs } from "jsr:@std/cli@1/parse-args";
 import { XMLBuilder } from "npm:fast-xml-parser@5";
 import path from "node:path";
-import { walk } from "./utils.ts";
+import { load, walk } from "./utils.ts";
 
 let { _: [dir], root: DocRoot } = parseArgs(Deno.args, {
   string: ["root", "_"],
@@ -38,7 +38,9 @@ Deno.stdout.writeSync(
             walk(dir),
             async ({ path: p, name }) => {
               const meta = await Deno.stat(p),
-                ext = path.extname(name);
+                ext = path.extname(name),
+                contentMeta = (await load(p))?.meta;
+              if (!contentMeta) return {};
               return {
                 url: [
                   {
@@ -53,6 +55,11 @@ Deno.stdout.writeSync(
                   { "meta:routable": [] },
                   { "lastmod": [{ "#text": meta.mtime?.toISOString() }] },
                   { "meta:suffix": [{ "#text": ext.slice(1) }] },
+                  ...(contentMeta.entrypoint
+                    ? [{
+                      "meta:entrypoint": [{ "#text": contentMeta.entrypoint }],
+                    }]
+                    : []),
                 ],
               };
             },
@@ -62,4 +69,3 @@ Deno.stdout.writeSync(
     ),
   ),
 );
-
