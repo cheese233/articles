@@ -5,7 +5,8 @@ import { html } from "https://esm.sh/htm/preact";
 /**
  * # 主页
  * @routable
- * @author: cheese233
+ * @author cheese233
+ * @param {HTMLElement} main
  */
 export function homepage(main) {
   main.replaceChildren();

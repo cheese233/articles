@@ -17,9 +17,10 @@ const parse = async (content: string) => {
       }
 
       let { meta: { title, author }, summary } = parseMd(node.jsDoc?.doc ?? "");
-      if (!author) author = (tags.find((t) =>
+      author = (tags.find((t) =>
         t.kind == "unsupported" && t.value.startsWith("@author")
-      ) as { value: string } | undefined)?.value.replace(/^@author\s*/, "");
+      ) as { value: string } | undefined)?.value.replace(/^@author\s*/, "") ||
+        author;
       return {
         meta: { title, author, entrypoint: node.name },
         summary: summary,

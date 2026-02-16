@@ -23,9 +23,9 @@ jobs:
 
       - name: Modify .gitignore
         run: |
-          sed -i '/^\.\/sitemap\.xml$/d' .gitignore
-          sed -i '/^\.\/atom\.xml$/d' .gitignore
-          sed -i '/^\.\/feed\.json$/d' .gitignore
+          sed -i '/^sitemap\.xml$/d' .gitignore
+          sed -i '/^atom\.xml$/d' .gitignore
+          sed -i '/^feed\.json$/d' .gitignore
 
       - name: Commit and Push to pages
         run: |
