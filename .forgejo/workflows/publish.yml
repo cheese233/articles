@@ -30,6 +30,7 @@ jobs:
       - name: Deploy website
         uses: actions/git-pages@v2
         with:
-          site: https://grebedoc.dev/
+          site: https://c23.me/
+          server: grebedoc.dev
           source: .
           password: ${{ secrets.GIT_PAGES_PASSWORD }}
