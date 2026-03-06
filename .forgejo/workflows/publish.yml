@@ -27,10 +27,8 @@ jobs:
           sed -i '/^atom\.xml$/d' .gitignore
           sed -i '/^feed\.json$/d' .gitignore
 
-      - name: Commit and Push to pages
-        run: |
-          git config user.name "cheese233_bot"
-          git config user.email "bot+codeberg@c23.me"
-          git add .
-          git commit -m "publish website" || echo "No changes to commit"
-          git push --force origin HEAD:pages
+      - uses: https://codeberg.org/git-pages/action@v2
+        with:
+          site: "https://${{ forge.repository_owner }}.codeberg.page/articles/"
+          token: ${{ forge.token }}
+          source: .

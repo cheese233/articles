@@ -21,6 +21,7 @@ const parse = async (content: string) => {
         t.kind == "unsupported" && t.value.startsWith("@author")
       ) as { value: string } | undefined)?.value.replace(/^@author\s*/, "") ||
         author;
+
       return {
         meta: { title, author, entrypoint: node.name },
         summary: summary,

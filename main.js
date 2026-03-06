@@ -1,6 +1,6 @@
-import { animate } from "https://esm.sh/animejs@4";
-import { render } from "https://esm.sh/preact";
-import { html } from "https://esm.sh/htm/preact";
+import { gsap } from "https://esm.sh/gsap@3";
+import { render } from "https://esm.sh/preact@10";
+import { html } from "https://esm.sh/htm@3/preact";
 
 /**
  * # 主页
