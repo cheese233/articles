@@ -27,8 +27,9 @@ jobs:
           sed -i '/^atom\.xml$/d' .gitignore
           sed -i '/^feed\.json$/d' .gitignore
 
-      - uses: https://codeberg.org/git-pages/action@v2
+      - name: Deploy website
+        uses: actions/git-pages@v2
         with:
-          site: "https://${{ forge.repository_owner }}.codeberg.page/articles/"
-          token: ${{ forge.token }}
+          site: https://grebedoc.dev/
           source: .
+          password: ${{ secrets.GIT_PAGES_PASSWORD }}
