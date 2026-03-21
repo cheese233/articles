@@ -11,28 +11,6 @@
             href="https://c23.me/atom.xml"
         />
         <link rel="preconnect" href="https://esm.sh" />
-        <script type="module">
-            import {
-                allComponents,
-                provideFluentDesignSystem,
-                baseLayerLuminance,
-                StandardLuminance,
-            } from "https://esm.sh/@fluentui/web-components";
-
-            provideFluentDesignSystem().register(allComponents);
-
-            const match = window.matchMedia("(prefers-color-scheme: dark)");
-            const setLuminance = () => {
-                baseLayerLuminance.setValueFor(
-                    document.body,
-                    match.matches
-                        ? StandardLuminance.DarkMode
-                        : StandardLuminance.LightMode,
-                );
-            };
-            setLuminance();
-            match.addEventListener("change", setLuminance);
-        </script>
         <style>
             body {
                 --seed-color: #ffb33f;
@@ -41,6 +19,10 @@
                 --secondary-color: #705b40;
                 --on-secondary-color: #ffffff;
                 --outline-color: #d3c4b4;
+                --surface-color: #fff8f4;
+                --on-surface-color: #211b13;
+                background-color: var(--surface-color);
+                color: var(--on-surface-color);
             }
             @media (prefers-color-scheme: dark) {
                 body {
@@ -49,6 +31,8 @@
                     --secondary-color: #dec2a1;
                     --on-secondary-color: #3e2d16;
                     --outline-color: #4f4539;
+                    --surface-color: #18120b;
+                    --on-surface-color: #ede0d4;
                 }
             }
 
@@ -80,6 +64,40 @@
                 }
             }
         </style>
+        <script type="module">
+            import { parseColorHexRGB } from "https://esm.sh/@microsoft/fast-colors";
+            import {
+                allComponents,
+                provideFluentDesignSystem,
+                baseLayerLuminance,
+                StandardLuminance,
+                accentBaseColor,
+            } from "https://esm.sh/@fluentui/web-components";
+
+            accentBaseColor.setValueFor(
+                document.documentElement,
+                parseColorHexRGB(
+                    getComputedStyle(document.body)
+                        .getPropertyValue("--seed-color")
+                        .trim(),
+                ),
+            );
+
+            provideFluentDesignSystem().register(allComponents);
+
+            const match = window.matchMedia("(prefers-color-scheme: dark)");
+            const setLuminance = () => {
+                // setAccentColor();
+                baseLayerLuminance.setValueFor(
+                    document.body,
+                    match.matches
+                        ? StandardLuminance.DarkMode
+                        : StandardLuminance.LightMode,
+                );
+            };
+            setLuminance();
+            match.addEventListener("change", setLuminance);
+        </script>
     </head>
     <body
         style="

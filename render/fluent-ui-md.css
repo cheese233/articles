@@ -16,16 +16,16 @@
         "Cascadia Code", Menlo, "Courier New", Courier, monospace;
 }
 .markdown-body {
-    color: #000;
-    background: #fff;
+    /*color: #000;
+    background: #fff;*/
     font-family: var(--fontStack-sansSerif);
 }
-@media (prefers-color-scheme: dark) {
+/*@media (prefers-color-scheme: dark) {
     .markdown-body {
         color: #f0f6fc;
         background: #0d1117;
     }
-}
+}*/
 .markdown-body {
     max-width: 1200px;
     font-family: var(--fontStack-sansSerif);

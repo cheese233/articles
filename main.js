@@ -12,7 +12,12 @@ export function homepage(main) {
   main.replaceChildren();
   render(
     html`
-      <h1>hi</h1>
+      <div>
+        <div>
+          <span style="font-family: monospace;color: var(--secondary-color)"
+          >233 lines · 1000 Bytes</span>
+        </div>
+      </div>
     `,
     main,
   );
