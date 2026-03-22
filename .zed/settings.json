@@ -21,7 +21,6 @@
         "!eslint",
         "...",
       ],
-      "formatter": "language_server",
     },
     "TypeScript": {
       "language_servers": [
@@ -31,7 +30,6 @@
         "!eslint",
         "...",
       ],
-      "formatter": "language_server",
     },
     "TSX": {
       "language_servers": [
@@ -41,7 +39,6 @@
         "!eslint",
         "...",
       ],
-      "formatter": "language_server",
     },
   },
 }
