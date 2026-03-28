@@ -40,7 +40,7 @@ export const BundleZeroMdMixin = (Base = class {}) =>
         KATEX: `<link rel="stylesheet" href="${cdn(
           "katex@0/dist/katex.min.css",
         )}"/>`,
-        MARKDOWN: `<link rel="stylesheet" href="/render/fluent-ui-md.css"/>`,
+        MARKDOWN: ``,
       }.preset();
       if (this.setAttribute) this.setAttribute("no-shadow", "");
       this.marked.use(

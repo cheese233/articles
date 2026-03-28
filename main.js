@@ -1,4 +1,4 @@
-import { gsap } from "https://esm.sh/gsap@3";
+import { animate } from "https://esm.sh/animejs@4";
 import { render } from "https://esm.sh/preact@10";
 import { html } from "https://esm.sh/htm@3/preact";
 
@@ -10,6 +10,74 @@ import { html } from "https://esm.sh/htm@3/preact";
  */
 export function homepage(main) {
   main.replaceChildren();
+  function mainCard(props) {
+    return html`<div
+      class="acrylic"
+      style="
+        pointer-events: auto;
+        margin-top: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        margin-left: 32px;
+        "
+    >
+      ${props.children}
+    </div>`;
+  }
+  function fluentWindow(props) {
+    const THRESHOLD = 15;
+
+    const hover = (el) => {
+      if (!el) return;
+
+      const motionMatchMedia = window.matchMedia("(prefers-reduced-motion)");
+      if (motionMatchMedia.matches) return;
+
+      el.addEventListener("mousemove", (e) => {
+        const { clientX, clientY, currentTarget } = e;
+        const { clientWidth, clientHeight } = currentTarget;
+        const offsetLeft = currentTarget.getBoundingClientRect().left;
+        const offsetTop = currentTarget.getBoundingClientRect().top;
+
+        const horizontal = (clientX - offsetLeft) / clientWidth;
+        const vertical = (clientY - offsetTop) / clientHeight;
+        const rotateX = (THRESHOLD / 2 - horizontal * THRESHOLD).toFixed(2);
+        const rotateY = (vertical * THRESHOLD - THRESHOLD / 2).toFixed(2);
+
+        animate(el, {
+          transform: [
+            `perspective(${clientWidth}px) rotateX(${rotateY}deg) rotateY(${rotateX}deg)`,
+          ],
+          duration: 300,
+          easing: "inCirc",
+        });
+      });
+
+      el.addEventListener("mouseleave", (e) => {
+        animate(el, {
+          transform: [
+            `perspective(${e.currentTarget.clientWidth}px) rotateX(0deg) rotateY(0deg)`,
+          ],
+          duration: 500,
+          easing: "outElastic",
+        });
+      });
+    };
+
+    return html`
+      <div
+        ref=${hover}
+        style="border-radius: 8px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          transform-style: preserve-3d;
+          background: #fff;"
+      >
+        <div style="padding: 16px">${props.children}</div>
+      </div>
+    `;
+  }
+
   function ghLikeCodeCard(props) {
     return html`
       <div
@@ -24,7 +92,7 @@ export function homepage(main) {
           style="font-family: monospace;
           color: var(--foreground-color);
           font-size: 12px;
-          padding-bottom:1rem"
+          padding-bottom: 1rem"
         >
           233 lines · 1000 Bytes
         </div>
@@ -33,7 +101,10 @@ export function homepage(main) {
               line-height: 1.5;
               background-color: var(--background-color);
               border: var(--border);
-              padding: .5rem"
+              padding: .5rem;
+              display: flex;
+              justify-content: space-between;
+              align-items: center"
         >
           <span
             style="background: #e6eaef;
@@ -53,14 +124,9 @@ export function homepage(main) {
             >
               Code
             </button>
-            <span
-              style="line-height: inherit;
-                        display: inline-block;
-                        font-size: inherit;
-                        padding: 2px 12px 2px 12px"
-              >Blame
-            </span>
+            <span style="padding: 2px 12px">Blame</span>
           </span>
+          <span style="color: var(--foreground-color); padding: 0 4px">⋯</span>
         </div>
         <div
           style="border: var(--border);
@@ -74,9 +140,56 @@ export function homepage(main) {
     `;
   }
   render(
-    html` <${ghLikeCodeCard} ><pre>111
-      111
-      111</pre></${ghLikeCodeCard}> `,
+    html`
+    <style>
+        header {
+            display: none !important;
+        }
+        nav {
+            display: none !important;
+        }
+        #hero {
+            padding-top: 6rem;
+        }
+        @media (max-width: 768px) {
+            #hero {
+                padding-top: 2rem;
+            }
+        }
+    </style>
+    <div style="display: grid;
+        width: 100%;
+        height:100%;
+        overflow-x: hidden;
+        position: relative;
+        box-sizing: border-box;" id="hero">
+
+        <div style="
+            grid-area: 1 / 1;
+            width: max(40%, 300px);
+            z-index: 1;
+            position: relative;
+            pointer-events: none;
+        ">
+            <${mainCard}><h1>hi</h1><p>under construction...</p></${mainCard}>
+        </div>
+
+        <div style="
+            grid-area: 1 / 1;
+            width: 90%;
+            margin-left: 30%;
+            z-index: 0;
+        ">
+            <${fluentWindow}>
+                <${ghLikeCodeCard} >
+                <pre>111
+                    111
+                    111</pre>
+                </${ghLikeCodeCard}>
+            </${fluentWindow}>
+        </div>
+
+    </div>`,
     main,
   );
 }

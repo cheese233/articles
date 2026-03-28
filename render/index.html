@@ -10,35 +10,9 @@
             title="RSS"
             href="https://c23.me/atom.xml"
         />
+        <link href="/render/style.css" rel="stylesheet" />
         <link rel="preconnect" href="https://esm.sh" />
         <style>
-            body {
-                --seed-color: #ffb33f;
-                --primary-color: #805611;
-                --on-primary-color: #ffffff;
-                --secondary-color: #705b40;
-                --on-secondary-color: #ffffff;
-                --outline-color: #d3c4b4;
-                --surface-color: #fff8f4;
-                --on-surface-color: #211b13;
-                background-color: var(--surface-color);
-                color: var(--on-surface-color);
-            }
-            @media (prefers-color-scheme: dark) {
-                body {
-                    --primary-color: #f5bc6f;
-                    --on-primary-color: #452b00;
-                    --secondary-color: #dec2a1;
-                    --on-secondary-color: #3e2d16;
-                    --outline-color: #4f4539;
-                    --surface-color: #18120b;
-                    --on-surface-color: #ede0d4;
-                }
-            }
-
-            .sr-only {
-                display: none;
-            }
             fluent-data-grid {
                 overflow-x: auto;
             }
@@ -65,29 +39,24 @@
             }
         </style>
         <script type="module">
-            import { parseColorHexRGB } from "https://esm.sh/@microsoft/fast-colors";
             import {
                 allComponents,
                 provideFluentDesignSystem,
                 baseLayerLuminance,
                 StandardLuminance,
                 accentBaseColor,
-            } from "https://esm.sh/@fluentui/web-components";
+                SwatchRGB,
+            } from "https://esm.sh/@fluentui/web-components@2";
 
             accentBaseColor.setValueFor(
-                document.documentElement,
-                parseColorHexRGB(
-                    getComputedStyle(document.body)
-                        .getPropertyValue("--seed-color")
-                        .trim(),
-                ),
+                document.body,
+                SwatchRGB.create(1, 179 / 255, 63 / 255), // --seed-color, and fk m$
             );
 
             provideFluentDesignSystem().register(allComponents);
 
             const match = window.matchMedia("(prefers-color-scheme: dark)");
             const setLuminance = () => {
-                // setAccentColor();
                 baseLayerLuminance.setValueFor(
                     document.body,
                     match.matches
@@ -101,8 +70,8 @@
     </head>
     <body
         style="
+            padding: 0;
             margin: 0;
-            padding: 8px;
             display: flex;
             min-height: 100vh;
             box-sizing: border-box;
