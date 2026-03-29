@@ -15,10 +15,9 @@ export function homepage(main) {
       class="acrylic"
       style="
         pointer-events: auto;
-        margin-top: 2rem;
         border-radius: 8px;
+        padding: 8px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        margin-left: 32px;
         "
     >
       ${props.children}
@@ -151,6 +150,14 @@ export function homepage(main) {
         #hero {
             padding-top: 6rem;
         }
+        #main-container {
+            padding-left: 32px;
+        }
+        @media (max-width: 300px) {
+            #main-container {
+                padding-left: 0;
+            }
+        }
         @media (max-width: 768px) {
             #hero {
                 padding-top: 2rem;
@@ -169,9 +176,13 @@ export function homepage(main) {
             width: max(40%, 300px);
             z-index: 1;
             position: relative;
+            padding-top: 2rem;
             pointer-events: none;
-        ">
-            <${mainCard}><h1>hi</h1><p>under construction...</p></${mainCard}>
+        " id="main-container">
+            <${mainCard}>
+                <h1 style="margin-top: 0">hi</h1>
+                <p>under construction...</p>
+            </${mainCard}>
         </div>
 
         <div style="
@@ -181,7 +192,7 @@ export function homepage(main) {
             z-index: 0;
         ">
             <${fluentWindow}>
-                <${ghLikeCodeCard} >
+                <${ghLikeCodeCard}>
                 <pre>111
                     111
                     111</pre>
