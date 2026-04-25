@@ -21,12 +21,6 @@ jobs:
           deno run -A scripts/gen/atom.ts --root "https://c23.me/" --title "cheese233's blog" . > atom.xml
           deno run -A scripts/gen/sitemap.ts --root "https://c23.me/" . > sitemap.xml
 
-      - name: Modify .gitignore
-        run: |
-          sed -i '/^sitemap\.xml$/d' .gitignore
-          sed -i '/^atom\.xml$/d' .gitignore
-          sed -i '/^feed\.json$/d' .gitignore
-
       - name: Deploy website
         uses: actions/git-pages@v2
         with:
