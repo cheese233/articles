@@ -79,7 +79,7 @@ await writer.write(
                   { ":@": { "@_href": url }, link: [] },
                   {
                     ":@": {
-                      "@_href": new URL(pathWithoutExt, DocRoot).toString(),
+                      "@_href": new URL(path, DocRoot).toString(),
                       "@_rel": "via",
                     },
                     link: [],
