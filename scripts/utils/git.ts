@@ -1,4 +1,4 @@
-import { simpleGit } from "npm:simple-git";
+import { simpleGit } from "npm:simple-git@3";
 
 export const read = async (path: string, root?: string) => {
   const git = simpleGit({ baseDir: root });

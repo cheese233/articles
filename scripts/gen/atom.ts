@@ -2,18 +2,27 @@
 
 import { parseArgs } from "jsr:@std/cli@1/parse-args";
 import { XMLBuilder } from "npm:fast-xml-parser@5";
-import { walk, read } from "../utils/fs.ts";
+import { walk } from "../utils/fs.ts";
 import parse from "../parse/parse.ts";
+import { getBackend, getWriter } from "../utils/common.ts";
 
 let {
   _: [dir],
   root: DocRoot,
   title,
+  backend,
+  output,
 } = parseArgs(Deno.args, {
-  string: ["root", "_", "title"],
+  string: ["root", "_", "title", "backend", "output"],
+  alias: {
+    output: "o",
+  },
 });
 if (!dir) dir = ".";
 if (!(await Deno.stat(dir)).isDirectory) throw new Error();
+if (!DocRoot) throw new Error();
+
+const read = await getBackend(backend).then((i) => i.read);
 
 const info = [
   { title: [{ "#text": title ?? "" }] },
@@ -28,7 +37,9 @@ const builder = new XMLBuilder({
   preserveOrder: true,
 });
 
-Deno.stdout.writeSync(
+const writer = await getWriter(output);
+
+await writer.write(
   new TextEncoder().encode(
     builder.build([
       {
@@ -48,12 +59,12 @@ Deno.stdout.writeSync(
           ...(await Array.fromAsync(
             walk(dir),
             async ({ ext, pathWithoutExt, path }) => {
-              const content = await read(path),
+              const content = await read(path, dir),
                 url = new URL(pathWithoutExt, DocRoot).toString();
 
-              if (!content) return {};
-
               const meta = await parse(content.content, ext);
+
+              if (!meta) return {};
 
               return {
                 entry: [
@@ -87,3 +98,5 @@ Deno.stdout.writeSync(
     ]),
   ),
 );
+
+await writer.close();

@@ -25,7 +25,8 @@
     "npm:marked-plaintify@1": "1.1.1_marked@17.0.2",
     "npm:marked@17": "17.0.2",
     "npm:nodegit@0": "0.27.0",
-    "npm:simple-git@*": "3.36.0"
+    "npm:simple-git@*": "3.36.0",
+    "npm:simple-git@3": "3.36.0"
   },
   "jsr": {
     "@b-fuze/deno-dom@0.1.56": {

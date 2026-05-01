@@ -1,5 +1,3 @@
-import * as kaomoji from "./kaomoji.js";
-
 const namespaceUri = "https://codeberg.org/cheese233/articles";
 
 const requireOnce = (fn) => {

@@ -10,8 +10,8 @@
   "tasks": {
     "dev": "npx netlify-cli dev",
     "build": "deno task \"build-*\"",
-    "build-atom": "deno run -A scripts/gen/atom.ts --root \"$DOC_ROOT\" --title \"$SITE_TITLE\" \"$INIT_CWD\" > atom.xml",
-    "build-sitemap": "deno run -A scripts/gen/sitemap.ts --root \"$DOC_ROOT\" \"$INIT_CWD\" > sitemap.xml"
+    "build-atom": "deno run -A scripts/gen/atom.ts --root \"$DOC_ROOT\" --title \"$SITE_TITLE\" -o atom.xml \"$INIT_CWD\"",
+    "build-sitemap": "deno run -A scripts/gen/sitemap.ts --root \"$DOC_ROOT\" -o sitemap.xml \"$INIT_CWD\""
   },
   "imports": {
     "@ts-morph/ts-morph": "jsr:@ts-morph/ts-morph@^28.0.0",

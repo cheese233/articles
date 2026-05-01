@@ -19,10 +19,11 @@ export const walk = async function* (dir: string) {
   }
 };
 
-export const read = async (path: string) => {
-  const meta = await Deno.stat(path);
+export const read = async (p: string, root?: string) => {
+  const fullPath = path.join(root ?? "", p);
+  const meta = await Deno.stat(fullPath);
   return {
-    content: await Deno.readTextFile(path),
+    content: await Deno.readTextFile(fullPath),
     modifiedTime: meta.mtime,
     creationTime: meta.birthtime,
   };
