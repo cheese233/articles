@@ -9,7 +9,7 @@ export default (marked) => {
       link(token) {
         if (token.title) {
           const linkId = `marked-anchor-${markedLinkTitleUid++}`;
-          return `
+          return /* html */ `
             <fluent-tooltip anchor="${linkId}">${token.title}</fluent-tooltip>
             <fluent-anchor href="${token.href}" appearance="hypertext"
             id="${linkId}" aria-describedby="tooltip">
@@ -17,7 +17,7 @@ export default (marked) => {
             </fluent-anchor>
         `;
         } else
-          return `
+          return /* html */ `
             <fluent-anchor href="${token.href}" appearance="hypertext">
               ${token.text}
             </fluent-anchor>
@@ -30,7 +30,7 @@ export default (marked) => {
         const parseCells = (r) =>
           r
             .map(
-              (c, i) => `
+              (c, i) => /* html */ `
                 <fluent-data-grid-cell grid-column="${i + 1}"
                 ${c.header ? 'cell-type="columnheader"' : ""}
                 ${c.align ? 'style="text-align: ' + c.align + '"' : ""}>
@@ -39,7 +39,7 @@ export default (marked) => {
             )
             .join("");
 
-        return `
+        return /* html */ `
           <fluent-data-grid>
             <fluent-data-grid-row row-type="header">
               ${parseCells(header)}
@@ -56,7 +56,7 @@ export default (marked) => {
       },
       listitem(token) {
         if (token.checked == undefined) return false;
-        return `
+        return /* html */ `
           <li>
             <fluent-checkbox ${token.checked ? "checked" : ""} disabled style="opacity: 1">
               ${marked.Parser.parseInline(token.tokens)}

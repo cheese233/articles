@@ -1,7 +1,21 @@
 {
+  "compilerOptions": {
+    "lib": ["esnext", "dom", "dom.iterable"]
+  },
   "lint": {
     "rules": {
-      "exclude": ["no-import-prefix"]
+      "exclude": ["no-import-prefix", "no-window"]
     }
+  },
+  "tasks": {
+    "dev": "npx netlify-cli dev",
+    "build": "deno task \"build-*\"",
+    "build-atom": "deno run -A scripts/gen/atom.ts --root \"$DOC_ROOT\" --title \"$SITE_TITLE\" \"$INIT_CWD\" > atom.xml",
+    "build-sitemap": "deno run -A scripts/gen/sitemap.ts --root \"$DOC_ROOT\" \"$INIT_CWD\" > sitemap.xml"
+  },
+  "imports": {
+    "@ts-morph/ts-morph": "jsr:@ts-morph/ts-morph@^28.0.0",
+    "nodegit": "npm:nodegit@^0.27.0",
+    "simple-git": "npm:simple-git@^3.36.0"
   }
 }

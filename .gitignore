@@ -1,3 +1,6 @@
 sitemap.xml
 atom.xml
 feed.json
+
+# Local Netlify folder
+.netlify

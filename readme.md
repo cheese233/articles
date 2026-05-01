@@ -7,6 +7,7 @@ A simple blog site that follows ESM specifications
 ## TODO
 
 - [ ] JSON Feed generation
+- [ ] i18n
 
 ## License
 

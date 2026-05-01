@@ -1,5 +1,7 @@
 import * as kaomoji from "./kaomoji.js";
 
+const namespaceUri = "https://codeberg.org/cheese233/articles";
+
 const requireOnce = (fn) => {
   let state = null;
 
@@ -33,32 +35,34 @@ class RouteNotFoundError extends Error {
 /**
  * @param {URL | Location} url
  */
-function route(url) {
-  const routes = [...SiteMap.querySelectorAll("url")]
-    .filter((e) => e.getElementsByTagName("meta:routable").length)
-    .map((e) => {
-      return {
-        url: new URL(e.getElementsByTagName("loc")[0].textContent),
-        suffix: e.getElementsByTagName("meta:suffix")[0]?.textContent,
-        entrypoint: e.getElementsByTagName("meta:entrypoint")[0]?.textContent,
-      };
-    })
-    .filter((e) => e.url.origin == url.origin);
-  for (const e of routes) if (e.url.pathname == url.pathname) return e;
-  throw new RouteNotFoundError(url.pathname);
-}
+const route = (url) =>
+  [...SiteMap.querySelectorAll("url")]
+    .filter((e) => e.getElementsByTagNameNS(namespaceUri, "routable").length)
+    .reduce((prev, e) => {
+      if (prev) return prev;
+      const parsedUrl = new URL(e.getElementsByTagName("loc")[0].textContent);
+      if (parsedUrl.origin == url.origin && parsedUrl.pathname == url.pathname)
+        return {
+          url: parsedUrl,
+          suffix: e.getElementsByTagNameNS(namespaceUri, "suffix")[0]
+            ?.textContent,
+        };
+      return null;
+    }, null) ??
+  (() => {
+    throw new RouteNotFoundError(url.pathname);
+  })();
 
 /**
  * @param {URL} url
  * @param {string} suffix
- * @param {string} [entrypoint]
  */
-async function render(url, suffix, entrypoint) {
+async function render(url, suffix) {
   switch (suffix) {
-    case "html":
+    case ".html":
       main.innerHTML = await (await fetch(url.toString() + ".html")).text();
       break;
-    case "md": {
+    case ".md": {
       await requireOnce(async () => {
         customElements.define(
           "zero-md",
@@ -72,32 +76,32 @@ async function render(url, suffix, entrypoint) {
       article.style.display = "none";
       main.appendChild(article);
       await new Promise((resolve) =>
-        article.addEventListener("zero-md-rendered", resolve, { once: true })
+        article.addEventListener("zero-md-rendered", resolve, { once: true }),
       );
       main.replaceChildren(article);
       article.style.display = "";
 
       break;
     }
-    case "js": {
-      await (await import(url.pathname + ".js"))[entrypoint](main);
+    case ".js": {
+      await import(url.pathname + ".js").then((i) => i.default(main));
       break;
     }
     default:
-      throw new RouteNotFoundError(url.pathname + "." + suffix);
+      throw new RouteNotFoundError(url.pathname + suffix);
   }
 }
 
 try {
-  const { url, suffix, entrypoint } = route(
-    (location.pathname == "/") ? new URL("/main", location) : location,
+  const { url, suffix } = route(
+    location.pathname == "/" ? new URL("/main", location) : location,
   );
 
-  if (suffix == "md") document.querySelector("#header-loc").innerHTML = "blog";
-  render(url, suffix, entrypoint);
+  if (suffix == ".md") document.querySelector("#header-loc").innerHTML = "blog"; // TODO
+  await render(url, suffix);
 } catch (e) {
   if (e instanceof RouteNotFoundError) {
     document.querySelector("#header-loc").innerHTML = ";(";
-    render(new URL("/render/404", location), "html");
+    render(new URL("/render/404", location), ".html");
   } else throw e;
 }

@@ -1,32 +1,34 @@
-import { doc } from "jsr:@deno/doc@0";
 import parseMd from "./md.ts";
+import { Project, SyntaxKind } from "jsr:@ts-morph/ts-morph@28";
+const project = new Project();
 
 const parse = async (content: string) => {
-  const url = `data:text/javascript,${encodeURIComponent(content)}`;
+  const data = project.createSourceFile(".ts", content, { overwrite: true });
 
-  const nodes = (await doc([url]))[url] || [];
+  const routable = data
+    .getDescendantsOfKind(SyntaxKind.JSDocTag)
+    .filter((tag) => tag.getTagName() == "routable");
 
-  for (const node of nodes) {
-    const tags = node.jsDoc?.tags || [];
+  // TODO: 1. warn if not exported
+  // TODO: 2. find only callable
+  // TODO: 3. handle class & arrow functions & unnamed function correctly
+  for (const jsdoc of routable
+    .map((tag) => tag.getParent())
+    .filter((e) => !!e)) {
+    if (!jsdoc.isKind(SyntaxKind.JSDoc)) continue;
 
-    if (
-      tags.some((t) => t.kind == "unsupported" && t.value == "@routable")
-    ) {
-      if (!node.declarationKind.includes("export")) {
-        console.error(`${node.name} might not be correctly exported`);
-      }
+    let {
+      meta: { title, author },
+      summary,
+    } = parseMd(jsdoc.getDescription() ?? "");
+    author =
+      jsdoc.getFirstChildByKind(SyntaxKind.JSDocAuthorTag)?.getCommentText() ||
+      author;
 
-      let { meta: { title, author }, summary } = parseMd(node.jsDoc?.doc ?? "");
-      author = (tags.find((t) =>
-        t.kind == "unsupported" && t.value.startsWith("@author")
-      ) as { value: string } | undefined)?.value.replace(/^@author\s*/, "") ||
-        author;
-
-      return {
-        meta: { title, author, entrypoint: node.name },
-        summary: summary,
-      };
-    }
+    return {
+      meta: { title, author },
+      summary,
+    };
   }
 
   return null;

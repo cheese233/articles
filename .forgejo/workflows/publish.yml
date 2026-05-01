@@ -17,9 +17,10 @@ jobs:
           deno-version: ^2
 
       - name: Generate
-        run: |
-          deno run -A scripts/gen/atom.ts --root "https://c23.me/" --title "cheese233's blog" . > atom.xml
-          deno run -A scripts/gen/sitemap.ts --root "https://c23.me/" . > sitemap.xml
+        run: deno tasks build
+        env:
+          DOC_ROOT: "https://c23.me"
+          SITE_TITLE: "cheese233's blog"
 
       - name: Deploy website
         uses: actions/git-pages@v2

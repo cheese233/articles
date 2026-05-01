@@ -5,10 +5,11 @@ import { html } from "https://esm.sh/htm@3/preact";
 /**
  * # 主页
  * @routable
+ * @hidden
  * @author cheese233
  * @param {HTMLElement} main
  */
-export function homepage(main) {
+export default function (main) {
   main.replaceChildren();
   function mainCard(props) {
     return html`<div
@@ -138,6 +139,7 @@ export function homepage(main) {
       </div>
     `;
   }
+
   render(
     html`
     <style>
@@ -193,9 +195,7 @@ export function homepage(main) {
         ">
             <${fluentWindow}>
                 <${ghLikeCodeCard}>
-                <pre>111
-                    111
-                    111</pre>
+
                 </${ghLikeCodeCard}>
             </${fluentWindow}>
         </div>

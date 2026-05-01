@@ -37,12 +37,12 @@ export const BundleZeroMdMixin = (Base = class {}) =>
       });
       this.template = {
         ...STYLES,
-        KATEX: `<link rel="stylesheet" href="${cdn(
+        KATEX: /* html */ `<link rel="stylesheet" href="${cdn(
           "katex@0/dist/katex.min.css",
         )}"/>`,
         MARKDOWN: ``,
       }.preset();
-      if (this.setAttribute) this.setAttribute("no-shadow", "");
+      if (this.setAttribute) this.setAttribute("no-shadow", ""); // FIXME
       this.marked.use(
         (await import("./fluentify-marked.js")).default(this.marked),
         (await import(cdn("marked-footnote"))).default(),
