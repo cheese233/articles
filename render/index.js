@@ -22,7 +22,7 @@ const customElemBuilder = new (class {
     if (this.executed.has(ext)) return;
     customElements.define(
       `${ext.slice(1)}-loader`,
-      (await import(`./${ext.slice(1)}.js`)).MarkdownLoader,
+      (await import(`./${ext.slice(1)}.js`)).Loader,
     );
     this.executed.add(ext);
   }
@@ -54,31 +54,16 @@ const route = (url) =>
  * @param {string} suffix
  */
 async function render(url, suffix) {
-  switch (suffix) {
-    case ".html":
-      main.innerHTML = await (await fetch(url.toString() + ".html")).text(); // TODO: customElemBuilder
-      break;
-    case ".md": {
-      const article = document.createElement("md-loader");
-      article.setAttribute("src", url.toString() + ".md");
-      customElemBuilder.build(suffix); // FIXME
-      article.style.display = "none";
-      main.appendChild(article);
-      await new Promise((resolve) =>
-        article.addEventListener("update", resolve, { once: true }),
-      );
-      main.replaceChildren(article);
-      article.style.display = "";
-
-      break;
-    }
-    case ".js": {
-      await import(url.pathname + ".js").then((i) => i.default(main));
-      break;
-    }
-    default:
-      throw new RouteNotFoundError(url.pathname + suffix);
-  }
+  await customElemBuilder.build(suffix);
+  const article = document.createElement(`${suffix.slice(1)}-loader`);
+  article.setAttribute("src", url.toString() + suffix);
+  article.style.display = "none";
+  main.appendChild(article);
+  await new Promise((resolve) =>
+    article.addEventListener("update", resolve, { once: true }),
+  );
+  main.replaceChildren(article);
+  article.style.display = "";
 }
 
 try {

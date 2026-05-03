@@ -11,6 +11,7 @@ import { html } from "https://esm.sh/htm@3/preact";
  */
 export default function (main) {
   main.replaceChildren();
+
   function mainCard(props) {
     return html`<div
       class="acrylic"
@@ -142,13 +143,8 @@ export default function (main) {
 
   render(
     html`
+    <link rel="stylesheet" href="/arcylic.css" />
     <style>
-        header {
-            display: none !important;
-        }
-        nav {
-            display: none !important;
-        }
         #hero {
             padding-top: 6rem;
         }
