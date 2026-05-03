@@ -15,6 +15,7 @@ jobs:
       - uses: https://github.com/denoland/setup-deno@v2
         with:
           deno-version: ^2
+          cache: true
 
       - name: Generate
         run: deno task build --backend git # you should have git if there's an actions/checkout
