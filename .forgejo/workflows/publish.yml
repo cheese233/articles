@@ -17,7 +17,7 @@ jobs:
           deno-version: ^2
 
       - name: Generate
-        run: deno task build
+        run: deno task build --backend git # you should have git if there's an actions/checkout
         env:
           DOC_ROOT: "https://c23.me"
           SITE_TITLE: "cheese233's blog"

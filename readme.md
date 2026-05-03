@@ -10,6 +10,7 @@ A simple blog site that follows ESM specifications
 
 - [ ] JSON Feed generation
 - [ ] i18n
+- [ ] nuke.ts to nuke your articles
 
 ## License
 
