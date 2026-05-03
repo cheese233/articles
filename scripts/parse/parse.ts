@@ -1,10 +1,22 @@
 import parseMd from "../parse/md.ts";
 import parseHTML from "../parse/html.ts";
 import parseJs from "../parse/js.ts";
-export default async function (content: string, ext: string) {
+
+export interface ParseResult {
+  meta: {
+    title?: string;
+    author?: string;
+  };
+  summary: string;
+}
+
+export default async function (
+  content: string,
+  ext: string,
+): Promise<ParseResult | null> {
   switch (ext) {
     case ".md":
-      return parseMd(content);
+      return await parseMd(content);
     case ".html":
       return parseHTML(content);
     case ".js":

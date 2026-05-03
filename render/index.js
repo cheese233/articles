@@ -1,23 +1,5 @@
 const namespaceUri = "https://codeberg.org/cheese233/articles";
 
-const requireOnce = (fn) => {
-  let state = null;
-
-  return (...args) => {
-    if (!state) {
-      state = (async () => {
-        try {
-          return await fn(...args);
-        } catch (error) {
-          state = null;
-          throw error;
-        }
-      })();
-    }
-    return state;
-  };
-};
-
 const SiteMap = new DOMParser().parseFromString(
   await (await fetch("/sitemap.xml")).text(),
   "text/xml",
@@ -29,6 +11,22 @@ class RouteNotFoundError extends Error {
     this.name = "RouteNotFoundError";
   }
 }
+
+const customElemBuilder = new (class {
+  executed = new Set();
+
+  /**
+   * @param {string} ext
+   */
+  async build(ext) {
+    if (this.executed.has(ext)) return;
+    customElements.define(
+      `${ext.slice(1)}-loader`,
+      (await import(`./${ext.slice(1)}.js`)).MarkdownLoader,
+    );
+    this.executed.add(ext);
+  }
+})();
 
 /**
  * @param {URL | Location} url
@@ -58,23 +56,16 @@ const route = (url) =>
 async function render(url, suffix) {
   switch (suffix) {
     case ".html":
-      main.innerHTML = await (await fetch(url.toString() + ".html")).text();
+      main.innerHTML = await (await fetch(url.toString() + ".html")).text(); // TODO: customElemBuilder
       break;
     case ".md": {
-      await requireOnce(async () => {
-        customElements.define(
-          "zero-md",
-          await (await import("./markdown.js")).ZeroMd(),
-        );
-      })();
-
-      const article = document.createElement("zero-md");
+      const article = document.createElement("md-loader");
       article.setAttribute("src", url.toString() + ".md");
-
+      customElemBuilder.build(suffix); // FIXME
       article.style.display = "none";
       main.appendChild(article);
       await new Promise((resolve) =>
-        article.addEventListener("zero-md-rendered", resolve, { once: true }),
+        article.addEventListener("update", resolve, { once: true }),
       );
       main.replaceChildren(article);
       article.style.display = "";

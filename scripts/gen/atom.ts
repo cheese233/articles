@@ -1,7 +1,7 @@
 #!/usr/bin/env deno
 
 import { parseArgs } from "jsr:@std/cli@1/parse-args";
-import { XMLBuilder } from "npm:fast-xml-parser@5";
+import XMLBuilder from "npm:fast-xml-builder@1";
 import { walk } from "../utils/fs.ts";
 import parse from "../parse/parse.ts";
 import { getBackend, getWriter } from "../utils/common.ts";
@@ -35,7 +35,10 @@ const builder = new XMLBuilder({
   ignoreAttributes: false,
   suppressEmptyNode: true,
   preserveOrder: true,
+  cdataPropName: ":CDATA",
 });
+
+const toCDATA = (content: string) => [{ ":CDATA": [{ "#text": content }] }];
 
 const writer = await getWriter(output);
 
@@ -88,7 +91,7 @@ await writer.write(
                     updated: [{ "#text": content.modifiedTime?.toISOString() }],
                   },
                   { author: [{ name: [{ "#text": meta?.meta.author }] }] },
-                  { summary: [{ "#text": meta?.summary }] },
+                  { summary: toCDATA(meta?.summary || "") },
                 ],
               };
             },

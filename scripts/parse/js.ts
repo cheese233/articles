@@ -20,7 +20,7 @@ const parse = async (content: string) => {
     let {
       meta: { title, author },
       summary,
-    } = parseMd(jsdoc.getDescription() ?? "");
+    } = await parseMd(jsdoc.getDescription() ?? "");
     author =
       jsdoc.getFirstChildByKind(SyntaxKind.JSDocAuthorTag)?.getCommentText() ||
       author;
