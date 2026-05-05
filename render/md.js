@@ -15,7 +15,9 @@ export class Loader extends BaseLoader {
    * @param {string} content
    */
   async update(content) {
-    let head = "";
+    let head = _I.prestyle
+      ? /* html */ `<link rel="stylesheet" href="/render/markdown.css" />`
+      : "";
 
     const processed = await unified()
       .use(remarkParse)

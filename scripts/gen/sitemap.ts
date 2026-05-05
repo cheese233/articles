@@ -1,7 +1,7 @@
 #!/usr/bin/env deno
 
 import { parseArgs } from "jsr:@std/cli@1/parse-args";
-import { XMLBuilder } from "npm:fast-xml-parser@5";
+import XMLBuilder from "npm:fast-xml-builder@1";
 import { walk } from "../utils/fs.ts";
 import parse from "../parse/parse.ts";
 import { getBackend, getWriter } from "../utils/common.ts";
@@ -28,8 +28,10 @@ const builder = new XMLBuilder({
   ignoreAttributes: false,
   suppressEmptyNode: true,
   preserveOrder: true,
-  // format: true,
+  cdataPropName: ":CDATA",
 });
+
+const toCDATA = (content: string) => [{ ":CDATA": [{ "#text": content }] }];
 
 const writer = await getWriter(output);
 
@@ -68,6 +70,16 @@ await writer.write(
                 { "meta:routable": [] },
                 { lastmod: [{ "#text": content.modifiedTime?.toISOString() }] },
                 { "meta:suffix": [{ "#text": ext }] },
+                meta.meta.include || meta.meta.exclude
+                  ? {
+                      "meta:includes": toCDATA(
+                        JSON.stringify({
+                          include: meta?.meta.include ?? [],
+                          exclude: meta?.meta.exclude ?? [],
+                        }),
+                      ),
+                    }
+                  : {},
               ],
             };
           },

@@ -2,7 +2,7 @@
 title: 关于这个生成器
 ---
 
-A simple blog site that follows ESM specifications
+[wip] A simple blog site that follows ESM specifications.
 
 <!-- more -->
 

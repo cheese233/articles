@@ -1,21 +1,22 @@
 import {
-  remarkParse,
-  remarkMath,
   remarkFrontmatter,
   remarkGfm,
+  remarkMath,
+  remarkParse,
   unified,
 } from "../../render/markdown_deps.js";
+import type { ParseResult } from "./parse.ts";
 
+import remarkStringify from "https://esm.sh/remark-stringify@11";
+import type { Heading, Root } from "npm:@types/mdast@4";
 import { toText } from "npm:hast-util-to-text@4";
-import { remove } from "npm:unist-util-remove@4";
-import { find } from "npm:unist-util-find@3";
-import { matter } from "npm:vfile-matter@5";
 import { commentMarker } from "npm:mdast-comment-marker@3";
 import { fromMarkdown } from "npm:mdast-util-from-markdown@2";
 import { toHast } from "npm:mdast-util-to-hast@13";
+import { find } from "npm:unist-util-find@3";
+import { remove } from "npm:unist-util-remove@4";
 import { EXIT, visit } from "npm:unist-util-visit@5";
-import remarkStringify from "https://esm.sh/remark-stringify@11";
-import type { Root, Heading } from "npm:@types/mdast@4";
+import { matter } from "npm:vfile-matter@5";
 
 export default async function (content: string) {
   const processor = unified()
@@ -52,9 +53,12 @@ export default async function (content: string) {
 
   const file = await processor.process(content);
 
-  const meta = (file.data.matter as Record<string, string> | undefined) || {};
+  const meta = (file.data.matter as ParseResult["meta"] | undefined) || {};
 
   if (!meta.title) meta.title = file.data.title as string;
+
+  if (meta.exclude) meta.exclude = meta.exclude.map((e) => String(e));
+  if (meta.include) meta.include = meta.include.map((e) => String(e));
 
   return {
     meta,

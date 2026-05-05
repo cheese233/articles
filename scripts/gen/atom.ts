@@ -72,11 +72,7 @@ await writer.write(
               return {
                 entry: [
                   {
-                    title: [
-                      {
-                        "#text": meta?.meta.title ?? pathWithoutExt,
-                      },
-                    ],
+                    title: [{ "#text": meta.meta.title ?? pathWithoutExt }],
                   },
                   { id: [{ "#text": url }] },
                   { ":@": { "@_href": url }, link: [] },
@@ -90,8 +86,8 @@ await writer.write(
                   {
                     updated: [{ "#text": content.modifiedTime?.toISOString() }],
                   },
-                  { author: [{ name: [{ "#text": meta?.meta.author }] }] },
-                  { summary: toCDATA(meta?.summary || "") },
+                  { author: [{ name: [{ "#text": meta.meta.author }] }] },
+                  { summary: toCDATA(meta.summary || "") },
                 ],
               };
             },

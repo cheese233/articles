@@ -6,6 +6,8 @@ export interface ParseResult {
   meta: {
     title?: string;
     author?: string;
+    include?: string[];
+    exclude?: string[];
   };
   summary: string;
 }

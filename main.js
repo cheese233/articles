@@ -7,7 +7,8 @@ import { html } from "https://esm.sh/htm@3/preact";
  * @routable
  * @hidden
  * @author cheese233
- * @param {HTMLElement} main
+ * @param {ShadowRoot} main
+ * @exclude ["sidebar_header"]
  */
 export default function (main) {
   main.replaceChildren();

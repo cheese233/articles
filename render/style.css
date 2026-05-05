@@ -14,6 +14,7 @@ body {
     --on-secondary-color: #ffffff;
     --outline-color: #d3c4b4;
     --surface-color: #fff8f4;
+    --another-surface-color: #fff8f4;
     --on-surface-color: #211b13;
     background-color: var(--surface-color);
     color: var(--on-surface-color);
@@ -37,6 +38,7 @@ body {
         --on-secondary-color: #3e2d16;
         --outline-color: #4f4539;
         --surface-color: #18120b;
+        --another-surface-color: #3f3830;
         --on-surface-color: #ede0d4;
     }
     .acrylic {
@@ -44,6 +46,19 @@ body {
         border-color: #ffffff55;
         background-blend-mode: darken;
     }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 600;
+}
+
+a {
+    color: var(--primary-color);
 }
 
 @font-face {

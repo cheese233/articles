@@ -1,5 +1,6 @@
 import parseMd from "./md.ts";
-import { Project, SyntaxKind } from "jsr:@ts-morph/ts-morph@28";
+import { Project, SyntaxKind, Node } from "jsr:@ts-morph/ts-morph@28";
+import type { JSDocTag } from "jsr:@ts-morph/ts-morph@28";
 const project = new Project();
 
 const parse = async (content: string) => {
@@ -9,24 +10,43 @@ const parse = async (content: string) => {
     .getDescendantsOfKind(SyntaxKind.JSDocTag)
     .filter((tag) => tag.getTagName() == "routable");
 
-  // TODO: 1. warn if not exported
-  // TODO: 2. find only callable
-  // TODO: 3. handle class & arrow functions & unnamed function correctly
   for (const jsdoc of routable
     .map((tag) => tag.getParent())
     .filter((e) => !!e)) {
     if (!jsdoc.isKind(SyntaxKind.JSDoc)) continue;
 
-    let {
-      meta: { title, author },
+    const func = jsdoc.getParent();
+
+    const isExported =
+      (Node.isExportable(func) && func.isExported()) ||
+      (Node.isModifierable(func) && func.hasModifier(SyntaxKind.ExportKeyword));
+    if (!isExported) console.warn(`@routable function may not be exported`);
+
+    const {
+      meta: { title, author, include, exclude },
       summary,
     } = await parseMd(jsdoc.getDescription() ?? "");
-    author =
-      jsdoc.getFirstChildByKind(SyntaxKind.JSDocAuthorTag)?.getCommentText() ||
-      author;
+
+    const parseIncludes = (name: string) => {
+      const str = jsdoc
+        .getFirstChild(
+          (tag): tag is JSDocTag =>
+            tag.isKind(SyntaxKind.JSDocTag) && tag.getTagName() == name,
+        )
+        ?.getCommentText();
+      if (str) return JSON.parse(str);
+    };
 
     return {
-      meta: { title, author },
+      meta: {
+        title,
+        author:
+          jsdoc
+            .getFirstChildByKind(SyntaxKind.JSDocAuthorTag)
+            ?.getCommentText() || author,
+        include: parseIncludes("include") || include,
+        exclude: parseIncludes("exclude") || exclude,
+      },
       summary,
     };
   }

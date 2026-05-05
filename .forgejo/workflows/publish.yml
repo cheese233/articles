@@ -18,7 +18,9 @@ jobs:
           cache: true
 
       - name: Generate
-        run: deno task build --backend git # you should have git if there's an actions/checkout
+        run: | # you should have git if there's an actions/checkout
+          deno task build-atom --backend git
+          deno task build-sitemap --backend git
         env:
           DOC_ROOT: "https://c23.me"
           SITE_TITLE: "cheese233's blog"

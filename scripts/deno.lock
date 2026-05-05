@@ -10,6 +10,7 @@
     "jsr:@std/path@^1.1.4": "1.1.4",
     "jsr:@ts-morph/common@0.29": "0.29.0",
     "jsr:@ts-morph/ts-morph@28": "28.0.0",
+    "npm:fast-xml-builder@1": "1.1.5",
     "npm:fast-xml-parser@5": "5.7.2",
     "npm:hast-util-to-text@4": "4.0.2",
     "npm:mdast-comment-marker@3": "3.0.0",

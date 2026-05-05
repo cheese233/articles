@@ -1,0 +1,33 @@
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+ul {
+    padding-left: 2rem;
+}
+
+pre {
+    background-color: var(--another-surface-color) !important;
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+pre code {
+    font-size: 100%;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+}
+
+code {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    border-radius: 6px;
+    background-color: var(--another-surface-color);
+}
