@@ -1,4 +1,4 @@
-import { Loader as BaseLoader } from "./base_loader.js";
+import { Loader as BaseLoader } from "./base.js";
 
 export class Loader extends BaseLoader {
   async attributeChangedCallback(name, _, val) {

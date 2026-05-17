@@ -1,6 +1,6 @@
-import * as THREE from "https://esm.sh/three@0.184";
-import { GLTFLoader } from "https://esm.sh/three@0.184/addons/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "https://esm.sh/three@0.184/addons/libs/meshopt_decoder.module.js";
+import * as THREE from "https://cdn.c23.me/three@0.184";
+import { GLTFLoader } from "https://cdn.c23.me/three@0.184/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "https://cdn.c23.me/three@0.184/examples/jsm/libs/meshopt_decoder.module.js";
 
 /**
  * # cute kipfel

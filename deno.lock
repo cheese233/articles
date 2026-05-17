@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@b-fuze/deno-dom@0": "0.1.56",
     "jsr:@david/code-block-writer@13": "13.0.3",
     "jsr:@std/fs@1": "1.0.23",
     "jsr:@std/internal@^1.0.12": "1.0.13",
@@ -8,10 +9,22 @@
     "jsr:@std/path@^1.1.4": "1.1.4",
     "jsr:@ts-morph/common@0.29": "0.29.0",
     "jsr:@ts-morph/ts-morph@28": "28.0.0",
+    "npm:@types/mdast@4": "4.0.4",
+    "npm:hast-util-to-text@4": "4.0.2",
+    "npm:mdast-comment-marker@3": "3.0.0",
+    "npm:mdast-util-from-markdown@2": "2.0.3",
+    "npm:mdast-util-to-hast@13": "13.2.1",
     "npm:nodegit@0.27": "0.27.0",
-    "npm:simple-git@^3.36.0": "3.36.0"
+    "npm:simple-git@^3.36.0": "3.36.0",
+    "npm:unist-util-find@3": "3.0.0",
+    "npm:unist-util-remove@4": "4.0.0",
+    "npm:unist-util-visit@5": "5.1.0",
+    "npm:vfile-matter@5": "5.0.1"
   },
   "jsr": {
+    "@b-fuze/deno-dom@0.1.56": {
+      "integrity": "8030e2dc1d8750f1682b53462ab893d9c3470f2287feecbe22f44a88c54ab148"
+    },
     "@david/code-block-writer@13.0.3": {
       "integrity": "f98c77d320f5957899a61bfb7a9bead7c6d83ad1515daee92dbacc861e13bb7f"
     },
@@ -83,6 +96,27 @@
         "@types/responselike"
       ]
     },
+    "@types/debug@4.1.13": {
+      "integrity": "sha512-KSVgmQmzMwPlmtljOomayoR89W4FynCAi3E8PPs7vmDVPe84hT+vGPKkJfThkmXs0x0jAaa9U8uW8bbfyS2fWw==",
+      "dependencies": [
+        "@types/ms"
+      ]
+    },
+    "@types/estree-jsx@1.0.5": {
+      "integrity": "sha512-52CcUVNFyfb1A2ALocQw/Dd1BQFNmSdkuC3BkZ6iqhdMfQz7JWOFRuJFloOzjk+6WijU56m9oKXFAXc7o3Towg==",
+      "dependencies": [
+        "@types/estree"
+      ]
+    },
+    "@types/estree@1.0.8": {
+      "integrity": "sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w=="
+    },
+    "@types/hast@3.0.4": {
+      "integrity": "sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==",
+      "dependencies": [
+        "@types/unist"
+      ]
+    },
     "@types/http-cache-semantics@4.2.0": {
       "integrity": "sha512-L3LgimLHXtGkWikKnsPg0/VFx9OGZaC+eN1u4r+OB1XRqH3meBIAVC2zr1WdMH+RHmnRkqliQAOHNJ/E0j/e0Q=="
     },
@@ -91,6 +125,15 @@
       "dependencies": [
         "@types/node"
       ]
+    },
+    "@types/mdast@4.0.4": {
+      "integrity": "sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==",
+      "dependencies": [
+        "@types/unist"
+      ]
+    },
+    "@types/ms@2.1.0": {
+      "integrity": "sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA=="
     },
     "@types/node@25.6.0": {
       "integrity": "sha512-+qIYRKdNYJwY3vRCZMdJbPLJAtGjQBudzZzdzwQYkEPQd+PJGixUL5QfvCLDaULoLv+RhT3LDkwEfKaAkgSmNQ==",
@@ -103,6 +146,12 @@
       "dependencies": [
         "@types/node"
       ]
+    },
+    "@types/unist@3.0.3": {
+      "integrity": "sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q=="
+    },
+    "@ungap/structured-clone@1.3.0": {
+      "integrity": "sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g=="
     },
     "abbrev@1.1.1": {
       "integrity": "sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q=="
@@ -235,6 +284,9 @@
     "caseless@0.12.0": {
       "integrity": "sha512-4tYFyifaFfGacoiObjJegolkwSU4xQNGbVgUiNYVUxbQ2x2lUsFvY4hVgVzGiIe6WLOPqycWXA40l+PWsxthUw=="
     },
+    "character-entities@2.0.2": {
+      "integrity": "sha512-shx7oQ0Awen/BRIdkjkvz54PnEEI/EjwXDSIZp86/KKdbafHh1Df/RYGBhn4hbe2+uKC9FnT5UCEdyPz3ai9hQ=="
+    },
     "chownr@1.1.4": {
       "integrity": "sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg=="
     },
@@ -280,6 +332,12 @@
         "ms"
       ]
     },
+    "decode-named-character-reference@1.3.0": {
+      "integrity": "sha512-GtpQYB283KrPp6nRw50q3U9/VfOutZOe103qlN7BPP6Ad27xYnOIWv4lPzo8HCAL+mMZofJ9KEy30fq6MfaK6Q==",
+      "dependencies": [
+        "character-entities"
+      ]
+    },
     "decompress-response@5.0.0": {
       "integrity": "sha512-TLZWWybuxWgoW7Lykv+gq9xvzOsUjQ9tF09Tj6NSTYGMTCHNXzrPnD6Hi+TgZq19PyTAGH4Ll/NIM/eTGglnMw==",
       "dependencies": [
@@ -306,9 +364,18 @@
     "delegates@1.0.0": {
       "integrity": "sha512-bd2L678uiWATM6m5Z1VzNCErI3jiGzt6HGY8OVICs40JQq/HALfbyNJmp0UDakEY4pMMaN0Ly5om/B1VI/+xfQ=="
     },
+    "dequal@2.0.3": {
+      "integrity": "sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA=="
+    },
     "detect-libc@1.0.3": {
       "integrity": "sha512-pGjwhsmsp4kL2RTz08wcOlGN83otlqHeD/Z5T8GXZB+/YcpQ/dgo+lbU8ZsGxV0HIvqqxo9l7mqYwyYMD9bKDg==",
       "bin": true
+    },
+    "devlop@1.1.0": {
+      "integrity": "sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==",
+      "dependencies": [
+        "dequal"
+      ]
     },
     "dunder-proto@1.0.1": {
       "integrity": "sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==",
@@ -519,6 +586,21 @@
         "function-bind"
       ]
     },
+    "hast-util-is-element@3.0.0": {
+      "integrity": "sha512-Val9mnv2IWpLbNPqc/pUem+a7Ipj2aHacCwgNfTiK0vJKl0LF+4Ba4+v1oPHFpf3bLYmreq0/l3Gud9S5OH42g==",
+      "dependencies": [
+        "@types/hast"
+      ]
+    },
+    "hast-util-to-text@4.0.2": {
+      "integrity": "sha512-KK6y/BN8lbaq654j7JgBydev7wuNMcID54lkRav1P0CaE1e47P72AWWPiGKXTJU271ooYzcvTAn/Zt0REnvc7A==",
+      "dependencies": [
+        "@types/hast",
+        "@types/unist",
+        "hast-util-is-element",
+        "unist-util-find-after"
+      ]
+    },
     "http-cache-semantics@4.2.0": {
       "integrity": "sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ=="
     },
@@ -626,14 +708,265 @@
         "json-buffer"
       ]
     },
+    "lodash.iteratee@4.7.0": {
+      "integrity": "sha512-yv3cSQZmfpbIKo4Yo45B1taEvxjNvcpF1CEOc0Y6dEyvhPIfEJE3twDwPgWTPQubcSgXyBwBKG6wpQvWMDOf6Q=="
+    },
     "lodash@4.18.1": {
       "integrity": "sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q=="
+    },
+    "longest-streak@3.1.0": {
+      "integrity": "sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g=="
     },
     "lowercase-keys@2.0.0": {
       "integrity": "sha512-tqNXrS78oMOE73NMxK4EMLQsQowWf8jKooH9g7xPavRT706R6bkQJ6DY2Te7QukaZsulxa30wQ7bk0pm4XiHmA=="
     },
     "math-intrinsics@1.1.0": {
       "integrity": "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="
+    },
+    "mdast-comment-marker@3.0.0": {
+      "integrity": "sha512-bt08sLmTNg00/UtVDiqZKocxqvQqqyQZAg1uaRuO/4ysXV5motg7RolF5o5yy/sY1rG0v2XgZEqFWho1+2UquA==",
+      "dependencies": [
+        "@types/mdast",
+        "mdast-util-mdx-expression"
+      ]
+    },
+    "mdast-util-from-markdown@2.0.3": {
+      "integrity": "sha512-W4mAWTvSlKvf8L6J+VN9yLSqQ9AOAAvHuoDAmPkz4dHf553m5gVj2ejadHJhoJmcmxEnOv6Pa8XJhpxE93kb8Q==",
+      "dependencies": [
+        "@types/mdast",
+        "@types/unist",
+        "decode-named-character-reference",
+        "devlop",
+        "mdast-util-to-string",
+        "micromark",
+        "micromark-util-decode-numeric-character-reference",
+        "micromark-util-decode-string",
+        "micromark-util-normalize-identifier",
+        "micromark-util-symbol",
+        "micromark-util-types",
+        "unist-util-stringify-position"
+      ]
+    },
+    "mdast-util-mdx-expression@2.0.1": {
+      "integrity": "sha512-J6f+9hUp+ldTZqKRSg7Vw5V6MqjATc+3E4gf3CFNcuZNWD8XdyI6zQ8GqH7f8169MM6P7hMBRDVGnn7oHB9kXQ==",
+      "dependencies": [
+        "@types/estree-jsx",
+        "@types/hast",
+        "@types/mdast",
+        "devlop",
+        "mdast-util-from-markdown",
+        "mdast-util-to-markdown"
+      ]
+    },
+    "mdast-util-phrasing@4.1.0": {
+      "integrity": "sha512-TqICwyvJJpBwvGAMZjj4J2n0X8QWp21b9l0o7eXyVJ25YNWYbJDVIyD1bZXE6WtV6RmKJVYmQAKWa0zWOABz2w==",
+      "dependencies": [
+        "@types/mdast",
+        "unist-util-is"
+      ]
+    },
+    "mdast-util-to-hast@13.2.1": {
+      "integrity": "sha512-cctsq2wp5vTsLIcaymblUriiTcZd0CwWtCbLvrOzYCDZoWyMNV8sZ7krj09FSnsiJi3WVsHLM4k6Dq/yaPyCXA==",
+      "dependencies": [
+        "@types/hast",
+        "@types/mdast",
+        "@ungap/structured-clone",
+        "devlop",
+        "micromark-util-sanitize-uri",
+        "trim-lines",
+        "unist-util-position",
+        "unist-util-visit",
+        "vfile"
+      ]
+    },
+    "mdast-util-to-markdown@2.1.2": {
+      "integrity": "sha512-xj68wMTvGXVOKonmog6LwyJKrYXZPvlwabaryTjLh9LuvovB/KAH+kvi8Gjj+7rJjsFi23nkUxRQv1KqSroMqA==",
+      "dependencies": [
+        "@types/mdast",
+        "@types/unist",
+        "longest-streak",
+        "mdast-util-phrasing",
+        "mdast-util-to-string",
+        "micromark-util-classify-character",
+        "micromark-util-decode-string",
+        "unist-util-visit",
+        "zwitch"
+      ]
+    },
+    "mdast-util-to-string@4.0.0": {
+      "integrity": "sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==",
+      "dependencies": [
+        "@types/mdast"
+      ]
+    },
+    "micromark-core-commonmark@2.0.3": {
+      "integrity": "sha512-RDBrHEMSxVFLg6xvnXmb1Ayr2WzLAWjeSATAoxwKYJV94TeNavgoIdA0a9ytzDSVzBy2YKFK+emCPOEibLeCrg==",
+      "dependencies": [
+        "decode-named-character-reference",
+        "devlop",
+        "micromark-factory-destination",
+        "micromark-factory-label",
+        "micromark-factory-space",
+        "micromark-factory-title",
+        "micromark-factory-whitespace",
+        "micromark-util-character",
+        "micromark-util-chunked",
+        "micromark-util-classify-character",
+        "micromark-util-html-tag-name",
+        "micromark-util-normalize-identifier",
+        "micromark-util-resolve-all",
+        "micromark-util-subtokenize",
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-factory-destination@2.0.1": {
+      "integrity": "sha512-Xe6rDdJlkmbFRExpTOmRj9N3MaWmbAgdpSrBQvCFqhezUn4AHqJHbaEnfbVYYiexVSs//tqOdY/DxhjdCiJnIA==",
+      "dependencies": [
+        "micromark-util-character",
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-factory-label@2.0.1": {
+      "integrity": "sha512-VFMekyQExqIW7xIChcXn4ok29YE3rnuyveW3wZQWWqF4Nv9Wk5rgJ99KzPvHjkmPXF93FXIbBp6YdW3t71/7Vg==",
+      "dependencies": [
+        "devlop",
+        "micromark-util-character",
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-factory-space@2.0.1": {
+      "integrity": "sha512-zRkxjtBxxLd2Sc0d+fbnEunsTj46SWXgXciZmHq0kDYGnck/ZSGj9/wULTV95uoeYiK5hRXP2mJ98Uo4cq/LQg==",
+      "dependencies": [
+        "micromark-util-character",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-factory-title@2.0.1": {
+      "integrity": "sha512-5bZ+3CjhAd9eChYTHsjy6TGxpOFSKgKKJPJxr293jTbfry2KDoWkhBb6TcPVB4NmzaPhMs1Frm9AZH7OD4Cjzw==",
+      "dependencies": [
+        "micromark-factory-space",
+        "micromark-util-character",
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-factory-whitespace@2.0.1": {
+      "integrity": "sha512-Ob0nuZ3PKt/n0hORHyvoD9uZhr+Za8sFoP+OnMcnWK5lngSzALgQYKMr9RJVOWLqQYuyn6ulqGWSXdwf6F80lQ==",
+      "dependencies": [
+        "micromark-factory-space",
+        "micromark-util-character",
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-util-character@2.1.1": {
+      "integrity": "sha512-wv8tdUTJ3thSFFFJKtpYKOYiGP2+v96Hvk4Tu8KpCAsTMs6yi+nVmGh1syvSCsaxz45J6Jbw+9DD6g97+NV67Q==",
+      "dependencies": [
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-util-chunked@2.0.1": {
+      "integrity": "sha512-QUNFEOPELfmvv+4xiNg2sRYeS/P84pTW0TCgP5zc9FpXetHY0ab7SxKyAQCNCc1eK0459uoLI1y5oO5Vc1dbhA==",
+      "dependencies": [
+        "micromark-util-symbol"
+      ]
+    },
+    "micromark-util-classify-character@2.0.1": {
+      "integrity": "sha512-K0kHzM6afW/MbeWYWLjoHQv1sgg2Q9EccHEDzSkxiP/EaagNzCm7T/WMKZ3rjMbvIpvBiZgwR3dKMygtA4mG1Q==",
+      "dependencies": [
+        "micromark-util-character",
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-util-combine-extensions@2.0.1": {
+      "integrity": "sha512-OnAnH8Ujmy59JcyZw8JSbK9cGpdVY44NKgSM7E9Eh7DiLS2E9RNQf0dONaGDzEG9yjEl5hcqeIsj4hfRkLH/Bg==",
+      "dependencies": [
+        "micromark-util-chunked",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-util-decode-numeric-character-reference@2.0.2": {
+      "integrity": "sha512-ccUbYk6CwVdkmCQMyr64dXz42EfHGkPQlBj5p7YVGzq8I7CtjXZJrubAYezf7Rp+bjPseiROqe7G6foFd+lEuw==",
+      "dependencies": [
+        "micromark-util-symbol"
+      ]
+    },
+    "micromark-util-decode-string@2.0.1": {
+      "integrity": "sha512-nDV/77Fj6eH1ynwscYTOsbK7rR//Uj0bZXBwJZRfaLEJ1iGBR6kIfNmlNqaqJf649EP0F3NWNdeJi03elllNUQ==",
+      "dependencies": [
+        "decode-named-character-reference",
+        "micromark-util-character",
+        "micromark-util-decode-numeric-character-reference",
+        "micromark-util-symbol"
+      ]
+    },
+    "micromark-util-encode@2.0.1": {
+      "integrity": "sha512-c3cVx2y4KqUnwopcO9b/SCdo2O67LwJJ/UyqGfbigahfegL9myoEFoDYZgkT7f36T0bLrM9hZTAaAyH+PCAXjw=="
+    },
+    "micromark-util-html-tag-name@2.0.1": {
+      "integrity": "sha512-2cNEiYDhCWKI+Gs9T0Tiysk136SnR13hhO8yW6BGNyhOC4qYFnwF1nKfD3HFAIXA5c45RrIG1ub11GiXeYd1xA=="
+    },
+    "micromark-util-normalize-identifier@2.0.1": {
+      "integrity": "sha512-sxPqmo70LyARJs0w2UclACPUUEqltCkJ6PhKdMIDuJ3gSf/Q+/GIe3WKl0Ijb/GyH9lOpUkRAO2wp0GVkLvS9Q==",
+      "dependencies": [
+        "micromark-util-symbol"
+      ]
+    },
+    "micromark-util-resolve-all@2.0.1": {
+      "integrity": "sha512-VdQyxFWFT2/FGJgwQnJYbe1jjQoNTS4RjglmSjTUlpUMa95Htx9NHeYW4rGDJzbjvCsl9eLjMQwGeElsqmzcHg==",
+      "dependencies": [
+        "micromark-util-types"
+      ]
+    },
+    "micromark-util-sanitize-uri@2.0.1": {
+      "integrity": "sha512-9N9IomZ/YuGGZZmQec1MbgxtlgougxTodVwDzzEouPKo3qFWvymFHWcnDi2vzV1ff6kas9ucW+o3yzJK9YB1AQ==",
+      "dependencies": [
+        "micromark-util-character",
+        "micromark-util-encode",
+        "micromark-util-symbol"
+      ]
+    },
+    "micromark-util-subtokenize@2.1.0": {
+      "integrity": "sha512-XQLu552iSctvnEcgXw6+Sx75GflAPNED1qx7eBJ+wydBb2KCbRZe+NwvIEEMM83uml1+2WSXpBAcp9IUCgCYWA==",
+      "dependencies": [
+        "devlop",
+        "micromark-util-chunked",
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
+    },
+    "micromark-util-symbol@2.0.1": {
+      "integrity": "sha512-vs5t8Apaud9N28kgCrRUdEed4UJ+wWNvicHLPxCa9ENlYuAY31M0ETy5y1vA33YoNPDFTghEbnh6efaE8h4x0Q=="
+    },
+    "micromark-util-types@2.0.2": {
+      "integrity": "sha512-Yw0ECSpJoViF1qTU4DC6NwtC4aWGt1EkzaQB8KPPyCRR8z9TWeV0HbEFGTO+ZY1wB22zmxnJqhPyTpOVCpeHTA=="
+    },
+    "micromark@4.0.2": {
+      "integrity": "sha512-zpe98Q6kvavpCr1NPVSCMebCKfD7CA2NqZ+rykeNhONIJBpc1tFKt9hucLGwha3jNTNI8lHpctWJWoimVF4PfA==",
+      "dependencies": [
+        "@types/debug",
+        "debug@4.4.3",
+        "decode-named-character-reference",
+        "devlop",
+        "micromark-core-commonmark",
+        "micromark-factory-space",
+        "micromark-util-character",
+        "micromark-util-chunked",
+        "micromark-util-combine-extensions",
+        "micromark-util-decode-numeric-character-reference",
+        "micromark-util-encode",
+        "micromark-util-normalize-identifier",
+        "micromark-util-resolve-all",
+        "micromark-util-sanitize-uri",
+        "micromark-util-subtokenize",
+        "micromark-util-symbol",
+        "micromark-util-types"
+      ]
     },
     "mime-db@1.52.0": {
       "integrity": "sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg=="
@@ -1071,6 +1404,9 @@
         "punycode"
       ]
     },
+    "trim-lines@3.0.1": {
+      "integrity": "sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg=="
+    },
     "tunnel-agent@0.6.0": {
       "integrity": "sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==",
       "dependencies": [
@@ -1093,6 +1429,62 @@
     },
     "undici-types@7.19.2": {
       "integrity": "sha512-qYVnV5OEm2AW8cJMCpdV20CDyaN3g0AjDlOGf1OW4iaDEx8MwdtChUp4zu4H0VP3nDRF/8RKWH+IPp9uW0YGZg=="
+    },
+    "unist-util-find-after@5.0.0": {
+      "integrity": "sha512-amQa0Ep2m6hE2g72AugUItjbuM8X8cGQnFoHk0pGfrFeT9GZhzN5SW8nRsiGKK7Aif4CrACPENkA6P/Lw6fHGQ==",
+      "dependencies": [
+        "@types/unist",
+        "unist-util-is"
+      ]
+    },
+    "unist-util-find@3.0.0": {
+      "integrity": "sha512-T7ZqS7immLjYyC4FCp2hDo3ksZ1v+qcbb+e5+iWxc2jONgHOLXPCpms1L8VV4hVxCXgWTxmBHDztuEZFVwC+Gg==",
+      "dependencies": [
+        "@types/unist",
+        "lodash.iteratee",
+        "unist-util-visit"
+      ]
+    },
+    "unist-util-is@6.0.1": {
+      "integrity": "sha512-LsiILbtBETkDz8I9p1dQ0uyRUWuaQzd/cuEeS1hoRSyW5E5XGmTzlwY1OrNzzakGowI9Dr/I8HVaw4hTtnxy8g==",
+      "dependencies": [
+        "@types/unist"
+      ]
+    },
+    "unist-util-position@5.0.0": {
+      "integrity": "sha512-fucsC7HjXvkB5R3kTCO7kUjRdrS0BJt3M/FPxmHMBOm8JQi2BsHAHFsy27E0EolP8rp0NzXsJ+jNPyDWvOJZPA==",
+      "dependencies": [
+        "@types/unist"
+      ]
+    },
+    "unist-util-remove@4.0.0": {
+      "integrity": "sha512-b4gokeGId57UVRX/eVKej5gXqGlc9+trkORhFJpu9raqZkZhU0zm8Doi05+HaiBsMEIJowL+2WtQ5ItjsngPXg==",
+      "dependencies": [
+        "@types/unist",
+        "unist-util-is",
+        "unist-util-visit-parents"
+      ]
+    },
+    "unist-util-stringify-position@4.0.0": {
+      "integrity": "sha512-0ASV06AAoKCDkS2+xw5RXJywruurpbC4JZSm7nr7MOt1ojAzvyyaO+UxZf18j8FCF6kmzCZKcAgN/yu2gm2XgQ==",
+      "dependencies": [
+        "@types/unist"
+      ]
+    },
+    "unist-util-visit-parents@6.0.2": {
+      "integrity": "sha512-goh1s1TBrqSqukSc8wrjwWhL0hiJxgA8m4kFxGlQ+8FYQ3C/m11FcTs4YYem7V664AhHVvgoQLk890Ssdsr2IQ==",
+      "dependencies": [
+        "@types/unist",
+        "unist-util-is"
+      ]
+    },
+    "unist-util-visit@5.1.0": {
+      "integrity": "sha512-m+vIdyeCOpdr/QeQCu2EzxX/ohgS8KbnPDgFni4dQsfSCtpz8UqDyY5GjRru8PDKuYn7Fq19j1CQ+nJSsGKOzg==",
+      "dependencies": [
+        "@types/unist",
+        "unist-util-is",
+        "unist-util-visit-parents"
+      ]
     },
     "universalify@0.1.2": {
       "integrity": "sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg=="
@@ -1117,6 +1509,27 @@
         "assert-plus",
         "core-util-is",
         "extsprintf"
+      ]
+    },
+    "vfile-matter@5.0.1": {
+      "integrity": "sha512-o6roP82AiX0XfkyTHyRCMXgHfltUNlXSEqCIS80f+mbAyiQBE2fxtDVMtseyytGx75sihiJFo/zR6r/4LTs2Cw==",
+      "dependencies": [
+        "vfile",
+        "yaml"
+      ]
+    },
+    "vfile-message@4.0.3": {
+      "integrity": "sha512-QTHzsGd1EhbZs4AsQ20JX1rC3cOlt/IWJruk893DfLRr57lcnOeMaWG4K0JrRta4mIJZKth2Au3mM3u03/JWKw==",
+      "dependencies": [
+        "@types/unist",
+        "unist-util-stringify-position"
+      ]
+    },
+    "vfile@6.0.3": {
+      "integrity": "sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==",
+      "dependencies": [
+        "@types/unist",
+        "vfile-message"
       ]
     },
     "which-typed-array@1.1.20": {
@@ -1152,7 +1565,451 @@
     },
     "yallist@3.1.1": {
       "integrity": "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="
+    },
+    "yaml@2.8.4": {
+      "integrity": "sha512-ml/JPOj9fOQK8RNnWojA67GbZ0ApXAUlN2UQclwv2eVgTgn7O9gg9o7paZWKMp4g0H3nTLtS9LVzhkpOFIKzog==",
+      "bin": true
+    },
+    "zwitch@2.0.4": {
+      "integrity": "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="
     }
+  },
+  "redirects": {
+    "https://cdn.c23.me/character-entities@^2.0.0?module": "https://cdn.c23.me/character-entities@2.0.2/index.js?module",
+    "https://cdn.c23.me/decode-named-character-reference@^1.0.0?module": "https://cdn.c23.me/decode-named-character-reference@1.3.0/index.js?module",
+    "https://cdn.c23.me/longest-streak@^3.0.0?module": "https://cdn.c23.me/longest-streak@3.1.0/index.js?module",
+    "https://cdn.c23.me/mdast-util-math@3?module": "https://cdn.c23.me/mdast-util-math@3.0.0/index.js?module",
+    "https://cdn.c23.me/mdast-util-phrasing@^4.0.0?module": "https://cdn.c23.me/mdast-util-phrasing@4.1.0/index.js?module",
+    "https://cdn.c23.me/mdast-util-to-markdown@^2.0.0?module": "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/index.js?module",
+    "https://cdn.c23.me/mdast-util-to-string@^4.0.0?module": "https://cdn.c23.me/mdast-util-to-string@4.0.0/index.js?module",
+    "https://cdn.c23.me/micromark-util-character@^2.0.0?module": "https://cdn.c23.me/micromark-util-character@2.1.1/index.js?module",
+    "https://cdn.c23.me/micromark-util-classify-character@^2.0.0?module": "https://cdn.c23.me/micromark-util-classify-character@2.0.1/index.js?module",
+    "https://cdn.c23.me/micromark-util-decode-numeric-character-reference@^2.0.0?module": "https://cdn.c23.me/micromark-util-decode-numeric-character-reference@2.0.2/index.js?module",
+    "https://cdn.c23.me/micromark-util-decode-string@^2.0.0?module": "https://cdn.c23.me/micromark-util-decode-string@2.0.1/index.js?module",
+    "https://cdn.c23.me/rehype-dom-stringify@4?module": "https://cdn.c23.me/rehype-dom-stringify@4.0.2/index.js?module",
+    "https://cdn.c23.me/remark-gfm@4?module": "https://cdn.c23.me/remark-gfm@4.0.1/index.js?module",
+    "https://cdn.c23.me/remark-parse@11?module": "https://cdn.c23.me/remark-parse@11.0.0/index.js?module",
+    "https://cdn.c23.me/remark-rehype@11?module": "https://cdn.c23.me/remark-rehype@11.1.2/index.js?module",
+    "https://cdn.c23.me/remark-stringify@11?module": "https://cdn.c23.me/remark-stringify@11.0.0/index.js?module",
+    "https://cdn.c23.me/unist-util-is@^6.0.0?module": "https://cdn.c23.me/unist-util-is@6.0.1/index.js?module",
+    "https://cdn.c23.me/unist-util-visit-parents@^6.0.0?module": "https://cdn.c23.me/unist-util-visit-parents@6.0.2/index.js?module",
+    "https://cdn.c23.me/unist-util-visit-parents@latest/do-not-use-color?module": "https://cdn.c23.me/unist-util-visit-parents@6.0.2/lib/color.js?module",
+    "https://cdn.c23.me/unist-util-visit@^5.0.0?module": "https://cdn.c23.me/unist-util-visit@5.1.0/index.js?module",
+    "https://cdn.c23.me/zwitch@^2.0.0?module": "https://cdn.c23.me/zwitch@2.0.4/index.js?module",
+    "https://esm.cdn.c23.me/hast-util-select@6": "https://esm.cdn.c23.me/hast-util-select@6.0.4?target=es2022",
+    "https://esm.cdn.c23.me/hast-util-select@6.0.4/index.d.ts": "https://esm.cdn.c23.me/hast-util-select@6.0.4/index.d.ts?target=es2022",
+    "https://esm.cdn.c23.me/hast-util-select@6.0.4/lib/index.js": "https://esm.cdn.c23.me/hast-util-select@6.0.4/lib/index.js?target=es2022",
+    "https://esm.cdn.c23.me/remark-frontmatter@5": "https://esm.cdn.c23.me/remark-frontmatter@5.0.0?target=es2022",
+    "https://esm.cdn.c23.me/remark-frontmatter@5.0.0/index.d.ts": "https://esm.cdn.c23.me/remark-frontmatter@5.0.0/index.d.ts?target=es2022",
+    "https://esm.cdn.c23.me/remark-frontmatter@5.0.0/lib/index.js": "https://esm.cdn.c23.me/remark-frontmatter@5.0.0/lib/index.js?target=es2022",
+    "https://esm.sh/remark-parse@11": "https://esm.sh/remark-parse@11.0.0",
+    "https://esm.sh/remark-stringify@11": "https://esm.sh/remark-stringify@11.0.0",
+    "https://unpkg.com/@ungap/structured-clone@^1.0.0?module": "https://unpkg.com/@ungap/structured-clone@1.3.1/esm/index.js?module",
+    "https://unpkg.com/ccount@^2.0.0?module": "https://unpkg.com/ccount@2.0.1/index.js?module",
+    "https://unpkg.com/character-entities@^2.0.0?module": "https://unpkg.com/character-entities@2.0.2/index.js?module",
+    "https://unpkg.com/decode-named-character-reference@^1.0.0?module": "https://unpkg.com/decode-named-character-reference@1.3.0/index.js?module",
+    "https://unpkg.com/devlop@^1.0.0?module": "https://unpkg.com/devlop@1.1.0/lib/default.js?module",
+    "https://unpkg.com/devlop@^1.1.0?module": "https://unpkg.com/devlop@1.1.0/lib/default.js?module",
+    "https://unpkg.com/escape-string-regexp@^5.0.0?module": "https://unpkg.com/escape-string-regexp@5.0.0/index.js?module",
+    "https://unpkg.com/hast-util-to-dom@^4.0.0?module": "https://unpkg.com/hast-util-to-dom@4.0.1/index.js?module",
+    "https://unpkg.com/longest-streak@^3.0.0?module": "https://unpkg.com/longest-streak@3.1.0/index.js?module",
+    "https://unpkg.com/markdown-table@^3.0.0?module": "https://unpkg.com/markdown-table@3.0.4/index.js?module",
+    "https://unpkg.com/mdast-util-find-and-replace@^3.0.0?module": "https://unpkg.com/mdast-util-find-and-replace@3.0.2/index.js?module",
+    "https://unpkg.com/mdast-util-from-markdown@^2.0.0?module": "https://unpkg.com/mdast-util-from-markdown@2.0.3/index.js?module",
+    "https://unpkg.com/mdast-util-gfm-autolink-literal@^2.0.0?module": "https://unpkg.com/mdast-util-gfm-autolink-literal@2.0.1/index.js?module",
+    "https://unpkg.com/mdast-util-gfm-footnote@^2.0.0?module": "https://unpkg.com/mdast-util-gfm-footnote@2.1.0/index.js?module",
+    "https://unpkg.com/mdast-util-gfm-strikethrough@^2.0.0?module": "https://unpkg.com/mdast-util-gfm-strikethrough@2.0.0/index.js?module",
+    "https://unpkg.com/mdast-util-gfm-table@^2.0.0?module": "https://unpkg.com/mdast-util-gfm-table@2.0.0/index.js?module",
+    "https://unpkg.com/mdast-util-gfm-task-list-item@^2.0.0?module": "https://unpkg.com/mdast-util-gfm-task-list-item@2.0.0/index.js?module",
+    "https://unpkg.com/mdast-util-gfm@^3.0.0?module": "https://unpkg.com/mdast-util-gfm@3.1.0/index.js?module",
+    "https://unpkg.com/mdast-util-phrasing@^4.0.0?module": "https://unpkg.com/mdast-util-phrasing@4.1.0/index.js?module",
+    "https://unpkg.com/mdast-util-to-hast@^13.0.0?module": "https://unpkg.com/mdast-util-to-hast@13.2.1/index.js?module",
+    "https://unpkg.com/mdast-util-to-markdown@^2.0.0?module": "https://unpkg.com/mdast-util-to-markdown@2.1.2/index.js?module",
+    "https://unpkg.com/mdast-util-to-string@^4.0.0?module": "https://unpkg.com/mdast-util-to-string@4.0.0/index.js?module",
+    "https://unpkg.com/micromark-core-commonmark@^2.0.0?module": "https://unpkg.com/micromark-core-commonmark@2.0.3/index.js?module",
+    "https://unpkg.com/micromark-extension-gfm-autolink-literal@^2.0.0?module": "https://unpkg.com/micromark-extension-gfm-autolink-literal@2.1.0/index.js?module",
+    "https://unpkg.com/micromark-extension-gfm-footnote@^2.0.0?module": "https://unpkg.com/micromark-extension-gfm-footnote@2.1.0/index.js?module",
+    "https://unpkg.com/micromark-extension-gfm-strikethrough@^2.0.0?module": "https://unpkg.com/micromark-extension-gfm-strikethrough@2.1.0/index.js?module",
+    "https://unpkg.com/micromark-extension-gfm-table@^2.0.0?module": "https://unpkg.com/micromark-extension-gfm-table@2.1.1/index.js?module",
+    "https://unpkg.com/micromark-extension-gfm-tagfilter@^2.0.0?module": "https://unpkg.com/micromark-extension-gfm-tagfilter@2.0.0/index.js?module",
+    "https://unpkg.com/micromark-extension-gfm-task-list-item@^2.0.0?module": "https://unpkg.com/micromark-extension-gfm-task-list-item@2.1.0/index.js?module",
+    "https://unpkg.com/micromark-extension-gfm@^3.0.0?module": "https://unpkg.com/micromark-extension-gfm@3.0.0/index.js?module",
+    "https://unpkg.com/micromark-factory-destination@^2.0.0?module": "https://unpkg.com/micromark-factory-destination@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-factory-label@^2.0.0?module": "https://unpkg.com/micromark-factory-label@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-factory-space@^2.0.0?module": "https://unpkg.com/micromark-factory-space@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-factory-title@^2.0.0?module": "https://unpkg.com/micromark-factory-title@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-factory-whitespace@^2.0.0?module": "https://unpkg.com/micromark-factory-whitespace@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-character@^2.0.0?module": "https://unpkg.com/micromark-util-character@2.1.1/index.js?module",
+    "https://unpkg.com/micromark-util-chunked@^2.0.0?module": "https://unpkg.com/micromark-util-chunked@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-classify-character@^2.0.0?module": "https://unpkg.com/micromark-util-classify-character@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-combine-extensions@^2.0.0?module": "https://unpkg.com/micromark-util-combine-extensions@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-decode-numeric-character-reference@^2.0.0?module": "https://unpkg.com/micromark-util-decode-numeric-character-reference@2.0.2/index.js?module",
+    "https://unpkg.com/micromark-util-decode-string@^2.0.0?module": "https://unpkg.com/micromark-util-decode-string@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-encode@^2.0.0?module": "https://unpkg.com/micromark-util-encode@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-html-tag-name@^2.0.0?module": "https://unpkg.com/micromark-util-html-tag-name@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-normalize-identifier@^2.0.0?module": "https://unpkg.com/micromark-util-normalize-identifier@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-resolve-all@^2.0.0?module": "https://unpkg.com/micromark-util-resolve-all@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-sanitize-uri@^2.0.0?module": "https://unpkg.com/micromark-util-sanitize-uri@2.0.1/index.js?module",
+    "https://unpkg.com/micromark-util-subtokenize@^2.0.0?module": "https://unpkg.com/micromark-util-subtokenize@2.1.0/index.js?module",
+    "https://unpkg.com/micromark@^4.0.0?module": "https://unpkg.com/micromark@4.0.2/index.js?module",
+    "https://unpkg.com/property-information@^7.0.0?module": "https://unpkg.com/property-information@7.1.0/index.js?module",
+    "https://unpkg.com/trim-lines@^3.0.0?module": "https://unpkg.com/trim-lines@3.0.1/index.js?module",
+    "https://unpkg.com/unist-util-is@^6.0.0?module": "https://unpkg.com/unist-util-is@6.0.1/index.js?module",
+    "https://unpkg.com/unist-util-position@^5.0.0?module": "https://unpkg.com/unist-util-position@5.0.0/index.js?module",
+    "https://unpkg.com/unist-util-stringify-position@^4.0.0?module": "https://unpkg.com/unist-util-stringify-position@4.0.0/index.js?module",
+    "https://unpkg.com/unist-util-visit-parents@^6.0.0?module": "https://unpkg.com/unist-util-visit-parents@6.0.2/index.js?module",
+    "https://unpkg.com/unist-util-visit-parents@latest/do-not-use-color?module": "https://unpkg.com/unist-util-visit-parents@6.0.2/lib/color.js?module",
+    "https://unpkg.com/unist-util-visit@^5.0.0?module": "https://unpkg.com/unist-util-visit@5.1.0/index.js?module",
+    "https://unpkg.com/web-namespaces@^2.0.0?module": "https://unpkg.com/web-namespaces@2.0.1/index.js?module",
+    "https://unpkg.com/zwitch@^2.0.0?module": "https://unpkg.com/zwitch@2.0.4/index.js?module"
+  },
+  "remote": {
+    "https://cdn.c23.me/character-entities@2.0.2/index.js?module": "a5f982520e46458dd306fe9320ac62665cc611117dda7f3d074ec27cec63ba60",
+    "https://cdn.c23.me/decode-named-character-reference@1.3.0/index.js?module": "1dbee74ada36a4a5e99e8e4392313002b503a83629d371ac99279ef02aee1fb5",
+    "https://cdn.c23.me/longest-streak@3.1.0/index.js?module": "41d5da657563b0bf09d2e5235349195276e9246e1239370d98416e27a85b989c",
+    "https://cdn.c23.me/mdast-util-math@3.0.0/index.js": "266fcd72f8606ae61640f98ea2aa660562c08d3e5cc14956d09051813aab47c0",
+    "https://cdn.c23.me/mdast-util-math@3.0.0/index.js?module": "3c62da9c9a7f4f6112572436e95a2991b1ef53b323b0eaf4b86dbbe0ef31f7d0",
+    "https://cdn.c23.me/mdast-util-math@3.0.0/lib/index.js": "fabe05044becc9ae3ff1320f4c2ed30d8aa8859b4944e126cac22a570bae9574",
+    "https://cdn.c23.me/mdast-util-math@3.0.0/lib/index.js?module": "01539b75447b55dd9e08e2e9d883f5e4749ed1692aaa92ef70392f6df9704de0",
+    "https://cdn.c23.me/mdast-util-phrasing@4.1.0/index.js?module": "1ee5ae8fd70fc2bfcaf0dbc857ca3621ba60e796b79cba8f03df913eb4ba1fd8",
+    "https://cdn.c23.me/mdast-util-phrasing@4.1.0/lib/index.js?module": "89aa2974cb46d24722a9846ad5ff4de5279b6531907e1a77b6c604fdd7c988d5",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/index.js?module": "41665fa722d74edfd2d80ce771b00088ae7aff4564ca9828279af9e38bc5abaf",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/configure.js?module": "e5264debb8cb4bbe153339e366aa790ddd2d271ae864a712eacb61e10dc11656",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/blockquote.js?module": "b6dd851a1714f34fabdefb0cdacc77443326c9b6b8f5e83a90cada5d3bc71354",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/break.js?module": "e1d40e6d2e8f3663378835c0f3944fa38825cb31ef5f8444b584da07b74c523c",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/code.js?module": "75b076ea385ea8e795cd8d084220d01355de79e45c9c9f53d474466bfe48131d",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/definition.js?module": "b3554f93045160c31c4d61c47811aff420bad14b3aecf15dbc888ad3c32e67c4",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/emphasis.js?module": "fcab67dd66e498864ae24e8f48f0e6660b5c55459cd0c1e2411bc2682bf58c18",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/heading.js?module": "287595d0bdcd15c9b9241ae88d48e4caaad2cd7f35b792c41f886f4be20fc7a5",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/html.js?module": "07aae47b1697513c04efedc45f2cf10047e680d7af3c7e517ec126578a092d83",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/image-reference.js?module": "8da0d0564cefefdc0442961c72d33c7e8bf924f1933be9fe646ccffc5545c438",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/image.js?module": "4f3f06a9a7bee3cd286ce582b4fd2cc1d1b58b7ccc120104b254f89ba0f9eebe",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/index.js?module": "9cce8f17c1b6afb31a747e8a368ede0b10029029439aeb52a5333e7934e64cd0",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/inline-code.js?module": "82024330cc4f32d476d81f572ce2c760bc43975bb1030d73c064a391df694971",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/link-reference.js?module": "27f4e01096422e1b897b65d3f2511240e518550968ed3e2f20a15f5459093ac6",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/link.js?module": "ce805ee52da25cae59ab3ed25a499de1fc78b4b58c54e0a54118f99e22f610bf",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/list-item.js?module": "c67c76ce96ac5d54aee9b7df61a808feada19503d4f66a0cf617c2790eb8facc",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/list.js?module": "b9b074e43d216574d311fddf6f5242666a394fe995caa9e01423c6372dc50446",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/paragraph.js?module": "777de9e03969c3e98ec5b1df78de243954be4008eeab44d77ee873900e397e00",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/root.js?module": "a333a32d23b61b634b0f6386238e9d9fd2e41db7934d62eead71a249059c4c3b",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/strong.js?module": "6a35f39e90d24eb2c949e3494f785f7405d8221872897c47b8d275a9d5804781",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/text.js?module": "82c7802143c42efbb86f81ae026ea8b21bb6181a79b5a179db668deabed42c39",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/handle/thematic-break.js?module": "c6064ef94b4e7742bdb48ee1d8fe0159793558f51e7d12f6c324d44fa7813566",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/index.js?module": "aef5251b802db16e3147c7350ee36a3b1395b6e55f2e2d7c77e670013c7f66bc",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/join.js?module": "d34b68dac517588bc9cfbd7cda3620617c98356f88ee8fa755b55e1635999e48",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/types.js": "2c785c7622923005c12bd4a5515388ead64d8773b31af8fe325431a453f05250",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/unsafe.js?module": "748691eabb03fb76b35f43690f510eb23902397cc2cb2ce75371aae177857b13",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/association.js?module": "1a2540ee28bc8dd787793132c5de01104f4055e647bdacfc93a6028def1daaa1",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-bullet-ordered.js?module": "e5b643295c4d28ca25a58701b0acf19873032ee6385d8e7bf92298cfb3010df2",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-bullet-other.js?module": "79e182af6657e4ab5dddddf872cb32ab1646aef72eba74e74800844ec5b03441",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-bullet.js?module": "c9e29e954a8976cf2b86b93414e4a4d40ba904fef02ba47dea4ca3790dcfdfc5",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-emphasis.js?module": "ed8cbf60a71d9cd433dd1af38bb690afafc45c7c657fc62cba8e161a8aee6878",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-fence.js?module": "2319c48816ce3d363ab42687621d64824dafabb2747540396192806e5a51992d",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-list-item-indent.js?module": "2966c2cae70ef1dc0a71b84cf821c65a12fb4d41da76aae3de5e33eba6265d09",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-quote.js?module": "ce4b9514ae41379d7156ffedd44b15e421fd0518ee8668c1914bf5baf3a0985a",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-rule-repetition.js?module": "ed3e4bec7a04ea73d842017a8164915e5b35f9b37470f4be99ecfe7eacaf8321",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-rule.js?module": "95ab8adc95f1e590e3433d739c79d2132833b3397fcc833db9c79aee582ea988",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/check-strong.js?module": "65a9dcd6c2e771b10c524a85ea72e985e64362f001317a4e90d7318644551bd5",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/compile-pattern.js?module": "cc5942773ca68186c628ae956e7734709376dbf94df3c57ef5e7be276e4ba7a6",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/container-flow.js?module": "462a5ba7f6fbeb0e21f5021a4f07961c0e93108660dda27b559cad88eb09dc66",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/container-phrasing.js?module": "51bde998e3b1c38befc3055f010d290b279ba910e02c932e052da624da06c65c",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/encode-character-reference.js?module": "a1aacc0ea2e4cd7fb84deaa115a5deaf4576e0701dd9441d5d6ffa70386c5dfd",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/encode-info.js?module": "400cd6b0f0718e63c302a6beeb589755856186797d6dafa8bcf6aa8f62d798dd",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/format-code-as-indented.js?module": "875735363c778c12d8a760e77420d636b7d2e111c955c2002168ba744e12d30b",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/format-heading-as-setext.js?module": "0d4711398f3b0754708217bc8a06574b3453214b73b57498d14270ca76d7e55b",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/format-link-as-autolink.js?module": "e87cfa2f3b3bdaaccfc56b55348b89d2b2d67cdfe6864616e25a36024eb2f4c0",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/indent-lines.js?module": "1f0fdb29bf49d7c189d161f16c7d3f91a9d8ce625f5a6aeaad9de9810bd93782",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/pattern-in-scope.js?module": "be9c737be3309735314d3b20d73afebff1d9d8d6681d43fe517fa573a193d255",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/safe.js?module": "ad0fe1adf94e302d452a3b901e281dcb5884b27083690d92462e413a859d479d",
+    "https://cdn.c23.me/mdast-util-to-markdown@2.1.2/lib/util/track.js?module": "a7254e9fa9b1c92e349e2fde6bbacfc9b2453806f9cf06f16ff735fdde900f8e",
+    "https://cdn.c23.me/mdast-util-to-string@4.0.0/index.js?module": "d1eb19251bcb1fcc889a9574f0fa574d8dbc921ea0b61de00ad942790e19aff2",
+    "https://cdn.c23.me/mdast-util-to-string@4.0.0/lib/index.js": "53015b2b0b7a72aed1c2d880d3c2aaed73972241f968d4a206a18d92fbe57b21",
+    "https://cdn.c23.me/mdast-util-to-string@4.0.0/lib/index.js?module": "53015b2b0b7a72aed1c2d880d3c2aaed73972241f968d4a206a18d92fbe57b21",
+    "https://cdn.c23.me/micromark-util-character@2.1.1/index.js?module": "0ec487160ae3fa7f375698f9f951a0c5d7d752800bca2e3b1de15e3a07ee0417",
+    "https://cdn.c23.me/micromark-util-classify-character@2.0.1/index.js?module": "ce73e34c40a71322616bac6e71f9e3425f859cdd93d3ca5bd731b6a4a6c0b85e",
+    "https://cdn.c23.me/micromark-util-decode-numeric-character-reference@2.0.2/index.js?module": "74d2139b3651d79a7f4c1d3b21159d9c89459256e12b263ed2eb6b4fce599f87",
+    "https://cdn.c23.me/micromark-util-decode-string@2.0.1/index.js?module": "4f7fcc7136b25dbad4284f1e1166cef7a90e1bb6ac4ac7394e5076ead257a195",
+    "https://cdn.c23.me/rehype-dom-stringify@4.0.2/index.js?module": "7d6a2a85fd37420b92751409c5d76cf0d438964e8fcb8ef92242e7fee1b7e483",
+    "https://cdn.c23.me/rehype-dom-stringify@4.0.2/lib/index.js?module": "7acefad0a4fa75797002b7b603b059e8202515d5713e7f799c26f1d8a93c2d81",
+    "https://cdn.c23.me/remark-gfm@4.0.1/index.js?module": "7d6a2a85fd37420b92751409c5d76cf0d438964e8fcb8ef92242e7fee1b7e483",
+    "https://cdn.c23.me/remark-gfm@4.0.1/lib/index.js?module": "0046869daac20e31f3063b3ad5179854f594feb4541f4733c0c39b3059984050",
+    "https://cdn.c23.me/remark-parse@11.0.0/index.js?module": "7d6a2a85fd37420b92751409c5d76cf0d438964e8fcb8ef92242e7fee1b7e483",
+    "https://cdn.c23.me/remark-parse@11.0.0/lib/index.js?module": "9f3a007775112c5b8e8f71ac8d689b8357c0329d8e0c12d534eba0120250456e",
+    "https://cdn.c23.me/remark-rehype@11.1.2/index.js?module": "6288426a8c832621773c7fa194b1fbb96c2509f4071d2ebfd2732183c611c948",
+    "https://cdn.c23.me/remark-rehype@11.1.2/lib/index.js": "85f8d8985414613d2a64c4b6927e10ebd1edefe87a956190a1343dd833f689ef",
+    "https://cdn.c23.me/remark-rehype@11.1.2/lib/index.js?module": "915596e6328bb3a1302c785880a1a8e136bc6eed48f1061c6f46e7bc216b0b0f",
+    "https://cdn.c23.me/remark-stringify@11.0.0/index.js?module": "7d6a2a85fd37420b92751409c5d76cf0d438964e8fcb8ef92242e7fee1b7e483",
+    "https://cdn.c23.me/remark-stringify@11.0.0/lib/index.js?module": "3b4eb23656835f63eb6f40a4b17b8fe1128c7b798af02a347691685d6793f3ad",
+    "https://cdn.c23.me/unist-util-is@6.0.1/index.js?module": "d01e239107ebaaba58b1350cb38cbf72dfd9b500edc9ff2288a19136861f7238",
+    "https://cdn.c23.me/unist-util-is@6.0.1/lib/index.js": "ce90bad6b772a7e1115d76e4cc53bfade1ee1fe8ac1b8880f48b0e1512ffba44",
+    "https://cdn.c23.me/unist-util-is@6.0.1/lib/index.js?module": "ce90bad6b772a7e1115d76e4cc53bfade1ee1fe8ac1b8880f48b0e1512ffba44",
+    "https://cdn.c23.me/unist-util-visit-parents@6.0.2/index.js?module": "6fd42477f3840ffa35db77e34e5d3785998b3e018f0ffc78ae22df01064895da",
+    "https://cdn.c23.me/unist-util-visit-parents@6.0.2/lib/color.js?module": "84d02ef62d60a8e4fc8529fa6725abb85729274a873afbb8d4d9fb317ae01135",
+    "https://cdn.c23.me/unist-util-visit-parents@6.0.2/lib/index.js?module": "d0bb2f3df21b01cb0f4e72b0b95a3c2c81584aa19d2e82aea58dc1ef245d5dc8",
+    "https://cdn.c23.me/unist-util-visit@5.1.0/index.js?module": "348dd490274e97c713fd8d63832bedc54bd04de04c657c427b84ffaa923ab286",
+    "https://cdn.c23.me/unist-util-visit@5.1.0/lib/index.js?module": "9f3caa4dbca427a5405608321233c5cfd9c8cbea3dcd7de9b4632db314ca655d",
+    "https://cdn.c23.me/zwitch@2.0.4/index.js?module": "81f592d700aff8042238e7cab8e03c002e689117ecf15844ed753e08825a2873",
+    "https://edge.netlify.com/": "fd941d61d88673d5f28aab283fb86fcc50f08a3bc80ee5470498fcfa88c65cfb",
+    "https://edge.netlify.com/bootstrap/config.ts": "6a2ce0e544e15e8f8883a5c18da5948e37fd0f2619f68cb31f3af53c51817025",
+    "https://edge.netlify.com/bootstrap/context.ts": "e97240232121e2f369f6546ce961490f34d961ea1ea54be3ff09633e3f08373f",
+    "https://edge.netlify.com/bootstrap/cookie.ts": "8b0baae708989ca183c6f3b4ab3d029e6abcbc2e43f93edeb0ff447b3bbc3a05",
+    "https://edge.netlify.com/bootstrap/edge_function.ts": "b8253e86aa83c67341f5cfedeba5049d77fbf84dcab7eceff7566b7728ae9b39",
+    "https://edge.netlify.com/bootstrap/globals/types.ts": "eaa6148ded3121d8dee62dd91c86e7fe76601df0f3ca8d7962243a30f4c8935f",
+    "https://esm.cdn.c23.me/hast-util-select@6.0.4/lib/index.js?target=es2022": "aa4dc75bf45865ee63b9ded1cfed0d6e4f32b34237dcc403472aa9d149302a03",
+    "https://esm.cdn.c23.me/hast-util-select@6.0.4?target=es2022": "6ebb0117029112ef95e8cc83b4707c0f1f6007d24b2dd3134e11b970ccb7a674",
+    "https://esm.cdn.c23.me/remark-frontmatter@5.0.0/lib/index.js?target=es2022": "a4e3e60dcfacba406fc70e5808c8e4b4bc20c84e7863e097775ebfa972381709",
+    "https://esm.cdn.c23.me/remark-frontmatter@5.0.0?target=es2022": "3115ea48a2dfcda0a8498313dfa79c5f75e58c749792df358a4dfe10c3f7fb40",
+    "https://esm.sh/remark-parse@11.0.0": "f281dbd72bbffef14d203ae8d7f06ff88c5f04890e3546bd15aac84f9753e2cc",
+    "https://esm.sh/remark-stringify@11.0.0": "a5d7fc40630aae39780a02db2181d43a76c46d76aee35a326faf28103cffa54f",
+    "https://unpkg.com/@ungap/structured-clone@1.3.1/esm/deserialize.js?module": "7105da4e72de7a9506fb698e9fa15e84bdcc03cb9f3c6e210b54c30aebe3860b",
+    "https://unpkg.com/@ungap/structured-clone@1.3.1/esm/index.js?module": "2b385b473f834d99a96ee2d55495274009587ab05943037a511765b4b426f739",
+    "https://unpkg.com/@ungap/structured-clone@1.3.1/esm/serialize.js?module": "67f1de8cd1f81c0630137ab8d80e56ec2f27ad3ee63d48a0d5f6044e0c17e0f5",
+    "https://unpkg.com/@ungap/structured-clone@1.3.1/esm/types.js?module": "c0978dfc8d304b12d62aadc583977355f714ee8c1e4d1290620226fb78247800",
+    "https://unpkg.com/ccount@2.0.1/index.js?module": "cbba065a9f66c5909d49f740a64f12cfde03220303a845b2273d54af59e70af9",
+    "https://unpkg.com/character-entities@2.0.2/index.js?module": "a5f982520e46458dd306fe9320ac62665cc611117dda7f3d074ec27cec63ba60",
+    "https://unpkg.com/decode-named-character-reference@1.3.0/index.js?module": "12068e8119d5bb015e6889abf8951c1246daa1a0418543ea0b3f430ebed4ac36",
+    "https://unpkg.com/devlop@1.1.0/lib/default.js?module": "702fcb7d6bfdfe7b673b8bb7fa9d531d9b7d02693bed89f8dbb0a2c461604cf6",
+    "https://unpkg.com/escape-string-regexp@5.0.0/index.js?module": "af2065ad2f2d2b91946c2121e21618daa3f4b18787af9226f8c953ca54cca2f5",
+    "https://unpkg.com/hast-util-to-dom@4.0.1/index.js?module": "44a72a20838e923301d92eec3d31e9ac660ad4c017d217efafd3f131530a8784",
+    "https://unpkg.com/hast-util-to-dom@4.0.1/lib/index.js": "6438e4e8cab2d9bb93ee8a8b3683227e6075327adcb7c379c4bf2a3468bfce3b",
+    "https://unpkg.com/hast-util-to-dom@4.0.1/lib/index.js?module": "ae1192c37c4e0f2ee54e114a172e3c7a61bdc877260b5ae43c11841d63cea6cb",
+    "https://unpkg.com/longest-streak@3.1.0/index.js?module": "41d5da657563b0bf09d2e5235349195276e9246e1239370d98416e27a85b989c",
+    "https://unpkg.com/markdown-table@3.0.4/index.js?module": "2dd3014e8ce92317dfd819fc678217d8fdf47086a4607cc49566f0dee02b832a",
+    "https://unpkg.com/mdast-util-find-and-replace@3.0.2/index.js?module": "aae1320bdca7964fd6180d08c8baee7939efcac585074a8046717ed6897cb902",
+    "https://unpkg.com/mdast-util-find-and-replace@3.0.2/lib/index.js": "b171699f61c99a82565a6d6f8f3a1348d7d37756f889be30def0337caa9dbe2f",
+    "https://unpkg.com/mdast-util-find-and-replace@3.0.2/lib/index.js?module": "219e16cf7b60e99df813c9c31f7372a71e621094a351174185cde87aea341475",
+    "https://unpkg.com/mdast-util-from-markdown@2.0.3/index.js?module": "1e898a2b58a6de4e88a2ab741e860bd2cbee256e95c98fb02fa8fcfba387bf7f",
+    "https://unpkg.com/mdast-util-from-markdown@2.0.3/lib/index.js?module": "c569145adef526cdbb399073a343ba3402d7a5f3eb9ff38550f48fb7297f4c1a",
+    "https://unpkg.com/mdast-util-from-markdown@2.0.3/lib/types.js": "ee0a88bd47513fbc61140074a08400d8d3ef38fcf9d01d3731b8eba56f4d45cb",
+    "https://unpkg.com/mdast-util-gfm-autolink-literal@2.0.1/index.js?module": "5918dffd30bdd9d5ec9e99f3fe664abb6fe2b083840f68b3d2801e979c10cab2",
+    "https://unpkg.com/mdast-util-gfm-autolink-literal@2.0.1/lib/index.js?module": "041d765f634e860a8084311ffacffff05b72b77aedf11b064e2ca0dc803236fd",
+    "https://unpkg.com/mdast-util-gfm-footnote@2.1.0/index.js?module": "8c6edb58035e1b8cb61d38ad49f2a2dc0f94945f08dd1c90d943e32be3027d6d",
+    "https://unpkg.com/mdast-util-gfm-footnote@2.1.0/lib/index.js?module": "d9d0575a8fb885bceecdfcd5ed642a20d559cf6692b20b8d63e2e7a43c64843f",
+    "https://unpkg.com/mdast-util-gfm-strikethrough@2.0.0/index.js?module": "af65d96552c9d33a2502c12be89f846f6c732971a00edd917d70f627dab1f995",
+    "https://unpkg.com/mdast-util-gfm-strikethrough@2.0.0/lib/index.js?module": "808441e33c8419430429dba66470f34367636fac752cb89d1fb5473bc4d29d83",
+    "https://unpkg.com/mdast-util-gfm-table@2.0.0/index.js?module": "641dfc389f7ef0b798916ef472677334acd5f8f480e93764a59e0075b63b2002",
+    "https://unpkg.com/mdast-util-gfm-table@2.0.0/lib/index.js?module": "e94f5176080823628c69c43add2c2371587146671fdfab49665cc194c55aca82",
+    "https://unpkg.com/mdast-util-gfm-task-list-item@2.0.0/index.js?module": "1d4095d022467e1d98c6e4c63c825edededc28f53d6f4202a9c8509bbc154ab6",
+    "https://unpkg.com/mdast-util-gfm-task-list-item@2.0.0/lib/index.js?module": "04a6a7f3ec73e3805d6819d05899a4b6e12ab6f3075492f4bf885f671d56f2e9",
+    "https://unpkg.com/mdast-util-gfm@3.1.0/index.js?module": "0f43861db3ae9707fbfe2597d42880faa256da8874145158b5fb5488f68cf545",
+    "https://unpkg.com/mdast-util-gfm@3.1.0/lib/index.js?module": "2bec407cff0956f2f4416ace5890a8486f5a18d71c32f61461aeefa8378c71e7",
+    "https://unpkg.com/mdast-util-phrasing@4.1.0/index.js?module": "1ee5ae8fd70fc2bfcaf0dbc857ca3621ba60e796b79cba8f03df913eb4ba1fd8",
+    "https://unpkg.com/mdast-util-phrasing@4.1.0/lib/index.js?module": "f6739b9d5660c5b8edb40d4e1be7e4366eb5b87345d8551aeaad9c7084c9e72b",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/index.js": "681480f0d8fcae35643e8bbcc81085827be1a663106453d9549232d9b6a27721",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/index.js?module": "feb3b651135e0c80e3266c6a9c0fd29ddd5df63e016ced24ccb2a75389a4b7e1",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/footer.js": "40a9dbaa5cf1e3f3ff993bbdd7e9d8666cb620b3dabd4276af5212d1f95fe7d7",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/footer.js?module": "d97f3cbed18be10c8ffe8e6226fde61c88258e6089ad2fd50a208915582fa43e",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/blockquote.js": "9744b0434bd3f70716b1208a8e580ce01cdc3b99736ddac44aafe32503a05b60",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/blockquote.js?module": "9744b0434bd3f70716b1208a8e580ce01cdc3b99736ddac44aafe32503a05b60",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/break.js": "bbd9617fec60951f0a0d46477cfa1a3355375f6a655adb13f11a6fd9d8aee47d",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/break.js?module": "bbd9617fec60951f0a0d46477cfa1a3355375f6a655adb13f11a6fd9d8aee47d",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/code.js": "60d18f00c0f40917ad26a2e112f5dd0be66e7ab1088832932ec14aa69df8eb29",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/code.js?module": "60d18f00c0f40917ad26a2e112f5dd0be66e7ab1088832932ec14aa69df8eb29",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/delete.js": "20a3aa0fca3e1cb6c80e4103392168c945c97477573d13bd123f92cfea071672",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/delete.js?module": "20a3aa0fca3e1cb6c80e4103392168c945c97477573d13bd123f92cfea071672",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/emphasis.js": "d40b9afbcd5a1ab9f598d5ff439e73cbfa8f1cc9708115e439c030ffc5bf1edf",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/emphasis.js?module": "d40b9afbcd5a1ab9f598d5ff439e73cbfa8f1cc9708115e439c030ffc5bf1edf",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/footnote-reference.js": "f5c49df607b90b1a1e89b754cfdd3290f49e5ca42b5af9ea9a01f1af1ccacae8",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/footnote-reference.js?module": "282799adbb85bb64d8d9e8824eaab048bfee5d6c59aeeb2a181972d00c88ba6e",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/heading.js": "c54a67319a4ac1d9d25eb8a8fb73f094b2ffac385d11f64ef748d8e0a0c0aec3",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/heading.js?module": "c54a67319a4ac1d9d25eb8a8fb73f094b2ffac385d11f64ef748d8e0a0c0aec3",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/html.js": "18af5a6b0d9eebad977bb78e60b247d4cde445bb1cc5c275f1bea61e1151b14a",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/html.js?module": "18af5a6b0d9eebad977bb78e60b247d4cde445bb1cc5c275f1bea61e1151b14a",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/image-reference.js": "79c616d913f42ecb997b008a3147a3a208c08c18dfd01c573976656f370b425c",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/image-reference.js?module": "1ff15f622c4834323fb75b5b82fadd5097d221c98485f81adca204920db22c45",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/image.js": "06c2c63d11c4ef7b0fe8f082ec2fe47ffd5bf00e7a2a2d4756515951dccad50e",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/image.js?module": "076d6598214f5619846a43b20c6c990a9182da09094d40d482394af99085b551",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/index.js": "4de11cfac2c9486f6633a60f180e7fb772d48d005a6168b50d41c7de062098aa",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/index.js?module": "c4304b92506ae38dee2806502bec16156fbd13c679a17eb17795c7810588aade",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/inline-code.js": "99e74e1891add9c61f640f859308e3f907c90eb4e92c381b1f29fab2e16c19a1",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/inline-code.js?module": "99e74e1891add9c61f640f859308e3f907c90eb4e92c381b1f29fab2e16c19a1",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/link-reference.js": "c1dcf7f39f12ab58603197504f6707372bf936fc113aaa7625910faff37063b5",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/link-reference.js?module": "087073c1bd6321e05d65f9198d4a72102651efd6634d6d4ebeb6d32d25cfa0da",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/link.js": "ac8d90073fee56d692f964775332dce0ffda38b07f86f1b412212f21f1d19d1e",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/link.js?module": "9bc90625a18fb7c9bd292167b7f358e257abb32bfa2bc3a2f35d2455d2027536",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/list-item.js": "0da607553981392d7ce7c1bc49f74bb4eb643ee517e959fac6dbd276d7b80488",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/list-item.js?module": "0da607553981392d7ce7c1bc49f74bb4eb643ee517e959fac6dbd276d7b80488",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/list.js": "f6b70088d06ca8c101c07c6dff2363c7962a5aeecd7a2b26005848b2e14100d8",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/list.js?module": "f6b70088d06ca8c101c07c6dff2363c7962a5aeecd7a2b26005848b2e14100d8",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/paragraph.js": "a77301efe0f60029bd39935a64c456556f945f22c780e2c93f610a4711ab68d7",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/paragraph.js?module": "a77301efe0f60029bd39935a64c456556f945f22c780e2c93f610a4711ab68d7",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/root.js": "aeba8659e5c4dca7c269f4ded5c39688876f3f76057b5f2459eadd956bf44a86",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/root.js?module": "aeba8659e5c4dca7c269f4ded5c39688876f3f76057b5f2459eadd956bf44a86",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/strong.js": "3dba3cfd6954bc3c52653ba74c50771e3b776b561c901f542f28e07eb6591191",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/strong.js?module": "3dba3cfd6954bc3c52653ba74c50771e3b776b561c901f542f28e07eb6591191",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/table-cell.js": "6faa2956741b11b277e7d2189f5bb97786a13462e39e412aeaefa65325588f8f",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/table-cell.js?module": "6faa2956741b11b277e7d2189f5bb97786a13462e39e412aeaefa65325588f8f",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/table-row.js": "bec1dca051d327477166c745be7d7a51fe97ef182b57e889f17e7b57bd7ecee3",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/table-row.js?module": "bec1dca051d327477166c745be7d7a51fe97ef182b57e889f17e7b57bd7ecee3",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/table.js": "f12e3d16638a2159b08e6f0cb816c34d3c2ede3ab592235621bb60cda3d0d128",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/table.js?module": "59a3faacfe0cf58a6c2f4ca806edc5454e0c440abe49e3ac405051e6a6972980",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/text.js": "66aa96a1369887fe40759b200f80b609316e8cc66da424e2832400aad41eebeb",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/text.js?module": "19a21c5215525e99c0b0395df36c137623490e8b6fc60c64262861b57c10ed03",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/thematic-break.js": "bf3cfab49b184da92b8e53ddf86e13625da8d5055db3a9abc904daff1312aa56",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/handlers/thematic-break.js?module": "bf3cfab49b184da92b8e53ddf86e13625da8d5055db3a9abc904daff1312aa56",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/index.js": "f6e0be6ee208cd0d0d6ee5a532cc61d9a6a88b87de60d2453a241f3e5a113413",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/index.js?module": "ea3d0dfe37c50e789bf3d4a6ef6b11b2b0f39c4f6e4d74a6046a286b73fafdce",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/revert.js": "09ec851551e7d2076f9a542975f480e046efd0b66db755903fb7a8855e23acff",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/revert.js?module": "09ec851551e7d2076f9a542975f480e046efd0b66db755903fb7a8855e23acff",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/state.js": "3efa2af554f55b9d6b9fde660f40886669976e73bdea09c4884fabf6a65e2803",
+    "https://unpkg.com/mdast-util-to-hast@13.2.1/lib/state.js?module": "7de8a5dbb9b5afdf9d76050b826b2a8530c7598bb5bb274262781d7cb367235b",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/index.js?module": "41665fa722d74edfd2d80ce771b00088ae7aff4564ca9828279af9e38bc5abaf",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/configure.js?module": "e5264debb8cb4bbe153339e366aa790ddd2d271ae864a712eacb61e10dc11656",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/blockquote.js?module": "b6dd851a1714f34fabdefb0cdacc77443326c9b6b8f5e83a90cada5d3bc71354",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/break.js?module": "e1d40e6d2e8f3663378835c0f3944fa38825cb31ef5f8444b584da07b74c523c",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/code.js?module": "53b481658060b3dd2c693d1819090fdf1b87fb9d4365c915b3f02f0fed913aab",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/definition.js?module": "b3554f93045160c31c4d61c47811aff420bad14b3aecf15dbc888ad3c32e67c4",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/emphasis.js?module": "fcab67dd66e498864ae24e8f48f0e6660b5c55459cd0c1e2411bc2682bf58c18",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/heading.js?module": "287595d0bdcd15c9b9241ae88d48e4caaad2cd7f35b792c41f886f4be20fc7a5",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/html.js?module": "07aae47b1697513c04efedc45f2cf10047e680d7af3c7e517ec126578a092d83",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/image-reference.js?module": "8da0d0564cefefdc0442961c72d33c7e8bf924f1933be9fe646ccffc5545c438",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/image.js?module": "4f3f06a9a7bee3cd286ce582b4fd2cc1d1b58b7ccc120104b254f89ba0f9eebe",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/index.js?module": "9cce8f17c1b6afb31a747e8a368ede0b10029029439aeb52a5333e7934e64cd0",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/inline-code.js?module": "82024330cc4f32d476d81f572ce2c760bc43975bb1030d73c064a391df694971",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/link-reference.js?module": "27f4e01096422e1b897b65d3f2511240e518550968ed3e2f20a15f5459093ac6",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/link.js?module": "ce805ee52da25cae59ab3ed25a499de1fc78b4b58c54e0a54118f99e22f610bf",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/list-item.js?module": "c67c76ce96ac5d54aee9b7df61a808feada19503d4f66a0cf617c2790eb8facc",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/list.js?module": "b9b074e43d216574d311fddf6f5242666a394fe995caa9e01423c6372dc50446",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/paragraph.js?module": "777de9e03969c3e98ec5b1df78de243954be4008eeab44d77ee873900e397e00",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/root.js?module": "f0002f2a199b2862aaec069155da9c24c8a99acce4ea0b7dcf2579ddd53d1142",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/strong.js?module": "6a35f39e90d24eb2c949e3494f785f7405d8221872897c47b8d275a9d5804781",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/text.js?module": "82c7802143c42efbb86f81ae026ea8b21bb6181a79b5a179db668deabed42c39",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/handle/thematic-break.js?module": "c6064ef94b4e7742bdb48ee1d8fe0159793558f51e7d12f6c324d44fa7813566",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/index.js?module": "ed39cd8a211cec0bfef9255ac198f785ffd93f8f9cbe74692d7cba5f51d07c9b",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/join.js?module": "d34b68dac517588bc9cfbd7cda3620617c98356f88ee8fa755b55e1635999e48",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/types.js": "2c785c7622923005c12bd4a5515388ead64d8773b31af8fe325431a453f05250",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/unsafe.js?module": "748691eabb03fb76b35f43690f510eb23902397cc2cb2ce75371aae177857b13",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/association.js?module": "f20755fa815a20f39312b79cf623b0b899df6a4129d1882ac2ae43f474cb4dcb",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-bullet-ordered.js?module": "e5b643295c4d28ca25a58701b0acf19873032ee6385d8e7bf92298cfb3010df2",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-bullet-other.js?module": "79e182af6657e4ab5dddddf872cb32ab1646aef72eba74e74800844ec5b03441",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-bullet.js?module": "c9e29e954a8976cf2b86b93414e4a4d40ba904fef02ba47dea4ca3790dcfdfc5",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-emphasis.js?module": "ed8cbf60a71d9cd433dd1af38bb690afafc45c7c657fc62cba8e161a8aee6878",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-fence.js?module": "2319c48816ce3d363ab42687621d64824dafabb2747540396192806e5a51992d",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-list-item-indent.js?module": "2966c2cae70ef1dc0a71b84cf821c65a12fb4d41da76aae3de5e33eba6265d09",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-quote.js?module": "ce4b9514ae41379d7156ffedd44b15e421fd0518ee8668c1914bf5baf3a0985a",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-rule-repetition.js?module": "ed3e4bec7a04ea73d842017a8164915e5b35f9b37470f4be99ecfe7eacaf8321",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-rule.js?module": "95ab8adc95f1e590e3433d739c79d2132833b3397fcc833db9c79aee582ea988",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/check-strong.js?module": "65a9dcd6c2e771b10c524a85ea72e985e64362f001317a4e90d7318644551bd5",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/compile-pattern.js?module": "cc5942773ca68186c628ae956e7734709376dbf94df3c57ef5e7be276e4ba7a6",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/container-flow.js?module": "462a5ba7f6fbeb0e21f5021a4f07961c0e93108660dda27b559cad88eb09dc66",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/container-phrasing.js?module": "51bde998e3b1c38befc3055f010d290b279ba910e02c932e052da624da06c65c",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/encode-character-reference.js?module": "a1aacc0ea2e4cd7fb84deaa115a5deaf4576e0701dd9441d5d6ffa70386c5dfd",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/encode-info.js?module": "88a5a328eaf10e93c11b906826ab731314d72970eb0f2dab4859c3b6fa742274",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/format-code-as-indented.js?module": "875735363c778c12d8a760e77420d636b7d2e111c955c2002168ba744e12d30b",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/format-heading-as-setext.js?module": "fbc491b6fb3a02663d21b7e0dcef78738883156eb34d3bd26cac86f06e13fabc",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/format-link-as-autolink.js?module": "45cb7ef5d37d95efc7a5fd6c1a154924a09e75b35f11d07845ca634957e2a674",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/indent-lines.js?module": "1f0fdb29bf49d7c189d161f16c7d3f91a9d8ce625f5a6aeaad9de9810bd93782",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/pattern-in-scope.js?module": "be9c737be3309735314d3b20d73afebff1d9d8d6681d43fe517fa573a193d255",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/safe.js?module": "ad0fe1adf94e302d452a3b901e281dcb5884b27083690d92462e413a859d479d",
+    "https://unpkg.com/mdast-util-to-markdown@2.1.2/lib/util/track.js?module": "a7254e9fa9b1c92e349e2fde6bbacfc9b2453806f9cf06f16ff735fdde900f8e",
+    "https://unpkg.com/mdast-util-to-string@4.0.0/index.js?module": "d1eb19251bcb1fcc889a9574f0fa574d8dbc921ea0b61de00ad942790e19aff2",
+    "https://unpkg.com/mdast-util-to-string@4.0.0/lib/index.js": "53015b2b0b7a72aed1c2d880d3c2aaed73972241f968d4a206a18d92fbe57b21",
+    "https://unpkg.com/mdast-util-to-string@4.0.0/lib/index.js?module": "53015b2b0b7a72aed1c2d880d3c2aaed73972241f968d4a206a18d92fbe57b21",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/index.js?module": "5d230863f1b45ace112228ada98ecb17bd981cbc483dd87abf8aed62c3abeb77",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/attention.js?module": "eb9ea51f2d3be9350741459ac262e2758db73d669d2242463f3fe008f8bd1424",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/autolink.js?module": "bd62c20364032ff987d2e01349d36a3fd2f55bab6400e9c30c9bb99a83e32e22",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/blank-line.js?module": "93de87f00a3ab4337a406d9a515b0bd64ec3844ebf50ee5337b7d99211805593",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/block-quote.js?module": "d05c01a38950b8b3db25665d19e7ecba1b63f626b7f2b4cd5495d3284fbd1968",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/character-escape.js?module": "9e4a5be45d63a092bfa94cf6f6cc9cff95acaf9721c3b65e9f353da5eb4da6a4",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/character-reference.js?module": "c88db3e4d30e266c98f4c68222487e1199e3188242f5d1962dbb145249074577",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/code-fenced.js?module": "b951aa7d967efe6656cadcf50ca00cde398ee3235d9bcff7f06afc7dae31a46a",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/code-indented.js?module": "3437aa5105214a1370078b85a8cc300d48723a1508dfa694b3705acbbf0a4c8f",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/code-text.js?module": "2b2b59145eaf8239b151f458a5187f2b08c13bfe27deefffd947d994b3c3deca",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/content.js?module": "284c103eae9b4d33d2e2a857d84bd45b1dcbf35b8c9f3b326046fab974074822",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/definition.js?module": "23e858d644a544f3f376af3756b62d29227a59aabec5b0b3929ab4ffa77d98b8",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/hard-break-escape.js?module": "15680027cfa19090a266a55f97f5f21fa61288b783bf627145d13f67bfce5773",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/heading-atx.js?module": "df6106188a926f0e7bfbeefeda90414278c249240354caa9fad39838ee7f4795",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/html-flow.js?module": "8c598a506a00f6f597c2c05e7128d763c19cfffb2aa9ddc68ac9f0225c4c9ba1",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/html-text.js?module": "697a7dc417820e8e5169b3c2efba1f56cd7764cde134773fab8135323aea2786",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/label-end.js?module": "49f93c0c2193f349dfdae07b0747eed8fb43f6569a3b9a1ccdb45ac64de02510",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/label-start-image.js?module": "6ab769e9b5f45f5c36ba8f632ce7eb89dc66ee62444cac410c87ebe18060e8b4",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/label-start-link.js?module": "70541ac33689148dace4f849f2c0da2e762a5284d1e32291b43f6c98deaafebd",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/line-ending.js?module": "3c1972e9da794fe9f46cef8241252185d5c6dd1881bcf37d040a02760ca85f28",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/list.js?module": "8d0beac2102db94e02b7c9c0f7dc7b120f45a39c5b3914cdc114be0875eaab13",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/setext-underline.js?module": "2d6e802ec26ffca23ead087f8507a4e5caf51d1dae592e78a5cffb9fa9fbe8fe",
+    "https://unpkg.com/micromark-core-commonmark@2.0.3/lib/thematic-break.js?module": "c85f305281d870f052b71ae23a3257d072a895d4c2ded7f4f5e93dc3ec2f8d1f",
+    "https://unpkg.com/micromark-extension-gfm-autolink-literal@2.1.0/index.js?module": "f0335d843e2f6192b69a0ef2f3a2a81cca1189513f98f5ef1e17380894786355",
+    "https://unpkg.com/micromark-extension-gfm-autolink-literal@2.1.0/lib/html.js?module": "82d0df4b13af376de1a61b484461cfcb987db788cebf7ea94b6bf0dd6670a224",
+    "https://unpkg.com/micromark-extension-gfm-autolink-literal@2.1.0/lib/syntax.js?module": "61b8910ddca56637567a6f1e7c0da01a61f91f60cdd5caba41f24926e17a2b53",
+    "https://unpkg.com/micromark-extension-gfm-footnote@2.1.0/index.js?module": "a1384b910f69ce7e6dd3ab90f444666d30b2f2cba94ddc660cddd308587fbabf",
+    "https://unpkg.com/micromark-extension-gfm-footnote@2.1.0/lib/html.js?module": "79205cbcbc10c836200caa48a018a68b661765c8743d84d6864ea5944503d535",
+    "https://unpkg.com/micromark-extension-gfm-footnote@2.1.0/lib/syntax.js?module": "8f8c76586894bebf3c33dc15cc6c361dc490727a07b08ce65a6b8076902f6cef",
+    "https://unpkg.com/micromark-extension-gfm-strikethrough@2.1.0/index.js?module": "241de4484b148e4372b19761b79c188e5b85f6284e21f8f1c2d0075ea42acb92",
+    "https://unpkg.com/micromark-extension-gfm-strikethrough@2.1.0/lib/html.js?module": "6230e158b586049d3ba5612c7a2cd781bb48af69e5f3985339519d0720a7eeea",
+    "https://unpkg.com/micromark-extension-gfm-strikethrough@2.1.0/lib/syntax.js?module": "3065134113da21cc392bb5faf4d74392ab18123367dacd1f7d27730a636fe762",
+    "https://unpkg.com/micromark-extension-gfm-table@2.1.1/index.js?module": "10b2165392e348ed7ecc81ca37fa8424a81af7f91ec3a6caec14d6a17d96394b",
+    "https://unpkg.com/micromark-extension-gfm-table@2.1.1/lib/edit-map.js?module": "47e082373ee2022e2569ea4c0d7e05dbeae0a55885a6b5fb7efce65436b9bd82",
+    "https://unpkg.com/micromark-extension-gfm-table@2.1.1/lib/html.js?module": "e01378aaa7ce1f99b772f486606e3fa6fc1e48839ce6c79c4586127ccfc69852",
+    "https://unpkg.com/micromark-extension-gfm-table@2.1.1/lib/infer.js?module": "c2a038479872bd8026d513d528e56717fa266f09905f53192c6b5a0da6bc9ea7",
+    "https://unpkg.com/micromark-extension-gfm-table@2.1.1/lib/syntax.js?module": "8726786e2f909ee5fcd06d36ef399709db6bcd8cf698f0c77ac8542dcbaf7f79",
+    "https://unpkg.com/micromark-extension-gfm-tagfilter@2.0.0/index.js?module": "4fed25facdf4b8185247461e2ba8cb3fc693b3384015adfa4b4425da4a8bcd4c",
+    "https://unpkg.com/micromark-extension-gfm-tagfilter@2.0.0/lib/index.js?module": "ea626eefc8e4c741e450f31eed8476eeb1b344ea0db00363ad176c117a845a35",
+    "https://unpkg.com/micromark-extension-gfm-task-list-item@2.1.0/index.js?module": "f543d45fce5468bded0f3694498a14ca5a5b6b124efdc93ff02b80a904801173",
+    "https://unpkg.com/micromark-extension-gfm-task-list-item@2.1.0/lib/html.js?module": "8a90e3c2badc4eb1f640f7ae84d9ec5c6835c17c39aaec9a08c0014fdcad1623",
+    "https://unpkg.com/micromark-extension-gfm-task-list-item@2.1.0/lib/syntax.js?module": "1efd2c5dbaa81975379f1d9d309ff87836f655d2da464f814c3d002af2450394",
+    "https://unpkg.com/micromark-extension-gfm@3.0.0/index.js?module": "88d9622a54f2c74a9a1a654b330d084b32861dfbfdb4bd62d90c41447287475f",
+    "https://unpkg.com/micromark-factory-destination@2.0.1/index.js?module": "015864b567cc76f2fab323c92d6ac1397ae90c5c095e7eb3e1efc7d07e8ab76f",
+    "https://unpkg.com/micromark-factory-label@2.0.1/index.js?module": "1c507401deecf801875341abf6c10980be608bf9ef9d2a178b1d302d71260c80",
+    "https://unpkg.com/micromark-factory-space@2.0.1/index.js?module": "09943ddcfa22b02968e2c4c80a4310823fa12ff988f6244e29cffc23c51ca532",
+    "https://unpkg.com/micromark-factory-title@2.0.1/index.js?module": "14c5b2d0f8fea8e96b3b7ee28957cef60114efcac1fb1c7edd4aa77d6723e347",
+    "https://unpkg.com/micromark-factory-whitespace@2.0.1/index.js?module": "ba2f9db3ac51dcb33a33fa0bbe5cc740c97346b26f7452c657be3c238d40c913",
+    "https://unpkg.com/micromark-util-character@2.1.1/index.js?module": "0ec487160ae3fa7f375698f9f951a0c5d7d752800bca2e3b1de15e3a07ee0417",
+    "https://unpkg.com/micromark-util-chunked@2.0.1/index.js?module": "0776986647dd83ca16594bc02984a288f11e4c8a2d6f81b2487b3c9ef3a34f94",
+    "https://unpkg.com/micromark-util-classify-character@2.0.1/index.js?module": "21241fcf8ac02dbfdeedf9fcd7de86bd0b1111cc7535e434b7388ecf1469ffcf",
+    "https://unpkg.com/micromark-util-combine-extensions@2.0.1/index.js?module": "9939de6ab7099540799c5467b5d2900ad19d3de3758f35f6cb0e35adb27f7282",
+    "https://unpkg.com/micromark-util-decode-numeric-character-reference@2.0.2/index.js?module": "74d2139b3651d79a7f4c1d3b21159d9c89459256e12b263ed2eb6b4fce599f87",
+    "https://unpkg.com/micromark-util-decode-string@2.0.1/index.js?module": "d373e5b7dbae26cec89e714b4cd2686d544700b0a78b7349ecb7e15bbccd3f25",
+    "https://unpkg.com/micromark-util-encode@2.0.1/index.js?module": "323cc4fbd190cdcb56be068ff98e104aa2f431ea1039d7e967f3f7891cb859f0",
+    "https://unpkg.com/micromark-util-html-tag-name@2.0.1/index.js?module": "da74ea4080075b3f45a13eda9a05789e7038e1560954aff6979daafa68d0f096",
+    "https://unpkg.com/micromark-util-normalize-identifier@2.0.1/index.js?module": "6def6e2422ac8905df740d27603d8eaa5d2fdbe41122c40958ac785ff0c8dfe3",
+    "https://unpkg.com/micromark-util-resolve-all@2.0.1/index.js?module": "fa3b71cedce7b6f31ae68720dccfd561b7191e3d7280663cee1400a2dd38698c",
+    "https://unpkg.com/micromark-util-sanitize-uri@2.0.1/index.js?module": "9903eba4a794c744b093ce26de55b61ce563b514fc284e66f0b00104aa0940e0",
+    "https://unpkg.com/micromark-util-subtokenize@2.1.0/index.js?module": "833f8bd07c1e3e667d4b18df2c9296b0dbdf415ee55a52f67ba01c4465c15801",
+    "https://unpkg.com/micromark-util-subtokenize@2.1.0/lib/splice-buffer.js?module": "addce56cc7eccc0cb0ba10f7f8eab4c902f5ddf55ff43e0fb2907815ea63440e",
+    "https://unpkg.com/micromark@4.0.2/index.js?module": "03091ae4ebbc3f4d174a7420ad283a647de1e090aaafc61e5d588bec37c2495a",
+    "https://unpkg.com/micromark@4.0.2/lib/compile.js?module": "e6e41d5183adaf8f7df1202bf6a4e8e8c2e68bbab751e63b41e139c8bce3f390",
+    "https://unpkg.com/micromark@4.0.2/lib/constructs.js?module": "b0bb014ca5e0d7d5ba4f89984f7445ff873023366018813e8630e09984d37660",
+    "https://unpkg.com/micromark@4.0.2/lib/create-tokenizer.js?module": "cbce589e17e7338a74f8cae903943dc36ded2d7c8196494ececea488f75c8c70",
+    "https://unpkg.com/micromark@4.0.2/lib/initialize/content.js?module": "1c1240b67ca5f6a0e7ce92507946dc6715f1de771221f448748267c0c673aeaa",
+    "https://unpkg.com/micromark@4.0.2/lib/initialize/document.js?module": "5f670ba017df49ad0bd91e3005135cc72e44b043894d45954a77a07075a4cf39",
+    "https://unpkg.com/micromark@4.0.2/lib/initialize/flow.js?module": "5c4776b0e9e7dd272f5a253692ac7e4ec0def7d0e9558034d7d47ad59693ba5d",
+    "https://unpkg.com/micromark@4.0.2/lib/initialize/text.js?module": "c0e5b3edbad427ce44aac1b33ed78361c85fc521e52e534cdd43873a0d8e7982",
+    "https://unpkg.com/micromark@4.0.2/lib/parse.js?module": "d0b0cab1eceabc76a64a22b34cda0fe91cb7d9910fa45f8eabe8b07e92e54577",
+    "https://unpkg.com/micromark@4.0.2/lib/postprocess.js?module": "f2e141a4cfdccbfd16b3dcd1dd0718510a12b0e402f9a501cd4fb1af0dc97450",
+    "https://unpkg.com/micromark@4.0.2/lib/preprocess.js?module": "b582f16d9bc04d93d388004544be9c5293fda614eb86f8d02b97c3e57b9409e1",
+    "https://unpkg.com/property-information@7.1.0/index.js?module": "8b7af816c5245113ae5f9af6178b81b0c17c2a3c1cb53e7fff37066128db2e87",
+    "https://unpkg.com/property-information@7.1.0/lib/aria.js?module": "f8b5c2dd6824b42358f02ae57f9b63e91238fe2086645705b25c1afcdd5cc043",
+    "https://unpkg.com/property-information@7.1.0/lib/find.js?module": "6b8bdbd74d9e27b4147d5e651fa4c7f166f0241b04ef637106bfa185b319d6d1",
+    "https://unpkg.com/property-information@7.1.0/lib/hast-to-react.js?module": "47ba04ebd32327cae23e50c70f218c17161722942616182d46ce0cde7a2d58a8",
+    "https://unpkg.com/property-information@7.1.0/lib/html.js?module": "07ba9511dace4a56852a3b23059d0de615fead90ce6bb227aff455afd0ed3c5c",
+    "https://unpkg.com/property-information@7.1.0/lib/normalize.js?module": "b682cd82e5383c9752b3fd9b354d4694150a1b70027337998bcd46e030ed3e93",
+    "https://unpkg.com/property-information@7.1.0/lib/svg.js?module": "ff86a4dc6e887a4a9962de1d91872989ecb69bbf1de9999778298d65bc3e5358",
+    "https://unpkg.com/property-information@7.1.0/lib/util/case-insensitive-transform.js?module": "d4e8047e1e329ce8b2422f55277c095ec419967f59d8873b6d6c55daf5194120",
+    "https://unpkg.com/property-information@7.1.0/lib/util/case-sensitive-transform.js?module": "4935f8bbb39e31920d1efe1a1feb742678113f6355b4feb7b3060118a04c9eda",
+    "https://unpkg.com/property-information@7.1.0/lib/util/create.js?module": "08189bf069967b5afdc1ace4818943a06cda5456df0d432339d74cb6c3c68e40",
+    "https://unpkg.com/property-information@7.1.0/lib/util/defined-info.js?module": "077e2eb1e8f1c946720c25f0464501449cecf4534d53f1528165fea3f053fd06",
+    "https://unpkg.com/property-information@7.1.0/lib/util/info.js?module": "9cacb8f3711acde4ef79814c4f42d97a4923ccb37e5a6ddd550ebbffb452a1e5",
+    "https://unpkg.com/property-information@7.1.0/lib/util/merge.js?module": "fdf6c01c5ac458994213949131dd5682bed65e58f39e69bd392dcd7c8010daf9",
+    "https://unpkg.com/property-information@7.1.0/lib/util/schema.js?module": "d97aa20f271dd5e3ea798dff8cc1fa196a074081b92e60b9335824ce00d05ba6",
+    "https://unpkg.com/property-information@7.1.0/lib/util/types.js?module": "534ee498a7991c73556e49cf8031de26b193f4ffdf3da0aeac52add9d7b6ea1c",
+    "https://unpkg.com/property-information@7.1.0/lib/xlink.js?module": "7c8bf5d622857a63039885aa55df631936776d94f90bd1b16a4f36b12cb6a76f",
+    "https://unpkg.com/property-information@7.1.0/lib/xml.js?module": "69c6a6a18cf944a1e82eaebccc2226945dc91cf022f8e0619d73d6087f1e4a7a",
+    "https://unpkg.com/property-information@7.1.0/lib/xmlns.js?module": "e57cdaca63a72841ff76d91337c4682c4a099175ad3749a9e78b27ceb7bde6f6",
+    "https://unpkg.com/trim-lines@3.0.1/index.js?module": "d784a46164df3f83ea47bedc6a5c316fd29469e79b6a99e206856961321c2460",
+    "https://unpkg.com/unist-util-is@6.0.1/index.js?module": "d01e239107ebaaba58b1350cb38cbf72dfd9b500edc9ff2288a19136861f7238",
+    "https://unpkg.com/unist-util-is@6.0.1/lib/index.js": "ce90bad6b772a7e1115d76e4cc53bfade1ee1fe8ac1b8880f48b0e1512ffba44",
+    "https://unpkg.com/unist-util-is@6.0.1/lib/index.js?module": "ce90bad6b772a7e1115d76e4cc53bfade1ee1fe8ac1b8880f48b0e1512ffba44",
+    "https://unpkg.com/unist-util-position@5.0.0/index.js?module": "923700728f0c8fcadaf6e16511fe5708ac1e16bcb26b4c96f61f546209a71f2a",
+    "https://unpkg.com/unist-util-position@5.0.0/lib/index.js?module": "3a751e6977493112a744188be93f88005f89c6490a7ee88b2e50ff3756d79e44",
+    "https://unpkg.com/unist-util-stringify-position@4.0.0/index.js?module": "2fec9401f8d84b5f8ac5ec7764a4e6080e0893a319dd9a72aedea71b5268fb74",
+    "https://unpkg.com/unist-util-stringify-position@4.0.0/lib/index.js?module": "9d66941cf43fa4f4faa5912019ad9dae3f1ea3395b0c2fe64c2bcd5c2d4b2c28",
+    "https://unpkg.com/unist-util-visit-parents@6.0.2/index.js?module": "6fd42477f3840ffa35db77e34e5d3785998b3e018f0ffc78ae22df01064895da",
+    "https://unpkg.com/unist-util-visit-parents@6.0.2/lib/color.js?module": "84d02ef62d60a8e4fc8529fa6725abb85729274a873afbb8d4d9fb317ae01135",
+    "https://unpkg.com/unist-util-visit-parents@6.0.2/lib/index.js?module": "e96e60816f8b1297c018c5f40b79748ed323c06a8adf6a79b7725421cdf2b80f",
+    "https://unpkg.com/unist-util-visit@5.1.0/index.js?module": "348dd490274e97c713fd8d63832bedc54bd04de04c657c427b84ffaa923ab286",
+    "https://unpkg.com/unist-util-visit@5.1.0/lib/index.js?module": "843ed7fe7f9e183776fa55d30b65bcbb4ab276695be36815fa7d814cf4f91101",
+    "https://unpkg.com/web-namespaces@2.0.1/index.js?module": "8f72a63a66820c0e4656958f8ba33be2635a87a74ad5cc0734507eabf9770743",
+    "https://unpkg.com/zwitch@2.0.4/index.js?module": "81f592d700aff8042238e7cab8e03c002e689117ecf15844ed753e08825a2873"
   },
   "workspace": {
     "dependencies": [

@@ -7,8 +7,8 @@ import {
   remarkGfm,
   unified,
   select,
-} from "./markdown_deps.js";
-import { Loader as BaseLoader } from "./base_loader.js";
+} from "../markdown_deps.js";
+import { Loader as BaseLoader } from "./base.js";
 
 export class Loader extends BaseLoader {
   /**
@@ -30,21 +30,28 @@ export class Loader extends BaseLoader {
 
         if (select("code.language-math", hast)) {
           sub.use(
-            (await import("https://esm.sh/@daiji256/rehype-mathml@1")).default,
+            (
+              await import("https://cdn.c23.me/@daiji256/rehype-mathml@1?module")
+            ).default,
           );
-          head += /* html */ `<link rel="stylesheet" href="https://esm.sh/temml@0.13/dist/Temml-Local.css" />`;
+          head += /* html */ `<link rel="stylesheet" href="https://cdn.c23.me/temml@0.13/dist/Temml-Local.css" />`;
         }
 
         if (select("code.language-mermaid", hast)) {
-          sub.use((await import("https://esm.sh/rehype-mermaid@3")).default, {
-            strategy: "img-svg",
-            dark: true,
-          });
+          sub.use(
+            (await import("https://cdn.c23.me/rehype-mermaid@3?module"))
+              .default,
+            {
+              strategy: "img-svg",
+              dark: true,
+            },
+          );
         }
 
         if (select("pre > code", hast)) {
           sub.use(
-            (await import("https://esm.sh/@shikijs/rehype@4?bundle")).default,
+            (await import("https://cdn.c23.me/@shikijs/rehype@4?module"))
+              .default,
             {
               themes: { light: "github-light", dark: "github-dark" },
               defaultColor: "light-dark()",

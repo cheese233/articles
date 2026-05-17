@@ -51,7 +51,7 @@ const customElemBuilder = new (class {
     if (this.executed.has(ext)) return;
     customElements.define(
       `${ext.slice(1)}-loader`,
-      (await import(`./${ext.slice(1)}.js`)).Loader,
+      (await import(`./loader/${ext.slice(1)}.js`)).Loader,
     );
     this.executed.add(ext);
   }

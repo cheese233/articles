@@ -7,7 +7,7 @@ import {
 } from "../../render/markdown_deps.js";
 import type { ParseResult } from "./parse.ts";
 
-import remarkStringify from "https://esm.sh/remark-stringify@11";
+import remarkStringify from "https://cdn.c23.me/remark-stringify@11?module";
 import type { Heading, Root } from "npm:@types/mdast@4";
 import { toText } from "npm:hast-util-to-text@4";
 import { commentMarker } from "npm:mdast-comment-marker@3";
@@ -20,7 +20,9 @@ import { matter } from "npm:vfile-matter@5";
 
 export default async function (content: string) {
   const processor = unified()
-    .use(remarkParse)
+    .use(
+      remarkParse as unknown as (typeof import("https://esm.sh/remark-parse@11"))["default"],
+    )
     .use(remarkFrontmatter)
     .use(remarkMath)
     .use(remarkGfm)
@@ -49,7 +51,9 @@ export default async function (content: string) {
     .use(() => (_, file) => {
       matter(file);
     })
-    .use(remarkStringify);
+    .use(
+      remarkStringify as unknown as (typeof import("https://esm.sh/remark-stringify@11"))["default"],
+    );
 
   const file = await processor.process(content);
 

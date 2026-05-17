@@ -1,5 +1,5 @@
-import { render } from "https://esm.sh/preact@10";
-import { html } from "https://esm.sh/htm@3/preact";
+import { render, h } from "https://cdn.c23.me/preact@10?module";
+import htm from "https://cdn.c23.me/htm@3?module";
 
 /**
  * @param {ShadowRoot} shadow

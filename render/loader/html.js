@@ -1,11 +1,11 @@
-import { unified } from "https://esm.sh/unified@11";
-import rehypeParse from "https://esm.sh/rehype-parse@9";
-import { Loader as BaseLoader } from "./base_loader.js";
-import { selectAll } from "https://esm.sh/hast-util-select@6";
-import { hasProperty } from "https://esm.sh/hast-util-has-property@3";
-import { toString } from "https://esm.sh/hast-util-to-string@3";
-import { remove } from "https://esm.sh/unist-util-remove@4";
-import rehypeStringify from "https://esm.sh/rehype-stringify@10";
+import { unified } from "../markdown_deps.js";
+import rehypeDomParse from "https://cdn.c23.me/rehype-dom-parse@5?module";
+import { Loader as BaseLoader } from "./base.js";
+import { selectAll } from "https://esm.cdn.c23.me/hast-util-select@6";
+import { hasProperty } from "https://cdn.c23.me/hast-util-has-property@3?module";
+import { toString } from "https://cdn.c23.me/hast-util-to-string@3?module";
+import { remove } from "https://cdn.c23.me/unist-util-remove@4?module";
+import rehypeDomStringify from "https://cdn.c23.me/rehype-dom-stringify@4?module";
 
 export class Loader extends BaseLoader {
   /**
@@ -13,7 +13,7 @@ export class Loader extends BaseLoader {
    */
   async update(content) {
     const file = await unified()
-      .use(rehypeParse)
+      .use(rehypeDomParse)
       .use(() => (tree, file) => {
         file.data.scripts = [
           // <src> without async or defer will not be executed
@@ -36,7 +36,7 @@ export class Loader extends BaseLoader {
           })
           .filter(({ content, _, src }) => !!(content || src));
       })
-      .use(rehypeStringify)
+      .use(rehypeDomStringify)
       .process(content);
 
     this.shadow.innerHTML = file.toString();

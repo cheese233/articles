@@ -11,11 +11,8 @@
             href="https://c23.me/atom.xml"
         />
         <link href="/render/style.css" rel="stylesheet" />
-        <link rel="preconnect" href="https://esm.sh" />
+        <link rel="preconnect" href="https://cdn.c23.me" />
         <style>
-            fluent-data-grid {
-                overflow-x: auto;
-            }
             #crumb::part(list) {
                 flex-wrap: wrap;
             }
@@ -38,35 +35,21 @@
                 }
             }
         </style>
-        <script type="module">
-            import {
-                allComponents,
-                provideFluentDesignSystem,
-                baseLayerLuminance,
-                StandardLuminance,
-                accentBaseColor,
-                SwatchRGB,
-            } from "https://esm.sh/@fluentui/web-components@2";
-
-            accentBaseColor.setValueFor(
-                document.body,
-                SwatchRGB.create(1, 179 / 255, 63 / 255), // --seed-color, and fk m$
-            );
-
-            provideFluentDesignSystem().register(allComponents);
-
-            const match = window.matchMedia("(prefers-color-scheme: dark)");
-            const setLuminance = () => {
-                baseLayerLuminance.setValueFor(
-                    document.body,
-                    match.matches
-                        ? StandardLuminance.DarkMode
-                        : StandardLuminance.LightMode,
-                );
-            };
-            setLuminance();
-            match.addEventListener("change", setLuminance);
-        </script>
+        <script
+            defer
+            type="module"
+            src="https://cdn.c23.me/fluentui-webcomponents/components/breadcrumb/fluent-breadcrumb.js"
+        ></script>
+        <script
+            defer
+            type="module"
+            src="https://cdn.c23.me/fluentui-webcomponents/components/breadcrumb-item/fluent-breadcrumb-item.js"
+        ></script>
+        <script
+            defer
+            type="module"
+            src="https://cdn.c23.me/fluentui-webcomponents/components/button/fluent-button.js"
+        ></script>
     </head>
     <body
         style="
@@ -115,20 +98,14 @@
                 </div>
             </header>
             <nav>
-                <fluent-breadcrumb id="crumb"
-                    ><fluent-breadcrumb-item href="/"
-                        >Home</fluent-breadcrumb-item
-                    ></fluent-breadcrumb
-                >
+                <fluent-breadcrumb>
+                    <fluent-breadcrumb-item href="/">
+                        Home
+                    </fluent-breadcrumb-item>
+                </fluent-breadcrumb>
             </nav>
         </aside>
-        <main style="flex: 1" id="main">
-            <fluent-skeleton
-                style="height: 100%; width: 100%"
-                shape="rect"
-                shimmer
-            ></fluent-skeleton>
-        </main>
+        <main style="flex: 1" id="main"></main>
         <noscript>
             <div
                 style="

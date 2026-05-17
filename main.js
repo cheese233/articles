@@ -1,6 +1,8 @@
-import { animate } from "https://esm.sh/animejs@4";
-import { render } from "https://esm.sh/preact@10";
-import { html } from "https://esm.sh/htm@3/preact";
+import { animate } from "https://cdn.c23.me/animejs@4?module";
+import { render, h } from "https://cdn.c23.me/preact@10?module";
+import htm from "https://cdn.c23.me/htm@3?module";
+
+const html = htm.bind(h);
 
 /**
  * # 主页
@@ -192,7 +194,7 @@ export default function (main) {
         ">
             <${fluentWindow}>
                 <${ghLikeCodeCard}>
-
+                    <!-- TODO -->
                 </${ghLikeCodeCard}>
             </${fluentWindow}>
         </div>
