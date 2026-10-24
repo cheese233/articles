@@ -162,7 +162,7 @@ import PagesAdapter from "./pages.js.ext.js";
 export default class MarkdownAdapter extends PagesAdapter {}
 ```
 
-- `js.ext.js` 是唯一不继承 `HTMLElement` 的 adapter；它解析 JSDoc，`create()` 出 `pages.js` 的 Web Component，并负责注册 `web-elements` 与 `pages-element`。
+- `js.ext.js` 是唯一不继承 `HTMLElement` 的 adapter；它解析 JSDoc，`create()` 出 `pages.js` 的 Web Component，并负责注册 `web-elements`、`pages-element`；页面内容 class 的按需注册也由它提供的 `WebElements.definePage` 完成。
 - `pages.js.ext.js` 只导出 class：原生 `export class WebElements extends HTMLElement`，`PagesAdapter` 继承它；不在这里调用 `customElements.define`。
 - 运行时在加载任何页面 adapter 前先加载 `js` loader，确保注册完成；`md` / `html` / 目录 adapter 仍然继承 `pages.js`，加载时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`。
 - `.js` / `.pages.js` 内容如果 default export 自定义元素 class，`PagesAdapter` 会 define + 挂载；如果 default export 函数，则把页面的 `ShadowRoot` 作为参数调用。

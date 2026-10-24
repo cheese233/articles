@@ -4,6 +4,36 @@ import { parseJsDoc } from "../shared/jsdoc.js";
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
+let contentTag = 0;
+/** @type {WeakMap<Function, string>} */
+const contentTags = new WeakMap();
+
+/**
+ * Register a content module's custom element class once. The page component
+ * calls this through the static `definePage` hook set below.
+ *
+ * @param {Function} Page
+ */
+const definePage = (Page) => {
+  const existing = contentTags.get(Page);
+  if (existing) return existing;
+
+  const tag = `page-content-${contentTag++}`;
+  try {
+    customElements.define(
+      tag,
+      /** @type {CustomElementConstructor} */ (Page),
+    );
+  } catch {
+    // The class may already be registered elsewhere; `new Page()` is still
+    // constructible in that case.
+  }
+  contentTags.set(Page, tag);
+  return tag;
+};
+
+WebElements.definePage = definePage;
+
 /** @type {import("../shared/types.ts").AdapterStatics} */
 const meta = Object.freeze({
   ext: "js",

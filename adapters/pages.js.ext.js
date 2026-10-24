@@ -10,41 +10,15 @@ const meta = Object.freeze({
   priority: 10,
 });
 
-let contentTag = 0;
-/** @type {WeakMap<Function, string>} */
-const contentTags = new WeakMap();
-
-/**
- * A page module may default-export a custom element class. The browser
- * requires every custom element class to be defined before it can be
- * constructed, so allocate a stable tag once per class.
- *
- * @param {Function} Page
- */
-const definePage = (Page) => {
-  const existing = contentTags.get(Page);
-  if (existing) return existing;
-
-  const tag = `page-content-${contentTag++}`;
-  try {
-    customElements.define(
-      tag,
-      /** @type {CustomElementConstructor} */ (Page),
-    );
-  } catch {
-    // The class may already be registered elsewhere; `new Page()` is still
-    // constructible in that case.
-  }
-  contentTags.set(Page, tag);
-  return tag;
-};
-
 /**
  * The page Web Component. It is the root of the page hierarchy: `js.ext.js`
- * registers it, and the markdown/html/directory adapters extend
- * `PagesAdapter`.
+ * registers it and supplies `definePage`, and the markdown/html/directory
+ * adapters extend `PagesAdapter`.
  */
 export class WebElements extends HTMLElement {
+  /** @type {((Page: Function) => string) | undefined} */
+  static definePage;
+
   /** @type {VFile} */
   file;
   connected = false;
@@ -89,6 +63,9 @@ export class WebElements extends HTMLElement {
       if (!Page) throw new Error(`${path}: default export is missing`);
 
       if (Page.prototype instanceof HTMLElement) {
+        const definePage = /** @type {typeof WebElements} */ (this.constructor)
+          .definePage;
+        if (!definePage) throw new Error("page registration is not ready");
         definePage(Page);
         this.append(new Page(this.file));
       } else if (typeof Page == "function") {

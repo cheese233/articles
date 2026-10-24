@@ -41,7 +41,7 @@ js.ext.js  (JavaScriptAdapter, .js；语言 loader)
        └─ [...].ext.pages.js (directory)
 ```
 
-`pages.js.ext.js` 只导出 `WebElements` / `PagesAdapter` 两个 class。`js.ext.js` 加载它之后，在模块顶层注册 `web-elements` 与 `pages-element`；`PagesAdapter` 继承 `WebElements`，`md` / `html` / 目录 adapter 再继承 `PagesAdapter`。
+`pages.js.ext.js` 只导出 `WebElements` / `PagesAdapter` 两个 class。`js.ext.js` 加载它之后，在模块顶层注册 `web-elements` 与 `pages-element`，并通过 `WebElements.definePage` 按需注册页面内容 class；`PagesAdapter` 继承 `WebElements`，`md` / `html` / 目录 adapter 再继承 `PagesAdapter`。
 
 运行时把 `js` 和 `pages.js` 当作根；加载任何页面 adapter 前先加载 `js` loader，确保注册完成。加载其他 adapter 时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`，因为它是页面根，不是 loader 的子类。
 
