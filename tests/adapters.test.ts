@@ -1,24 +1,25 @@
-// Must stay first: adapter classes extend HTMLElement.
+// Must stay first: the pages.js wrapper extends HTMLElement.
 import "../scripts/lib/dom.ts";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { VFile } from "vfile";
-import HtmlFactory from "../adapters/html.ext.pages.js";
+import HtmlFactory, * as Html from "../adapters/html.ext.pages.js";
 import JavaScriptLoader, * as JavaScript from "../adapters/js.ext.js";
-import MarkdownFactory from "../adapters/md.ext.pages.js";
-import WebElements from "../adapters/pages.js.ext.js";
+import MarkdownFactory, * as Markdown from "../adapters/md.ext.pages.js";
+import PagesFactory, * as Pages from "../adapters/pages.js.ext.js";
 
-const MarkdownAdapter = MarkdownFactory(WebElements);
-const HtmlAdapter = HtmlFactory(WebElements);
+const MarkdownLoader = PagesFactory(MarkdownFactory);
+const HtmlLoader = PagesFactory(HtmlFactory);
 
-test("adapter factories return WebElements classes", () => {
-  assert.ok(WebElements.prototype instanceof HTMLElement);
-  assert.ok(MarkdownAdapter.prototype instanceof WebElements);
-  assert.ok(HtmlAdapter.prototype instanceof WebElements);
-  assert.ok(!(JavaScriptLoader.prototype instanceof HTMLElement));
-  assert.equal(WebElements.meta.ext, "pages.js");
-  assert.equal(MarkdownAdapter.meta.lang, "pages.js");
-  assert.equal(HtmlAdapter.meta.lang, "pages.js");
+test("factories wrap into WebElements loader classes", () => {
+  assert.ok(MarkdownLoader.prototype instanceof HTMLElement);
+  assert.ok(HtmlLoader.prototype instanceof HTMLElement);
+  assert.equal(MarkdownLoader.meta.ext, "md");
+  assert.equal(HtmlLoader.meta.ext, "html");
+  assert.equal(Pages.meta.ext, "pages.js");
+  assert.equal(MarkdownFactory.meta.ext, "md");
+  assert.equal(HtmlFactory.meta.ext, "html");
+  assert.equal(typeof JavaScriptLoader, "function");
   assert.equal(JavaScript.meta.ext, "js");
 });
 
@@ -38,7 +39,7 @@ test("markdown adapter reads YAML frontmatter", async () => {
     ].join("\n"),
   });
 
-  const meta = await new MarkdownAdapter(file).parse();
+  const meta = await Markdown.parse(file);
 
   assert.equal(meta.title, "Hello");
   assert.equal(meta.date, "2026-10-20");
@@ -53,7 +54,7 @@ test("markdown frontmatter can make a file a middleware", async () => {
     value: "---\nroutable: false\n---\n\n# 404\n",
   });
 
-  const meta = await new MarkdownAdapter(file).parse();
+  const meta = await Markdown.parse(file);
   assert.equal(meta.routable, false);
 });
 
@@ -90,7 +91,7 @@ test("pages.js defaults to routable", async () => {
     value: "/**\n * # About\n */\nexport default function () {}",
   });
 
-  const meta = await new WebElements(file).parse();
+  const meta = await Pages.parse(file);
   assert.equal(meta.title, "About");
   assert.equal(meta.routable, true);
 });
@@ -107,7 +108,7 @@ test("html adapter reads meta tags", async () => {
     ].join("\n"),
   });
 
-  const meta = await new HtmlAdapter(file).parse();
+  const meta = await Html.parse(file);
 
   assert.equal(meta.title, "Lab");
   assert.equal(meta.summary, "A lab.");

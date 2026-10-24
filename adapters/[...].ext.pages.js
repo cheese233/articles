@@ -37,52 +37,48 @@ const card = (/** @type {ManifestEntry} */ entry) => `
   </li>`;
 
 /**
- * @param {typeof import("./pages.js.ext.js").default} WebElements
+ * @param {VFile} _file
  */
-export default function (WebElements) {
-  return class DirectoryAdapter extends WebElements {
-    static meta = meta;
+const factory = (_file) => (/** @type {ShadowRoot} */ shadow) => {
+  const host = /** @type {HTMLElement & {
+   *   route?: string;
+   *   entries: ManifestEntry[];
+   *   site?: import("../shared/types.ts").SiteConfig;
+   * }} */ (shadow.host);
 
-    async connectedCallback() {
-      if (this.connected) return;
-      this.connected = true;
+  const route = host.route ?? "/";
+  const entries = route == "/"
+    ? host.entries
+    : host.entries.filter((entry) => entry.route.startsWith(route));
 
-      try {
-        const route = this.route ?? "/";
-        const entries = route == "/"
-          ? this.entries
-          : this.entries.filter((entry) => entry.route.startsWith(route));
+  const site = host.site;
+  const title = route == "/" ? site?.title ?? "Blog" : label(route);
+  const description = route == "/"
+    ? site?.description ?? ""
+    : `${entries.length} 篇内容`;
 
-        const site = this.site;
-        const title = route == "/" ? site?.title ?? "Blog" : label(route);
-        const description = route == "/"
-          ? site?.description ?? ""
-          : `${entries.length} 篇内容`;
+  const breadcrumb = route == "/"
+    ? ""
+    : `<a class="crumb" href="/">${escape(site?.title ?? "Home")}</a>
+      <span class="crumb-sep">/</span>
+      <span>${escape(title)}</span>`;
 
-        const breadcrumb = route == "/"
-          ? ""
-          : `<a class="crumb" href="/">${escape(site?.title ?? "Home")}</a>
-            <span class="crumb-sep">/</span>
-            <span>${escape(title)}</span>`;
+  const article = document.createElement("article");
+  article.className = "listing";
+  article.innerHTML = `
+    <header class="listing-header">
+      ${breadcrumb}
+      <h1>${escape(title)}</h1>
+      <p>${escape(description)}</p>
+    </header>
+    <ul class="post-list">
+      ${entries.map(card).join("")}
+    </ul>
+    ${entries.length ? "" : '<p class="empty">这里还没有内容。</p>'}`;
 
-        this.innerHTML = `
-          <article class="listing">
-            <header class="listing-header">
-              ${breadcrumb}
-              <h1>${escape(title)}</h1>
-              <p>${escape(description)}</p>
-            </header>
-            <ul class="post-list">
-              ${entries.map(card).join("")}
-            </ul>
-            ${entries.length ? "" : '<p class="empty">这里还没有内容。</p>'}
-          </article>`;
+  shadow.append(article);
+};
 
-        this.dispatchEvent(new Event("rendered"));
-      } catch (error) {
-        console.error(error);
-        this.dispatchEvent(new Event("error"));
-      }
-    }
-  };
-}
+factory.meta = meta;
+
+export default factory;

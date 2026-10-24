@@ -1,4 +1,3 @@
-import WebElements from "./pages.js.ext.js";
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("vfile").VFile} VFile */
@@ -16,25 +15,21 @@ export const meta = Object.freeze({
 export const parse = async (file) => parseJsDoc(String(file));
 
 /**
- * Ask pages.js for the adapter class, then define it as
- * `<final-ext>-loader`. The adapter class is registered directly; there is no
- * wrapper class.
+ * Define the class produced by the pages.js wrapper. The class is generated
+ * once per extension; the content path is an attribute at mount time.
  *
- * @param {string} file
+ * @param {typeof HTMLElement & { meta: AdapterStatics }} Adapter
  */
-export default async function (file) {
-  const Adapter = await WebElements.create(file);
-  const ext = Adapter.meta?.ext;
-  if (!ext) throw new Error(`${file}: adapter has no meta.ext`);
-
+export default function (Adapter) {
+  const ext = Adapter.meta.ext;
   const base = ext
     .replaceAll("[...]", "directory")
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-+|-+$/g, "");
   const tag = `${base}-loader`;
   const existing = customElements.get(tag);
-  if (existing) return /** @type {CustomElementConstructor} */ (existing);
+  if (existing) return /** @type {typeof Adapter} */ (existing);
 
   customElements.define(tag, Adapter);
-  return /** @type {CustomElementConstructor} */ (Adapter);
+  return Adapter;
 }

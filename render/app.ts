@@ -72,6 +72,7 @@ const createHost = (route: string) => {
  * into their own light DOM, inside the page host's ShadowRoot.
  */
 type AdapterElement = HTMLElement & {
+  file?: VFile;
   site?: import("../shared/types.ts").SiteConfig;
   entries: import("../shared/types.ts").ManifestEntry[];
   route?: string;
@@ -85,11 +86,23 @@ const mount = async (
   context: AdapterContext,
 ) => {
   const shadow = createHost(route);
-  const element = new Loader(file) as AdapterElement;
+  const element = new Loader() as AdapterElement;
+  element.file = file;
+  element.setAttribute("path", file.path ?? route);
   element.site = context.site;
   element.entries = context.entries;
   element.route = context.route;
   element.entry = context.entry;
+
+  const contentShadow = element.shadowRoot;
+  if (!contentShadow) throw new Error("missing loader shadow root");
+
+  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = href;
+    contentShadow.append(stylesheet);
+  }
 
   let timeout = 0;
 

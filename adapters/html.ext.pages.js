@@ -100,36 +100,20 @@ export const parse = async (file) => {
 };
 
 /**
- * @param {typeof import("./pages.js.ext.js").default} WebElements
+ * @param {VFile} file
  */
-export default function (WebElements) {
-  return class HtmlAdapter extends WebElements {
-    static meta = meta;
+const factory = (file) => async (/** @type {ShadowRoot} */ shadow) => {
+  const source = String(file);
+  const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
+  const article = document.createElement("article");
+  article.className = "html-page markdown";
+  article.innerHTML = body;
+  article.querySelectorAll("meta").forEach((tag) => tag.remove());
 
-    /** @returns {Promise<ParsedMeta>} */
-    async parse() {
-      return parse(this.file);
-    }
+  shadow.append(article);
+  await execute(shadow, article);
+};
 
-    async connectedCallback() {
-      if (this.connected) return;
-      this.connected = true;
+factory.meta = meta;
 
-      try {
-        const source = String(this.file);
-        const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
-
-        this.classList.add("html-page", "markdown");
-        this.innerHTML = body;
-        this.querySelectorAll("meta").forEach((tag) => tag.remove());
-
-        const root = this.getRootNode();
-        await execute(root instanceof ShadowRoot ? root : this, this);
-        this.dispatchEvent(new Event("rendered"));
-      } catch (error) {
-        console.error(error);
-        this.dispatchEvent(new Event("error"));
-      }
-    }
-  };
-}
+export default factory;

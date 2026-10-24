@@ -1,14 +1,19 @@
 import type { VFile } from "vfile";
-import type { AdapterIndex } from "../../shared/types.ts";
+import type { AdapterIndex, AdapterStatics } from "../../shared/types.ts";
 
-export type LoaderConstructor = new (file: VFile) => HTMLElement;
+type AdapterFactory = ((
+  file: VFile,
+) => (shadow: ShadowRoot) => void | Promise<void>) & {
+  meta: AdapterStatics;
+};
+
+export type LoaderConstructor = new () => HTMLElement;
 
 const cache = new Map<string, LoaderConstructor>();
 
 /**
- * `js.ext.js` turns an adapter `.js` class into a `<final-ext>-loader`
- * custom element. Plain `.js` content uses the pages.js adapter, matching the
- * old js adapter behaviour.
+ * Build the nested chain `js.ext(pages.ext(factory))`. The factory waits for
+ * the content file; the generated element receives it through `path` at mount.
  */
 export const loadLoader = async (
   ext: string,
@@ -20,15 +25,32 @@ export const loadLoader = async (
   const info = index.adapters.find((adapter) => adapter.ext == ext);
   if (!info) throw new Error(`no adapter for .${ext}`);
 
-  const target = ext == "js"
-    ? index.adapters.find((adapter) => adapter.ext == "pages.js") ?? info
-    : info;
+  const [{ default: define }, pages] = await Promise.all([
+    import("../../adapters/js.ext.js"),
+    import("../../adapters/pages.js.ext.js"),
+  ]);
+  const { default: wrap } = pages;
 
-  const mod = await import("../../adapters/js.ext.js") as {
-    default: (file: string) => Promise<LoaderConstructor>;
-  };
-  const Loader = await mod.default(target.file);
+  let factory: AdapterFactory;
 
-  cache.set(ext, Loader);
-  return Loader;
+  if (ext == "js" || ext == "pages.js") {
+    factory = ((file: VFile) => async (shadow: ShadowRoot) => {
+      const path = file.path;
+      if (!path) throw new Error("vfile has no path");
+      const mod = await import(path);
+      if (typeof mod.default != "function")
+        throw new Error(`${path}: default export must be a function`);
+      await mod.default(shadow);
+    }) as AdapterFactory;
+    factory.meta = pages.meta;
+  } else {
+    const mod = await import(info.file);
+    factory = mod.default as AdapterFactory;
+    if (typeof factory != "function")
+      throw new Error(`adapter .${ext} has no default factory`);
+  }
+
+  const Adapter = define(wrap(factory)) as LoaderConstructor;
+  cache.set(ext, Adapter);
+  return Adapter;
 };

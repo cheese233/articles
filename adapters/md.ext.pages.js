@@ -80,33 +80,16 @@ export const parse = async (file) => {
 };
 
 /**
- * `pages.js` calls this factory with the page base class; the returned class
- * is passed to `js.ext.js` for definition.
- *
- * @param {typeof import("./pages.js.ext.js").default} WebElements
+ * @param {VFile} file
  */
-export default function (WebElements) {
-  return class MarkdownAdapter extends WebElements {
-    static meta = meta;
+const factory = (file) => async (/** @type {ShadowRoot} */ shadow) => {
+  const { renderMarkdown } = await import("../render/markdown_deps.ts");
+  const article = document.createElement("article");
+  article.className = "markdown";
+  article.innerHTML = renderMarkdown(String(file));
+  shadow.append(article);
+};
 
-    /** @returns {Promise<ParsedMeta>} */
-    async parse() {
-      return parse(this.file);
-    }
+factory.meta = meta;
 
-    async connectedCallback() {
-      if (this.connected) return;
-      this.connected = true;
-
-      try {
-        const { renderMarkdown } = await import("../render/markdown_deps.ts");
-        this.classList.add("markdown");
-        this.innerHTML = renderMarkdown(String(this.file));
-        this.dispatchEvent(new Event("rendered"));
-      } catch (error) {
-        console.error(error);
-        this.dispatchEvent(new Event("error"));
-      }
-    }
-  };
-}
+export default factory;
