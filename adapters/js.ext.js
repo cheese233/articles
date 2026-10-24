@@ -136,6 +136,8 @@ const definePage = (Page) => {
  * extend `pages.js`.
  */
 export class WebElements extends Base {
+  static meta = meta;
+
   /** @type {VFile} */
   file;
   connected = false;
@@ -196,6 +198,4 @@ export class WebElements extends Base {
   }
 }
 
-export default class JavaScriptAdapter extends WebElements {
-  static meta = meta;
-}
+export default WebElements;

@@ -1,4 +1,4 @@
-import { WebElements } from "./js.ext.js";
+import WebElements from "./js.ext.js";
 
 /** @type {import("../shared/types.ts").AdapterStatics} */
 const meta = Object.freeze({

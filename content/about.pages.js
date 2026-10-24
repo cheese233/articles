@@ -1,4 +1,4 @@
-import { WebElements } from "../adapters/js.ext.js";
+import WebElements from "../adapters/js.ext.js";
 
 /**
  * # 关于

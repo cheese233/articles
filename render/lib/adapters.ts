@@ -34,15 +34,19 @@ const define = (ext: string, Adapter: AdapterConstructor) => {
 /**
  * Every adapter is imported directly. Its parent adapter is its superclass:
  * `pages.js.ext.js` extends `js.ext.js`, and `md.ext.pages.js` extends the
- * `pages.js` adapter. The parent code therefore runs through the module
- * import chain, not through a separate module() call.
+ * `pages.js` adapter. Loading the parent first also enforces that chain; no
+ * separate module() call exists.
  */
 export const loadAdapterClass = async (
   ext: string,
   index: AdapterIndex,
+  stack: string[] = [],
 ): Promise<AdapterConstructor> => {
   const cached = cache.get(ext);
   if (cached) return cached;
+
+  if (stack.includes(ext))
+    throw new Error(`adapter cycle: ${[...stack, ext].join(" -> ")}`);
 
   const info = index.adapters.find((adapter) => adapter.ext == ext);
   if (!info) throw new Error(`no adapter for .${ext}`);
@@ -51,6 +55,16 @@ export const loadAdapterClass = async (
   const Adapter = mod.default as AdapterConstructor;
   if (typeof Adapter != "function")
     throw new Error(`adapter .${ext} has no default class`);
+
+  if (ext != "js") {
+    const Parent = await loadAdapterClass(
+      info.lang,
+      index,
+      [...stack, ext],
+    );
+    if (!(Adapter.prototype instanceof Parent))
+      throw new Error(`adapter .${ext} must extend .${info.lang}`);
+  }
 
   define(ext, Adapter);
   cache.set(ext, Adapter);

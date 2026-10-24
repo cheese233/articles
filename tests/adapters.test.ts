@@ -2,15 +2,15 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { VFile } from "vfile";
 import HtmlAdapter from "../adapters/html.ext.pages.js";
-import JavaScriptAdapter, { WebElements } from "../adapters/js.ext.js";
+import WebElements from "../adapters/js.ext.js";
 import MarkdownAdapter from "../adapters/md.ext.pages.js";
 import PagesAdapter from "../adapters/pages.js.ext.js";
 
 test("page adapters form a WebElements inheritance chain", () => {
-  assert.ok(JavaScriptAdapter.prototype instanceof WebElements);
   assert.ok(PagesAdapter.prototype instanceof WebElements);
   assert.ok(MarkdownAdapter.prototype instanceof PagesAdapter);
   assert.ok(HtmlAdapter.prototype instanceof PagesAdapter);
+  assert.equal(WebElements.meta.ext, "js");
   assert.equal(MarkdownAdapter.meta.lang, "pages.js");
   assert.equal(HtmlAdapter.meta.lang, "pages.js");
 });
@@ -62,7 +62,7 @@ test("js adapter reads JSDoc and requires explicit @routable", async () => {
   ].join("\n");
 
   const file = new VFile({ path: "content/demo.js", value: source });
-  const meta = await new JavaScriptAdapter(file).parse();
+  const meta = await new WebElements(file).parse();
 
   assert.equal(meta.title, "Demo");
   assert.equal(meta.date, "2026-10-19");
@@ -73,7 +73,7 @@ test("js adapter reads JSDoc and requires explicit @routable", async () => {
     path: "content/plain.js",
     value: "export default function () {}",
   });
-  const plain = await new JavaScriptAdapter(page).parse();
+  const plain = await new WebElements(page).parse();
   assert.equal(plain.routable, undefined);
 });
 

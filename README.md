@@ -122,8 +122,8 @@ import PagesAdapter from "./pages.js.ext.js";
 export default class MarkdownAdapter extends PagesAdapter {}
 ```
 
-- 运行时直接 `import()` adapter 文件，父 adapter 的模块/类会随 import 链执行。
-- `js.ext.js` 是唯一没有父 adapter 的模块，直接执行，避免自环。
+- 运行时直接 `import()` adapter 文件，父 adapter 的模块/类会随 import 链执行；运行时会先加载父 adapter，并检查 `Adapter.prototype instanceof Parent`，不满足就直接报错。
+- `js.ext.js` 是唯一没有父 adapter 的模块，直接执行，避免自环；它的 default export 就是 `WebElements`。
 - 运行时把 adapter class 注册成自定义元素（`customElements.define`），然后 `new Adapter(vfile)` + 挂载。挂载就是渲染，没有 `module()` / `render()` 两个阶段。
 - 一个 `.pages.js` 或 `.js` 模块如果 default export 的是自定义元素 class，`js.ext.js` 会直接 define + 挂载它；如果是函数，则把页面的 `ShadowRoot` 作为参数调用。
 
@@ -322,7 +322,7 @@ tags: [meta, blog]
 ```
 
 ```js
-import { WebElements } from "../adapters/js.ext.js";
+import WebElements from "../adapters/js.ext.js";
 
 /**
  * # 标题
