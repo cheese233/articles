@@ -1,3 +1,5 @@
+// Must precede adapter imports: they extend HTMLElement when evaluated.
+import "./dom.ts";
 import { readdir } from "node:fs/promises";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";

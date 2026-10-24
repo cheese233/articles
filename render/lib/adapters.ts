@@ -14,6 +14,8 @@ const tags = new Map<string, string>();
  * Web Components requirement.
  */
 const define = (ext: string, Adapter: AdapterConstructor) => {
+  // `js.ext.js` registers WebElements itself; only child adapters need a tag.
+  if (ext == "js") return;
   if (tags.has(ext)) return;
 
   const base = ext

@@ -8,10 +8,6 @@ const meta = Object.freeze({
   priority: 40,
 });
 
-const Base = /** @type {typeof HTMLElement} */ (
-  globalThis.HTMLElement ?? class {}
-);
-
 /**
  * @param {string} value
  */
@@ -135,7 +131,7 @@ const definePage = (Page) => {
  * `pages.js` extends this class, and the markdown/html/directory adapters
  * extend `pages.js`.
  */
-export class WebElements extends Base {
+export class WebElements extends HTMLElement {
   static meta = meta;
 
   /** @type {VFile} */
@@ -181,7 +177,7 @@ export class WebElements extends Base {
 
       if (!Page) throw new Error(`${path}: default export is missing`);
 
-      if (Page.prototype instanceof Base) {
+      if (Page.prototype instanceof HTMLElement) {
         definePage(Page);
         this.append(new Page(this.file));
       } else if (typeof Page == "function") {
@@ -196,6 +192,13 @@ export class WebElements extends Base {
       this.dispatchEvent(new Event("error"));
     }
   }
+}
+
+if (!customElements.get("web-elements")) {
+  customElements.define(
+    "web-elements",
+    /** @type {CustomElementConstructor} */ (WebElements),
+  );
 }
 
 export default WebElements;

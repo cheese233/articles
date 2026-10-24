@@ -1,3 +1,5 @@
+// Must stay first: adapters extend HTMLElement at module evaluation time.
+import "../scripts/lib/dom.ts";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { VFile } from "vfile";
@@ -7,6 +9,7 @@ import MarkdownAdapter from "../adapters/md.ext.pages.js";
 import PagesAdapter from "../adapters/pages.js.ext.js";
 
 test("page adapters form a WebElements inheritance chain", () => {
+  assert.ok(WebElements.prototype instanceof HTMLElement);
   assert.ok(PagesAdapter.prototype instanceof WebElements);
   assert.ok(MarkdownAdapter.prototype instanceof PagesAdapter);
   assert.ok(HtmlAdapter.prototype instanceof PagesAdapter);

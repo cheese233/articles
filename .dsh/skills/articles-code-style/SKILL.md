@@ -28,9 +28,16 @@ code disagree, follow the current code and do not silently change the architectu
   generates metadata only; it never renders final pages.
 - Adapters form a chain; a child adapter must extend its parent class. The runtime loads the
   parent first and verifies `Adapter.prototype instanceof Parent`.
-- `js.ext.js` is the root `WebElements` and has no parent. `pages.js.ext.js` extends
+- `js.ext.js` is the root `WebElements` and has no parent. It declares
+  `export class WebElements extends HTMLElement` and registers itself with
+  `customElements.define("web-elements", WebElements)`. `pages.js.ext.js` extends
   `WebElements`; `md.ext.pages.js`, `html.ext.pages.js`, and `[...].ext.pages.js` extend
   `PagesAdapter`.
+- The browser runtime only registers child adapters. The `js` root is already registered by
+  `js.ext.js`; do not register it a second time.
+- Node metadata generation installs a minimal `HTMLElement` / `customElements` shim in
+  `scripts/lib/dom.ts`. Keep adapter source native; never reintroduce a `Base` fallback
+  class inside `js.ext.js` to satisfy Node.
 - Every adapter has a static `meta` with `ext` and `lang`; use `directory: true` only for a
   `[...]` directory adapter. Do not invent fields.
 - The constructor receives a `vfile`. `parse()` reads metadata only and must not touch the DOM.
@@ -97,8 +104,10 @@ export default class MarkdownAdapter extends PagesAdapter {
 ```
 
 - `js.ext.js` default-exports `WebElements`; child adapters import it as a default import
-  (`import WebElements from "./js.ext.js";`). Do not switch this back to a named import
-  without changing the runtime and all adapters.
+  (`import WebElements from "./js.ext.js";`). Keep the module-level
+  `customElements.define("web-elements", WebElements)` registration there. Do not switch this
+  back to a named import or a fallback HTML element base without changing the runtime, Node
+  shim, and all adapters.
 - Keep adapter class names descriptive (`MarkdownAdapter`, `HtmlAdapter`, `DirectoryAdapter`,
   `PagesAdapter`). Keep the filename contract exact; do not rename adapters casually.
 
@@ -174,7 +183,9 @@ npm run build
 ```
 
 - `npm test` uses `node:test` and `node:assert/strict`; add focused tests instead of a new
-  framework. Vendor tests must use `write: false` and must not mutate `vendor/`.
+  framework. Vendor tests must use `write: false` and must not mutate `vendor/`. A Node test
+  that statically imports an adapter must import `../scripts/lib/dom.ts` first, because
+  adapters extend `HTMLElement` during module evaluation.
 - For UI or adapter changes, also run `npm run dev` and check the route, a markdown page, a
   `.pages.js` page, the directory listing, and 404.
 - For build, metadata, or vendor changes, build twice and compare the tree (determinism).
@@ -186,7 +197,8 @@ npm run build
 - [ ] Import types separated with `import type`; relative `.ts` imports include `.ts`.
 - [ ] No non-erasable TypeScript; no `as any` / `satisfies` / `#private` / enums.
 - [ ] Adapter extends the correct parent, has static `meta`, constructor `vfile`, `parse()` only
-      metadata, and `connectedCallback()` as the only render path.
+      metadata, and `connectedCallback()` as the only render path. `js.ext.js` is native
+      `extends HTMLElement` and registers `web-elements` itself.
 - [ ] No `module()` / `render()` split, no CI page rendering, no hardcoded vendor list.
 - [ ] Only node_modules are vendored; application source remains unbundled.
 - [ ] Deterministic output; generated files are not committed.
@@ -227,6 +239,12 @@ async module() {}  // wrong lifecycle
 async render() {} // wrong lifecycle; use connectedCallback()
 ```
 
+```js
+const Base = globalThis.HTMLElement ?? class {}; // wrong: use the Node shim
+export class WebElements extends Base {}           // source must extend HTMLElement
+```
+
 Also wrong: bundling `render/app.ts`, adding a central vendor package array, committing
-`vendor/` or `render/index.html`, introducing `Date.now()` into metadata, or changing the
-adapter chain to a loader registry.
+`vendor/` or `render/index.html`, introducing `Date.now()` into metadata, registering the
+`web-elements` tag again from `render/lib/adapters.ts`, or changing the adapter chain to a
+loader registry.

@@ -142,7 +142,7 @@ js.ext.js  (WebElements, .js)
 
 ```js
 // pages.js.ext.js
-import { WebElements } from "./js.ext.js";
+import WebElements from "./js.ext.js";
 export default class PagesAdapter extends WebElements {}
 
 // md.ext.pages.js
@@ -151,8 +151,8 @@ export default class MarkdownAdapter extends PagesAdapter {}
 ```
 
 - 运行时直接 `import()` adapter 文件，父 adapter 的模块/类会随 import 链执行；运行时会先加载父 adapter，并检查 `Adapter.prototype instanceof Parent`，不满足就直接报错。
-- `js.ext.js` 是唯一没有父 adapter 的模块，直接执行，避免自环；它的 default export 就是 `WebElements`。
-- 运行时把 adapter class 注册成自定义元素（`customElements.define`），然后 `new Adapter(vfile)` + 挂载。挂载就是渲染，没有 `module()` / `render()` 两个阶段。
+- `js.ext.js` 是唯一没有父 adapter 的模块，直接执行，避免自环；它原生 `export class WebElements extends HTMLElement`，并在模块顶层用 `customElements.define("web-elements", WebElements)` 注册自己。
+- 运行时只为子 adapter 注册自定义元素；`js` 根 adapter 已由 `js.ext.js` 自己注册。挂载仍然是 `new Adapter(vfile)`，没有 `module()` / `render()` 两个阶段。
 - 一个 `.pages.js` 或 `.js` 模块如果 default export 的是自定义元素 class，`js.ext.js` 会直接 define + 挂载它；如果是函数，则把页面的 `ShadowRoot` 作为参数调用。
 
 ### 类接口
@@ -193,7 +193,7 @@ export default class PagesAdapter extends WebElements {
 - `connectedCallback()` 是唯一的渲染钩子；挂载组件即可，不再有 `module()` / `render()` 拆分。
 - `routable` 由 adapter 决定：**不返回 `routable` 就是中间件**（不进路由表、不进 feed）。
 - `[...]` 表示 adapter 接受目录；`posts.[...]` 只接受 `/posts/` 及其子目录。
-- 在 Node 构建期，`WebElements` 继承的是一个空的 fallback class（浏览器里是 `HTMLElement`），所以 `parse()` 可以在没有 DOM 的环境执行。
+- 在 Node 构建期，`scripts/lib/dom.ts` 为 `HTMLElement` / `customElements` 安装最小 shim；adapter 源码本身保持原生 `extends HTMLElement`，`parse()` 因此可以在没有 DOM 的环境执行。
 
 ### 已实现的 adapter
 
