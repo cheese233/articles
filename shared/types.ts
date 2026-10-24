@@ -76,21 +76,14 @@ export interface ParsedMeta {
   summary?: string;
 }
 
-export interface AdapterContext {
-  target: ShadowRoot;
-  url: URL;
-  route: string;
-  site: SiteConfig;
-  entries: ManifestEntry[];
-  dirs: string[];
-  manifest: Manifest;
-  meta: EntryMeta | ManifestEntry | null;
-}
-
-export interface AdapterInstance {
+export interface AdapterInstance extends HTMLElement {
+  file: VFile;
   parse?: () => Promise<ParsedMeta>;
-  render: (ctx: AdapterContext) => Promise<void> | void;
-  module?: () => Promise<{ default: unknown }>;
+  site?: SiteConfig;
+  entries: ManifestEntry[];
+  route?: string;
+  entry?: EntryMeta | null;
+  connected?: boolean;
 }
 
 export interface AdapterStatics {

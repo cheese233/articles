@@ -1,7 +1,7 @@
 import { VFile } from "vfile";
 import { findDirectoryAdapter, matchFileAdapter, stripExt } from "../shared/ext.ts";
 import type {
-  AdapterContext,
+  AdapterInstance,
   EntryMeta,
   Manifest,
 } from "../shared/types.ts";
@@ -50,21 +50,59 @@ const setDescription = (text?: string | null) => {
   tag.setAttribute("content", content);
 };
 
-const context = (
-  current: Manifest,
-  shadow: ShadowRoot,
-  route: string,
-  meta: EntryMeta | null,
-): AdapterContext => ({
-  target: shadow,
-  url: new URL(location.href),
-  route,
-  site: current.site,
-  entries: current.entries,
-  dirs: current.dirs,
-  manifest: current,
-  meta,
-});
+const createHost = (route: string) => {
+  const host = document.createElement("div");
+  host.className = "page";
+  host.dataset.route = route;
+
+  const shadow = host.attachShadow({ mode: "open" });
+  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = href;
+    shadow.append(stylesheet);
+  }
+
+  main.replaceChildren(host);
+  return shadow;
+};
+
+/**
+ * The adapter is a Web Component: mounting it is the render. No module() or
+ * render() call exists; the runtime waits for the component's lifecycle
+ * event instead.
+ */
+const mount = async (element: AdapterInstance, route: string) => {
+  const shadow = createHost(route);
+  element.style.display = "block";
+  let timeout = 0;
+
+  const rendered = new Promise<void>((resolve, reject) => {
+    element.addEventListener("rendered", () => resolve(), { once: true });
+    element.addEventListener(
+      "error",
+      () => reject(new Error(`failed to render ${route}`)),
+      { once: true },
+    );
+
+    timeout = window.setTimeout(
+      () => reject(new Error(`render timeout: ${route}`)),
+      15000,
+    );
+  });
+
+  document.body.classList.add("is-loading");
+
+  try {
+    shadow.append(element);
+    await rendered;
+  } finally {
+    window.clearTimeout(timeout);
+    document.body.classList.remove("is-loading");
+  }
+
+  return shadow;
+};
 
 const escapeHtml = (value: string) =>
   value
@@ -106,33 +144,6 @@ const appendTimeline = (shadow: ShadowRoot, meta: EntryMeta | null) => {
   shadow.append(nav);
 };
 
-const mount = async (
-  _current: Manifest,
-  route: string,
-  draw: (shadow: ShadowRoot) => Promise<void>,
-) => {
-  const host = document.createElement("div");
-  host.className = "page";
-  host.dataset.route = route;
-
-  const shadow = host.attachShadow({ mode: "open" });
-  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
-    const stylesheet = document.createElement("link");
-    stylesheet.rel = "stylesheet";
-    stylesheet.href = href;
-    shadow.append(stylesheet);
-  }
-
-  main.replaceChildren(host);
-  document.body.classList.add("is-loading");
-
-  try {
-    await draw(shadow);
-  } finally {
-    document.body.classList.remove("is-loading");
-  }
-};
-
 const renderFile = async (
   current: Manifest,
   ext: string,
@@ -144,10 +155,13 @@ const renderFile = async (
   const Adapter = await loadAdapterClass(ext, current);
   const adapter = instantiate(Adapter, new VFile({ path: file, value: source }));
 
-  await mount(current, route, async (shadow) => {
-    await adapter.render(context(current, shadow, route, meta));
-    appendTimeline(shadow, meta);
-  });
+  adapter.entry = meta;
+  adapter.route = route;
+  adapter.site = current.site;
+  adapter.entries = current.entries;
+
+  const shadow = await mount(adapter, route);
+  appendTimeline(shadow, meta);
 
   setTitle(meta?.title);
   setDescription(meta?.summary);
@@ -160,9 +174,11 @@ const renderDirectory = async (current: Manifest, route: string) => {
   const Adapter = await loadAdapterClass(info.ext, current);
   const adapter = instantiate(Adapter, new VFile({ path: route }));
 
-  await mount(current, route, async (shadow) => {
-    await adapter.render(context(current, shadow, route, null));
-  });
+  adapter.route = route;
+  adapter.site = current.site;
+  adapter.entries = current.entries;
+
+  await mount(adapter, route);
 
   setTitle(route == "/" ? undefined : labelOf(route));
   setDescription(current.site.description);
@@ -171,50 +187,48 @@ const renderDirectory = async (current: Manifest, route: string) => {
 const renderNotFound = async (current: Manifest) => {
   const file = "/content/404.md";
   const source = await fetchSource(file, "md").catch(() => null);
-  const Adapter = await loadAdapterClass("md", current);
 
-  await mount(current, "/404", async (shadow) => {
-    if (source == null) {
-      const article = document.createElement("article");
-      article.className = "error";
-      article.innerHTML =
-        '<h1>404</h1><p>找不到这个页面。</p><p><a href="/">返回首页</a></p>';
-      shadow.append(article);
-      return;
-    }
-
+  if (source == null) {
+    const shadow = createHost("/404");
+    const article = document.createElement("article");
+    article.className = "error";
+    article.innerHTML =
+      '<h1>404</h1><p>找不到这个页面。</p><p><a href="/">返回首页</a></p>';
+    shadow.append(article);
+  } else {
+    const Adapter = await loadAdapterClass("md", current);
     const adapter = instantiate(
       Adapter,
       new VFile({ path: file, value: source }),
     );
-    await adapter.render(context(current, shadow, "/404", null));
-  });
+    adapter.route = "/404";
+    await mount(adapter, "/404");
+  }
 
   setTitle("404");
   setDescription("找不到这个页面。");
 };
 
-const renderError = async (current: Manifest, error: unknown) => {
+const renderError = async (_current: Manifest, error: unknown) => {
   console.error(error);
 
-  await mount(current, "/error", async (shadow) => {
-    const article = document.createElement("article");
-    article.className = "error";
+  const shadow = createHost("/error");
+  const article = document.createElement("article");
+  article.className = "error";
 
-    const title = document.createElement("h1");
-    title.textContent = "页面渲染失败";
+  const title = document.createElement("h1");
+  title.textContent = "页面渲染失败";
 
-    const message = document.createElement("pre");
-    message.textContent = error instanceof Error
-      ? error.message
-      : String(error);
+  const message = document.createElement("pre");
+  message.textContent = error instanceof Error
+    ? error.message
+    : String(error);
 
-    const hint = document.createElement("p");
-    hint.innerHTML = '请查看浏览器控制台，或 <a href="/">返回首页</a>。';
+  const hint = document.createElement("p");
+  hint.innerHTML = '请查看浏览器控制台，或 <a href="/">返回首页</a>。';
 
-    article.append(title, message, hint);
-    shadow.append(article);
-  });
+  article.append(title, message, hint);
+  shadow.append(article);
 
   setTitle("出错了");
 };

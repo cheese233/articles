@@ -8,6 +8,10 @@ const meta = Object.freeze({
   priority: 40,
 });
 
+const Base = /** @type {typeof HTMLElement} */ (
+  globalThis.HTMLElement ?? class {}
+);
+
 /**
  * @param {string} value
  */
@@ -97,14 +101,57 @@ export const parseJsDoc = (source) => {
   return parsed;
 };
 
-export default class JavaScriptAdapter {
-  static meta = meta;
+let contentTag = 0;
+/** @type {WeakMap<Function, string>} */
+const contentTags = new WeakMap();
 
+/**
+ * A page module may default-export a custom element class. The browser
+ * requires every custom element class to be defined before it can be
+ * constructed, so allocate a stable tag once per class.
+ *
+ * @param {Function} Page
+ */
+const definePage = (Page) => {
+  const existing = contentTags.get(Page);
+  if (existing) return existing;
+
+  const tag = `page-content-${contentTag++}`;
+  try {
+    customElements.define(
+      tag,
+      /** @type {CustomElementConstructor} */ (Page),
+    );
+  } catch {
+    // The class may already be registered elsewhere; `new Page()` is still
+    // constructible in that case.
+  }
+  contentTags.set(Page, tag);
+  return tag;
+};
+
+/**
+ * The shared Web Component. `js.ext.js` is the root of the adapter chain:
+ * `pages.js` extends this class, and the markdown/html/directory adapters
+ * extend `pages.js`.
+ */
+export class WebElements extends Base {
   /** @type {VFile} */
   file;
+  connected = false;
+
+  /** @type {import("../shared/types.ts").SiteConfig | undefined} */
+  site;
+  /** @type {import("../shared/types.ts").ManifestEntry[]} */
+  entries = [];
+  /** @type {string | undefined} */
+  route;
+  /** @type {import("../shared/types.ts").EntryMeta | null} */
+  entry = null;
 
   /** @param {VFile} file */
   constructor(file) {
+    super();
     this.file = file;
   }
 
@@ -113,19 +160,42 @@ export default class JavaScriptAdapter {
     return parseJsDoc(String(this.file));
   }
 
-  /** @returns {Promise<{ default: unknown }>} */
-  async module() {
-    const path = this.file.path;
-    if (!path) throw new Error("vfile has no path");
-    return await import(path);
-  }
+  /**
+   * A `.js` or `.pages.js` module is mounted directly: a class is appended
+   * as a custom element, a function receives the page's ShadowRoot.
+   */
+  async connectedCallback() {
+    if (this.connected) return;
+    this.connected = true;
 
-  /** @param {import("../shared/types.ts").AdapterContext} ctx */
-  async render(ctx) {
-    const mod = await this.module();
-    if (typeof mod.default != "function")
-      throw new Error(`${this.file.path}: default export is not a function`);
-    await mod.default(ctx.target);
+    try {
+      const path = this.file.path;
+      if (!path) throw new Error("vfile has no path");
+
+      const mod = await import(path);
+      const Page = mod.default;
+      const root = this.getRootNode();
+      const target = root instanceof ShadowRoot ? root : this;
+
+      if (!Page) throw new Error(`${path}: default export is missing`);
+
+      if (Page.prototype instanceof Base) {
+        definePage(Page);
+        this.append(new Page(this.file));
+      } else if (typeof Page == "function") {
+        await Page(target);
+      } else {
+        throw new Error(`${path}: default export is not a class or function`);
+      }
+
+      this.dispatchEvent(new Event("rendered"));
+    } catch (error) {
+      console.error(error);
+      this.dispatchEvent(new Event("error"));
+    }
   }
 }
 
+export default class JavaScriptAdapter extends WebElements {
+  static meta = meta;
+}

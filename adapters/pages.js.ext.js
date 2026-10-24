@@ -1,4 +1,4 @@
-import JavaScriptAdapter from "./js.ext.js";
+import { WebElements } from "./js.ext.js";
 
 /** @type {import("../shared/types.ts").AdapterStatics} */
 const meta = Object.freeze({
@@ -7,18 +7,17 @@ const meta = Object.freeze({
   priority: 10,
 });
 
-export default class PagesAdapter extends JavaScriptAdapter {
+/**
+ * The parent of every page adapter. It extends the shared Web Component and
+ * inherits the `.js` mounting behaviour from `js.ext.js`. A `.pages.js` file
+ * is a page even without `@routable`.
+ */
+export default class PagesAdapter extends WebElements {
   static meta = meta;
 
-  /**
-   * A `.pages.js` file is a page, even without `@routable`. The parent
-   * `js.ext.js` adapter still decides how the module is executed.
-   *
-   * @returns {Promise<import("../shared/types.ts").ParsedMeta>}
-   */
+  /** @returns {Promise<import("../shared/types.ts").ParsedMeta>} */
   async parse() {
     const parsed = await super.parse();
     return { ...parsed, routable: true };
   }
 }
-

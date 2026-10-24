@@ -1,10 +1,12 @@
+import PagesAdapter from "./pages.js.ext.js";
+
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
 /** @type {import("../shared/types.ts").AdapterStatics} */
 const meta = Object.freeze({
   ext: "html",
-  lang: "js",
+  lang: "pages.js",
   priority: 30,
 });
 
@@ -53,7 +55,7 @@ const titleOf = (source) => {
 };
 
 /**
- * @param {ShadowRoot} target
+ * @param {ShadowRoot | HTMLElement} target
  * @param {HTMLElement} content
  */
 const execute = async (target, content) => {
@@ -93,16 +95,8 @@ const execute = async (target, content) => {
   }
 };
 
-export default class HtmlAdapter {
+export default class HtmlAdapter extends PagesAdapter {
   static meta = meta;
-
-  /** @type {VFile} */
-  file;
-
-  /** @param {VFile} file */
-  constructor(file) {
-    this.file = file;
-  }
 
   /** @returns {Promise<ParsedMeta>} */
   async parse() {
@@ -119,18 +113,28 @@ export default class HtmlAdapter {
     };
   }
 
-  /** @param {import("../shared/types.ts").AdapterContext} ctx */
-  async render(ctx) {
-    const source = String(this.file);
-    const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
+  /**
+   * Mounting the Web Component is the render: there is no separate
+   * module/render phase.
+   */
+  async connectedCallback() {
+    if (this.connected) return;
+    this.connected = true;
 
-    const content = document.createElement("div");
-    content.className = "html-page markdown";
-    content.innerHTML = body;
-    content.querySelectorAll("meta").forEach((tag) => tag.remove());
+    try {
+      const source = String(this.file);
+      const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
 
-    ctx.target.append(content);
-    await execute(ctx.target, content);
+      this.classList.add("html-page", "markdown");
+      this.innerHTML = body;
+      this.querySelectorAll("meta").forEach((tag) => tag.remove());
+
+      const root = this.getRootNode();
+      await execute(root instanceof ShadowRoot ? root : this, this);
+      this.dispatchEvent(new Event("rendered"));
+    } catch (error) {
+      console.error(error);
+      this.dispatchEvent(new Event("error"));
+    }
   }
 }
-

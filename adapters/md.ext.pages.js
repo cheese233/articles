@@ -1,4 +1,5 @@
 import { parse as parseYaml } from "yaml";
+import PagesAdapter from "./pages.js.ext.js";
 
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
@@ -6,7 +7,7 @@ import { parse as parseYaml } from "yaml";
 /** @type {import("../shared/types.ts").AdapterStatics} */
 const meta = Object.freeze({
   ext: "md",
-  lang: "js",
+  lang: "pages.js",
   priority: 20,
 });
 
@@ -75,16 +76,8 @@ const summaryOf = (body) => {
   return stripMarkdown(text).slice(0, 280);
 };
 
-export default class MarkdownAdapter {
+export default class MarkdownAdapter extends PagesAdapter {
   static meta = meta;
-
-  /** @type {VFile} */
-  file;
-
-  /** @param {VFile} file */
-  constructor(file) {
-    this.file = file;
-  }
 
   /** @returns {Promise<ParsedMeta>} */
   async parse() {
@@ -106,15 +99,22 @@ export default class MarkdownAdapter {
     };
   }
 
-  /** @param {import("../shared/types.ts").AdapterContext} ctx */
-  async render(ctx) {
-    const { renderMarkdown } = await import("@site/markdown");
+  /**
+   * Mounting the Web Component is the render: there is no separate
+   * module/render phase.
+   */
+  async connectedCallback() {
+    if (this.connected) return;
+    this.connected = true;
 
-    const article = document.createElement("article");
-    article.className = "markdown";
-    article.innerHTML = renderMarkdown(String(this.file));
-
-    ctx.target.append(article);
+    try {
+      const { renderMarkdown } = await import("@site/markdown");
+      this.classList.add("markdown");
+      this.innerHTML = renderMarkdown(String(this.file));
+      this.dispatchEvent(new Event("rendered"));
+    } catch (error) {
+      console.error(error);
+      this.dispatchEvent(new Event("error"));
+    }
   }
 }
-

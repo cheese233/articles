@@ -1,10 +1,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { VFile } from "vfile";
-import HtmlAdapter from "../adapters/html.ext.js";
-import JavaScriptAdapter from "../adapters/js.ext.js";
-import MarkdownAdapter from "../adapters/md.ext.js";
+import HtmlAdapter from "../adapters/html.ext.pages.js";
+import JavaScriptAdapter, { WebElements } from "../adapters/js.ext.js";
+import MarkdownAdapter from "../adapters/md.ext.pages.js";
 import PagesAdapter from "../adapters/pages.js.ext.js";
+
+test("page adapters form a WebElements inheritance chain", () => {
+  assert.ok(JavaScriptAdapter.prototype instanceof WebElements);
+  assert.ok(PagesAdapter.prototype instanceof WebElements);
+  assert.ok(MarkdownAdapter.prototype instanceof PagesAdapter);
+  assert.ok(HtmlAdapter.prototype instanceof PagesAdapter);
+  assert.equal(MarkdownAdapter.meta.lang, "pages.js");
+  assert.equal(HtmlAdapter.meta.lang, "pages.js");
+});
 
 test("markdown adapter reads YAML frontmatter", async () => {
   const file = new VFile({
