@@ -121,9 +121,12 @@ export default class HtmlAdapter {
 
   /** @param {import("../shared/types.ts").AdapterContext} ctx */
   async render(ctx) {
+    const source = String(this.file);
+    const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
+
     const content = document.createElement("div");
     content.className = "html-page markdown";
-    content.innerHTML = String(this.file);
+    content.innerHTML = body;
 
     ctx.target.append(content);
     await execute(ctx.target, content);
