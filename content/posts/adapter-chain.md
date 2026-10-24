@@ -21,12 +21,50 @@ tags:
 | `md.ext.pages.js` | `md` | 函数 adapter |
 | `html.ext.pages.js` | `html` | 函数 adapter |
 | `[...].ext.pages.js` | 目录 | 函数 adapter |
-| `pages.js.ext.js` | `pages.js` | 函数 adapter |
-| `js.ext.js` | `js` | 函数 adapter + `WebElements` 宿主 |
+| `pages.js.ext.js` | `pages.js` | 页面基类 `WebElements` |
+| `js.ext.js` | `js` | `function(file)`，定义 `<ext>-loader` |
+
+## loader 元素
+
+`js.ext.js` 接收一个 adapter `.js` 文件，读取它的 `meta.ext`，定义：
+
+```text
+<meta.ext 里的点换成横线>-loader
+```
+
+例如 `md.ext.pages.js` → `md-loader`，`pages.js.ext.js` → `pages-js-loader`。
+
+所有 loader 都继承 `pages.js.ext.js` 的 `WebElements`：
+
+```js
+export default class WebElements extends HTMLElement {
+  constructor(file, context) {
+    super();
+    this.file = file;
+    this.context = context;
+    this.attachShadow({ mode: "open" });
+  }
+
+  async connectedCallback() {
+    if (this.constructor.adapter) {
+      await this.constructor.adapter.default(
+        this.file,
+        this.shadowRoot,
+        this.context,
+      );
+    } else {
+      const mod = await import(this.file.path);
+      await mod.default(this.shadowRoot);
+    }
+  }
+}
+```
+
+`md` / `html` / 目录 adapter 是函数，`js.ext.js` 把它们挂到 loader 的静态 `adapter` 上；`js` / `pages.js` 没有 adapter，loader 直接 import 内容模块并调用 `default(shadow)`。
 
 ## 函数 adapter
 
-adapter 不继承 class。每个模块导出三样东西：
+`md` / `html` / 目录 adapter 导出三样东西：
 
 ```js
 export const meta = Object.freeze({
@@ -45,23 +83,7 @@ export default async function (file, shadow, context) {
 }
 ```
 
-`parse(file)` 只给 CI 提取元数据，不碰 DOM；default 函数在浏览器里收到源文件、宿主的 `ShadowRoot` 和站点 context。函数返回时，页面就渲染完成。
-
-## WebElements 宿主
-
-`js.ext.js` 额外定义唯一的 Web Component：
-
-```js
-export class WebElements extends HTMLElement {
-  constructor(file) {
-    super();
-    this.file = file;
-    this.attachShadow({ mode: "open" });
-  }
-}
-```
-
-运行时创建这个宿主，把样式和页面内容都放进它的 ShadowRoot，然后调用当前 adapter 的 default 函数。没有每个 adapter 各自的自定义元素，也没有 class 继承链。
+`parse(file)` 只给 CI 提取元数据，不碰 DOM；default 函数在浏览器里收到源文件、loader 的 `ShadowRoot` 和站点 context。
 
 `.js` 和 `.pages.js` 内容文件默认导出 `function(shadowDom)`：
 
@@ -73,7 +95,7 @@ export default function (shadow) {
 }
 ```
 
-`js.ext.js` / `pages.js.ext.js` 的 default 函数负责 `import` 这个内容模块并调用它的 `default(shadow)`。`md` / `html` / 目录 adapter 则各自实现 `default(file, shadow, context)`，不 import `pages.js.ext.js`。
+`js-loader` / `pages-js-loader` 负责 import 这个内容模块并调用它的 `default(shadow)`。
 
 ## 目录 adapter
 
@@ -90,4 +112,4 @@ export default async function (file, shadow, context) {
 
 ## 构造器收到的是 VFile
 
-没有 adapter class，也没有 constructor。CI 把 [vfile](https://github.com/vfile/vfile) 传给 `parse(file)`；浏览器把同一个 vfile 和 ShadowRoot 传给 default 函数。
+`WebElements` loader 的 constructor 接收 `(file, context)`；CI 仍然把 [vfile](https://github.com/vfile/vfile) 传给 `parse(file)`。没有 `module()` / `render()` 两个阶段。

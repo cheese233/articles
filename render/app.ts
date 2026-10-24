@@ -1,13 +1,11 @@
 import { VFile } from "vfile";
-import { WebElements } from "../adapters/js.ext.js";
 import { findDirectoryAdapter, matchFileAdapter, stripExt } from "../shared/ext.ts";
 import type {
   AdapterContext,
-  AdapterModule,
   EntryMeta,
   Manifest,
 } from "../shared/types.ts";
-import { loadAdapter } from "./lib/adapters.ts";
+import { loadLoader, type LoaderConstructor } from "./lib/adapters.ts";
 import {
   fetchEntry,
   fetchManifest,
@@ -52,14 +50,12 @@ const setDescription = (text?: string | null) => {
   tag.setAttribute("content", content);
 };
 
-const createHost = (route: string, file?: VFile) => {
-  const host = new WebElements(file);
+const createHost = (route: string) => {
+  const host = document.createElement("div");
   host.className = "page";
   host.dataset.route = route;
 
-  const shadow = host.shadowRoot;
-  if (!shadow) throw new Error("missing page shadow root");
-
+  const shadow = host.attachShadow({ mode: "open" });
   for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
     const stylesheet = document.createElement("link");
     stylesheet.rel = "stylesheet";
@@ -72,20 +68,39 @@ const createHost = (route: string, file?: VFile) => {
 };
 
 /**
- * Adapter modules are functions. The runtime creates the WebElements host,
- * then calls the adapter with the source file, the host's ShadowRoot, and the
- * current site context. The function resolving means the page is rendered.
+ * `<final-ext>-loader` classes extend the pages.js WebElements class. The
+ * runtime appends the loader, then waits for its rendered/error lifecycle.
  */
 const mount = async (
-  adapter: AdapterModule,
+  Loader: LoaderConstructor,
   file: VFile,
   route: string,
   context: AdapterContext,
 ) => {
-  const shadow = createHost(route, file);
+  const element = new Loader(file, context);
+  element.className = "page";
+  element.dataset.route = route;
+
+  const shadow = element.shadowRoot;
+  if (!shadow) throw new Error("missing page shadow root");
+
+  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = href;
+    shadow.append(stylesheet);
+  }
+
   let timeout = 0;
 
-  const limit = new Promise<never>((_, reject) => {
+  const rendered = new Promise<void>((resolve, reject) => {
+    element.addEventListener("rendered", () => resolve(), { once: true });
+    element.addEventListener(
+      "error",
+      () => reject(new Error(`failed to render ${route}`)),
+      { once: true },
+    );
+
     timeout = window.setTimeout(
       () => reject(new Error(`render timeout: ${route}`)),
       15000,
@@ -95,10 +110,8 @@ const mount = async (
   document.body.classList.add("is-loading");
 
   try {
-    await Promise.race([
-      Promise.resolve(adapter.default(file, shadow, context)),
-      limit,
-    ]);
+    main.replaceChildren(element);
+    await rendered;
   } finally {
     window.clearTimeout(timeout);
     document.body.classList.remove("is-loading");
@@ -155,7 +168,7 @@ const renderFile = async (
   meta: EntryMeta | null,
 ) => {
   const source = await fetchSource(file, ext);
-  const adapter = await loadAdapter(ext, current);
+  const Loader = await loadLoader(ext, current);
   const sourceFile = new VFile({ path: file, value: source });
   const context: AdapterContext = {
     site: current.site,
@@ -164,7 +177,7 @@ const renderFile = async (
     entry: meta,
   };
 
-  const shadow = await mount(adapter, sourceFile, route, context);
+  const shadow = await mount(Loader, sourceFile, route, context);
   appendTimeline(shadow, meta);
 
   setTitle(meta?.title);
@@ -175,7 +188,7 @@ const renderDirectory = async (current: Manifest, route: string) => {
   const info = findDirectoryAdapter(route, current.adapters);
   if (!info) throw new NotFoundError(route);
 
-  const adapter = await loadAdapter(info.ext, current);
+  const Loader = await loadLoader(info.ext, current);
   const file = new VFile({ path: route });
   const context: AdapterContext = {
     site: current.site,
@@ -184,7 +197,7 @@ const renderDirectory = async (current: Manifest, route: string) => {
     entry: null,
   };
 
-  await mount(adapter, file, route, context);
+  await mount(Loader, file, route, context);
 
   setTitle(route == "/" ? undefined : labelOf(route));
   setDescription(current.site.description);
@@ -202,9 +215,9 @@ const renderNotFound = async (current: Manifest) => {
       '<h1>404</h1><p>找不到这个页面。</p><p><a href="/">返回首页</a></p>';
     shadow.append(article);
   } else {
-    const adapter = await loadAdapter("md", current);
+    const Loader = await loadLoader("md", current);
     const sourceFile = new VFile({ path: file, value: source });
-    await mount(adapter, sourceFile, "/404", {
+    await mount(Loader, sourceFile, "/404", {
       site: current.site,
       entries: current.entries,
       route: "/404",

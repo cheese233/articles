@@ -24,25 +24,26 @@ code disagree, follow the current code and do not silently change the architectu
 - Client TypeScript is executed by `ts-blank-space` in a Service Worker. It must remain
   erasable: no enums, runtime namespaces, parameter properties, decorators, or other
   non-erasable syntax. `npm test` checks this.
-- The SPA creates one `WebElements` host, then calls the selected adapter's default function with
-  the source file, the host ShadowRoot, and the site context. The CI generates metadata only; it
-  never renders final pages.
-- Adapters are functions, not classes. Each module exports named `meta` and `parse`, plus a
-  default `(file, shadow, context)` render function. There is no adapter inheritance chain and
-  no `Adapter.prototype instanceof Parent` check.
-- `js.ext.js` owns the single `WebElements extends HTMLElement` host, registers
-  `web-elements`, and is also the `.js` adapter. It calls the content module's
+- The SPA asks `js.ext.js` for a loader class, creates `<final-ext>-loader`, and waits for the
+  loader's `rendered` / `error` event. The CI generates metadata only; it never renders final
+  pages.
+- `pages.js.ext.js` is the `WebElements extends HTMLElement` page base. It is a class, not a
+  render function.
+- `js.ext.js` default-exports `async function(file)` where `file` is an adapter `.js` file. It
+  imports the adapter, reads `meta.ext`, and defines `<ext-with-dashes>-loader` (for example
+  `md.ext.pages.js` → `md-loader`) as a subclass of `WebElements`.
+- `md.ext.pages.js`, `html.ext.pages.js`, and `[...].ext.pages.js` are function adapters:
+  named `meta` / `parse` plus a default `(file, shadow, context)` render function. They do not
+  import `pages.js.ext.js`.
+- For `md` / `html` / directory loaders, `WebElements.connectedCallback` calls the adapter
+  function. For `js` / `pages.js`, it imports the content module and calls
   `default(shadow)`.
-- `pages.js.ext.js` is the `.pages.js` adapter. It imports the content module and calls its
-  `default(shadow)`. It does not import `js.ext.js` and does not extend a class.
-- `md.ext.pages.js`, `html.ext.pages.js`, and `[...].ext.pages.js` each implement their own
-  `meta`, `parse`, and default render function. They do not import `pages.js.ext.js`.
-- Only `WebElements` is registered as a custom element. Do not define a custom element per
-  adapter or dispatch `rendered` / `error` events; the runtime awaits the adapter function.
+- The `<ext>-loader>` elements are the only custom elements. Do not create a separate host per
+  adapter or a `PagesAdapter` class.
 - Node metadata generation installs a minimal `HTMLElement` / `customElements` shim in
   `scripts/lib/dom.ts`. Keep `WebElements` native; never reintroduce a `Base` fallback class.
 - Every adapter exports `meta` with `ext` and `lang`; use `directory: true` only for a
-  `[...]` directory adapter. Do not invent fields.
+  `[...]` directory adapter. `meta.ext` is the final extension used for the loader tag.
 - `parse(file)` reads metadata only and must not touch the DOM. The default function writes
   into the ShadowRoot; it may read `context.site`, `context.entries`, `context.route`, and
   `context.entry`. There is no `module()` / `render()` split.
@@ -112,26 +113,27 @@ export default async function (file, shadow, context) {
 }
 ```
 
-- `.js` / `.pages.js` content modules default-export `function(shadowDom)`; the `js` and
-  `pages.js` adapters call that function.
-- `js.ext.js` also exports the `WebElements` host class and registers `web-elements`. It is
-  the only custom element in the adapter layer.
-- Do not create a `PagesAdapter` class, a base class chain, or per-adapter custom elements.
-- `pages.js.ext.js` only imports the content module and calls `default(shadow)`; it must not
-  import `js.ext.js`.
+- `.js` / `.pages.js` content modules default-export `function(shadowDom)`; their loaders call
+  that function.
+- `js.ext.js` default-exports `async function(adapterFile)`: it imports the adapter, reads
+  `meta.ext`, and defines `<ext>-loader` as a subclass of `WebElements`.
+- `pages.js.ext.js` is the `WebElements` class base. It is not a function and does not import
+  `js.ext.js` or md/html adapters.
+- Do not create a `PagesAdapter` class, a base class chain, or a separate host per adapter.
+  The `<ext>-loader>` elements themselves are the hosts.
 
 ### Adapter filename contract
 
 | File | Handles | Shape |
 | --- | --- | --- |
-| `js.ext.js` | `.js` | function adapter + `WebElements` host |
-| `pages.js.ext.js` | `.pages.js` | function adapter; calls content `default(shadow)` |
-| `md.ext.pages.js` | `.md` | function adapter |
-| `html.ext.pages.js` | `.html` | function adapter |
-| `[...].ext.pages.js` | directory | function adapter; reads `context` |
+| `js.ext.js` | `.js` | `function(adapterFile)` → defines `js-loader` |
+| `pages.js.ext.js` | `.pages.js` | class `WebElements`; `pages-js-loader` |
+| `md.ext.pages.js` | `.md` | function adapter; `md-loader` |
+| `html.ext.pages.js` | `.html` | function adapter; `html-loader` |
+| `[...].ext.pages.js` | directory | function adapter; `directory-loader` |
 
-The runtime imports the selected module and calls its default function; there is no parent
-instanceof check.
+The runtime asks `js.ext.js` for the loader class, creates `<final-ext>-loader`, and waits for
+its `rendered` / `error` event. There is no parent instanceof check.
 
 `[...]` denotes a directory adapter. A prefix such as `posts.[...]` narrows it to that
 directory. Keep `meta.ext`, `meta.lang`, and `meta.directory` consistent with the filename and
@@ -196,8 +198,8 @@ npm run build
 
 - `npm test` uses `node:test` and `node:assert/strict`; add focused tests instead of a new
   framework. Vendor tests must use `write: false` and must not mutate `vendor/`. A Node test
-  that imports `js.ext.js` must import `../scripts/lib/dom.ts` first, because its
-  `WebElements` host class extends `HTMLElement` during module evaluation.
+  that imports `pages.js.ext.js` must import `../scripts/lib/dom.ts` first, because its
+  `WebElements` class extends `HTMLElement` during module evaluation.
 - For UI or adapter changes, also run `npm run dev` and check the route, a markdown page, a
   `.pages.js` page, the directory listing, and 404.
 - For build, metadata, or vendor changes, build twice and compare the tree (determinism).
@@ -208,10 +210,10 @@ npm run build
 - [ ] File name, indentation (2 or 4), double quotes, semicolons, trailing commas.
 - [ ] Import types separated with `import type`; relative `.ts` imports include `.ts`.
 - [ ] No non-erasable TypeScript; no `as any` / `satisfies` / `#private` / enums.
-- [ ] Adapter exports named `meta` / `parse` and a default `(file, shadow, context)` render
-      function. It does not extend a class and does not register a custom element.
-- [ ] `js.ext.js` is the only module defining/registering `WebElements`; `.js` / `.pages.js`
-      adapters call the content module's `default(shadow)`.
+- [ ] `md` / `html` / directory adapters export named `meta`, named `parse`, and a default
+      `(file, shadow, context)` function. `pages.js.ext.js` is the `WebElements` class.
+- [ ] `js.ext.js` defines `<meta.ext>-loader` subclasses; no separate host per adapter and no
+      `PagesAdapter` class.
 - [ ] No `module()` / `render()` split, no CI page rendering, no hardcoded vendor list.
 - [ ] Only node_modules are vendored; application source remains unbundled.
 - [ ] Deterministic output; generated files are not committed.
@@ -262,7 +264,7 @@ export default class MarkdownAdapter extends WebElements {} // wrong: adapters a
 ```
 
 ```js
-export default class MarkdownPage extends HTMLElement { // wrong: only WebElements is a host
+export default class MarkdownPage extends HTMLElement { // wrong: only <ext>-loaders are hosts
   static meta = { ext: "md" };
 }
 ```
@@ -274,14 +276,17 @@ async render() {} // wrong lifecycle; write into shadow in the default function
 
 ```js
 const Base = globalThis.HTMLElement ?? class {}; // wrong: use the Node shim
-export class WebElements extends Base {}           // js.ext.js must extend HTMLElement
+export class WebElements extends Base {}           // pages.js must extend HTMLElement
 ```
 
 ```js
-export default class PagesAdapter extends WebElements {} // wrong: pages.js is a function
+export default class PagesAdapter extends WebElements {} // wrong: pages.js is the base class
+```
+
+```js
+export default class JavaScriptAdapter extends HTMLElement {} // wrong: js.ext.js is a function
 ```
 
 Also wrong: bundling `render/app.ts`, adding a central vendor package array, committing
-`vendor/` or `render/index.html`, introducing `Date.now()` into metadata, registering the
-`web-elements` tag again from `render/lib/adapters.ts`, or changing the adapter chain to a
-loader registry.
+`vendor/` or `render/index.html`, introducing `Date.now()` into metadata, registering loader
+elements outside `js.ext.js`, or changing the adapter chain to a loader registry.

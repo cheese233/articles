@@ -1,7 +1,10 @@
+import WebElements from "./pages.js.ext.js";
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("vfile").VFile} VFile */
+/** @typedef {import("../shared/types.ts").AdapterModule} AdapterModule */
 /** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
+/** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
 /** @type {AdapterStatics} */
 export const meta = Object.freeze({
@@ -10,43 +13,35 @@ export const meta = Object.freeze({
   priority: 40,
 });
 
-export const parse = async (/** @type {VFile} */ file) =>
-  parseJsDoc(String(file));
+/** @param {VFile} file @returns {Promise<ParsedMeta>} */
+export const parse = async (file) => parseJsDoc(String(file));
 
 /**
- * The page host. It is the only custom element; adapters render into its
- * ShadowRoot and never extend it.
- */
-export class WebElements extends HTMLElement {
-  /** @param {VFile} [file] */
-  constructor(file) {
-    super();
-    this.file = file;
-    this.attachShadow({ mode: "open" });
-  }
-}
-
-if (!customElements.get("web-elements")) {
-  customElements.define(
-    "web-elements",
-    /** @type {CustomElementConstructor} */ (WebElements),
-  );
-}
-
-/**
- * `.js` content is a default-exported function(shadowDom).
+ * Import an adapter `.js` file, read its final `meta.ext`, and define
+ * `<final-ext>-loader`. The loader extends `pages.js`; for `md` / `html` /
+ * directory it calls the adapter function, while `js` / `pages.js` fall back to
+ * the content module's `default(shadow)`.
  *
- * @param {VFile} file
- * @param {ShadowRoot} shadow
+ * @param {string} file
  */
-export default async function (file, shadow) {
-  const path = file.path;
-  if (!path) throw new Error("vfile has no path");
+export default async function (file) {
+  const adapter = await import(file);
+  const ext = adapter.meta?.ext;
+  if (!ext) throw new Error(`${file}: adapter has no meta.ext`);
 
-  const mod = await import(path);
-  if (typeof mod.default != "function") {
-    throw new Error(`${path}: default export must be a function`);
-  }
+  const base = ext
+    .replaceAll("[...]", "directory")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
+  const tag = `${base}-loader`;
+  const existing = customElements.get(tag);
+  if (existing) return /** @type {typeof WebElements} */ (existing);
 
-  await mod.default(shadow);
+  const Adapter = class extends WebElements {
+    static meta = adapter.meta;
+    static adapter = ext == "js" || ext == "pages.js" ? null : adapter;
+  };
+
+  customElements.define(tag, Adapter);
+  return Adapter;
 }

@@ -1,28 +1,32 @@
-import type { AdapterIndex, AdapterModule } from "../../shared/types.ts";
+import type { VFile } from "vfile";
+import type { AdapterContext, AdapterIndex } from "../../shared/types.ts";
 
-const cache = new Map<string, AdapterModule>();
+export type LoaderConstructor = new (
+  file: VFile,
+  context: AdapterContext,
+) => HTMLElement;
+
+const cache = new Map<string, LoaderConstructor>();
 
 /**
- * Import an adapter module by extension. Adapters are functions: named
- * `meta` / `parse` plus a default render function; there is no class chain.
+ * `js.ext.js` defines a `<final-ext>-loader` custom element for each adapter
+ * `.js` file. Load that loader class on demand.
  */
-export const loadAdapter = async (
+export const loadLoader = async (
   ext: string,
   index: AdapterIndex,
-): Promise<AdapterModule> => {
+): Promise<LoaderConstructor> => {
   const cached = cache.get(ext);
   if (cached) return cached;
 
   const info = index.adapters.find((adapter) => adapter.ext == ext);
   if (!info) throw new Error(`no adapter for .${ext}`);
 
-  const mod = await import(info.file) as AdapterModule;
-  if (typeof mod.default != "function")
-    throw new Error(`adapter .${ext} has no default function`);
-  if (typeof mod.parse != "function")
-    throw new Error(`adapter .${ext} has no parse function`);
-  if (!mod.meta) throw new Error(`adapter .${ext} has no meta`);
+  const mod = await import("../../adapters/js.ext.js") as {
+    default: (file: string) => Promise<LoaderConstructor>;
+  };
+  const Loader = await mod.default(info.file);
 
-  cache.set(ext, mod);
-  return mod;
+  cache.set(ext, Loader);
+  return Loader;
 };

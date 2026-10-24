@@ -6,6 +6,7 @@ import { VFile } from "vfile";
 import * as HtmlAdapter from "../adapters/html.ext.pages.js";
 import * as JavaScriptAdapter from "../adapters/js.ext.js";
 import * as MarkdownAdapter from "../adapters/md.ext.pages.js";
+import WebElements from "../adapters/pages.js.ext.js";
 import * as Pages from "../adapters/pages.js.ext.js";
 
 test("adapter modules expose meta, parse, and a render function", () => {
@@ -22,7 +23,7 @@ test("adapter modules expose meta, parse, and a render function", () => {
     assert.ok(adapter.meta);
   }
 
-  assert.ok(JavaScriptAdapter.WebElements.prototype instanceof HTMLElement);
+  assert.ok(WebElements.prototype instanceof HTMLElement);
   assert.ok(!(JavaScriptAdapter.default.prototype instanceof HTMLElement));
   assert.equal(JavaScriptAdapter.meta.ext, "js");
   assert.equal(Pages.meta.ext, "pages.js");
