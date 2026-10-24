@@ -7,7 +7,10 @@ const epoch = "1970-01-01T00:00:00.000Z";
 
 export default async function (data: SiteData) {
   const { site, entries } = data;
-  const updated = entries[0]?.updated ?? epoch;
+  const updated = entries.reduce(
+    (latest, entry) => (entry.updated > latest ? entry.updated : latest),
+    epoch,
+  );
 
   const body = xml({
     ":@": { "@_xmlns": "http://www.w3.org/2005/Atom" },

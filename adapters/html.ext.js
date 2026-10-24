@@ -127,6 +127,7 @@ export default class HtmlAdapter {
     const content = document.createElement("div");
     content.className = "html-page markdown";
     content.innerHTML = body;
+    content.querySelectorAll("meta").forEach((tag) => tag.remove());
 
     ctx.target.append(content);
     await execute(ctx.target, content);
