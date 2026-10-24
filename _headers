@@ -1,3 +1,9 @@
+/sw.js
+  Cache-Control: no-cache
+
+/render/boot.js
+  Cache-Control: no-cache
+
 /meta/*
   Cache-Control: public, max-age=60, stale-while-revalidate=3600
 
@@ -6,6 +12,3 @@
 
 /vendor/*
   Cache-Control: public, max-age=31536000, immutable
-
-/render/app.js
-  Cache-Control: public, max-age=60, stale-while-revalidate=3600

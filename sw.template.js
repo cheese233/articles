@@ -1,0 +1,60 @@
+import tsBlankSpace from "<!-- @ts-blank-space -->";
+
+const javascript = (body) =>
+  new Response(body, {
+    headers: {
+      "content-type": "text/javascript; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+
+const failure = (message) => javascript(`throw new Error(${message});`);
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data == "claim") event.waitUntil(self.clients.claim());
+});
+
+const compile = async (request, url) => {
+  const response = await fetch(request, { cache: "no-store" });
+  if (!response.ok) return response;
+
+  const type = (response.headers.get("content-type") ?? "").toLowerCase();
+  if (type.includes("text/html")) {
+    return failure(
+      JSON.stringify(`TypeScript source not found: ${url.pathname}`),
+    );
+  }
+
+  const source = await response.text();
+  const errors = [];
+  const code = tsBlankSpace(source, (node) => errors.push(node));
+
+  if (errors.length) {
+    return failure(
+      JSON.stringify(
+        `ts-blank-space rejected ${url.pathname} (${errors.length} nodes)`,
+      ),
+    );
+  }
+
+  return javascript(code);
+};
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  const url = new URL(request.url);
+
+  if (url.origin != self.location.origin) return;
+  if (!url.pathname.endsWith(".ts")) return;
+  if (request.mode == "navigate") return;
+
+  event.respondWith(compile(request, url));
+});

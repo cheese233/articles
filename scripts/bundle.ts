@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import buildClient from "./gen/client.ts";
 import buildShell from "./gen/shell.ts";
+import buildSw from "./gen/sw.ts";
 import buildVendor from "./gen/vendor.ts";
 
-const hashes = await buildVendor();
-await buildShell(hashes);
-await buildClient();
+const vendors = await buildVendor();
+await buildSw(vendors);
+await buildShell(vendors);
 
-console.log("bundle: vendor + shell + client");
+console.log("bundle: node_modules vendor bundles + shell");

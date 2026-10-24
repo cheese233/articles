@@ -1,13 +1,13 @@
 node_modules/
 dist/
 vendor/
-render/app.js
 render/index.html
 meta/
 sitemap.xml
 atom.xml
 feed.json
 robots.txt
+sw.js
 
 # Local Wrangler state
 .wrangler/

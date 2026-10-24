@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-import buildClient from "./gen/client.ts";
 import buildMetadata from "./gen/metadata.ts";
 import buildShell from "./gen/shell.ts";
+import buildSw from "./gen/sw.ts";
 import stage from "./gen/stage.ts";
 import buildVendor from "./gen/vendor.ts";
 
-const hashes = await buildVendor();
-await buildShell(hashes);
-await buildClient();
+const vendors = await buildVendor();
+await buildSw(vendors);
+await buildShell(vendors);
 
 const data = await buildMetadata();
 await stage();

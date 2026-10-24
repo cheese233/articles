@@ -25,7 +25,6 @@
     "dist",
     "vendor",
     "node_modules",
-    "render/app.js",
     "render/index.html",
   ],
 }

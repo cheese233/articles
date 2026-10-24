@@ -108,7 +108,7 @@ export default class MarkdownAdapter extends PagesAdapter {
     this.connected = true;
 
     try {
-      const { renderMarkdown } = await import("@site/markdown");
+      const { renderMarkdown } = await import("../render/markdown_deps.ts");
       this.classList.add("markdown");
       this.innerHTML = renderMarkdown(String(this.file));
       this.dispatchEvent(new Event("rendered"));

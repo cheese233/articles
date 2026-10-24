@@ -2,14 +2,6 @@ import { cp, mkdir, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { paths } from "../lib/paths.ts";
 
-const renderFiles = [
-  "app.js",
-  "style.css",
-  "shadow.css",
-  "markdown.css",
-  "favicon.svg",
-];
-
 const rootFiles = [
   "sitemap.xml",
   "atom.xml",
@@ -17,6 +9,7 @@ const rootFiles = [
   "robots.txt",
   "_redirects",
   "_headers",
+  "sw.js",
   "LICENSE",
 ];
 
@@ -24,16 +17,22 @@ export default async function () {
   await rm(paths.dist, { recursive: true, force: true });
   await mkdir(path.join(paths.dist, "render"), { recursive: true });
 
-  await cp(`${paths.render}/index.html`, path.join(paths.dist, "index.html"));
+  await cp(paths.render, path.join(paths.dist, "render"), {
+    recursive: true,
+  });
+  await rm(path.join(paths.dist, "render/index.template.html"), {
+    force: true,
+  });
+  await rm(path.join(paths.dist, "render/index.html"), {
+    force: true,
+  });
 
-  for (const file of renderFiles) {
-    await cp(
-      path.join(paths.render, file),
-      path.join(paths.dist, "render", file),
-    );
-  }
+  await cp(
+    `${paths.render}/index.html`,
+    path.join(paths.dist, "index.html"),
+  );
 
-  for (const dir of ["content", "adapters", "meta", "vendor"]) {
+  for (const dir of ["content", "adapters", "meta", "vendor", "shared"]) {
     await cp(
       path.join(paths.root, dir),
       path.join(paths.dist, dir),

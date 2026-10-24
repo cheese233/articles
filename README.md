@@ -37,9 +37,9 @@ npm run dev        # 构建到 dist/，然后在 http://127.0.0.1:8788 提供服
 其他命令：
 
 ```bash
-npm run build      # vendor + shell + client + metadata + stage
+npm run build      # vendor + shell + metadata + stage
 npm run metadata   # 只生成元数据（CI 的核心职责）
-npm run bundle     # 只生成 vendor/、render/index.html、render/app.js
+npm run bundle     # 只生成 vendor/、sw.js、render/index.html
 npm run stage      # 把站点树复制到 dist/
 npm run typecheck  # tsc --noEmit
 npm test           # node:test
@@ -47,6 +47,8 @@ npm run deploy     # build + wrangler pages deploy dist
 ```
 
 `npm run dev` 会先完整构建一次；修改源文件后重新运行即可。`dist/` 通过 `_redirects` 模拟 Cloudflare Pages 的 SPA 回退行为。
+
+页面第一次加载时会注册 Service Worker；随后 `render/app.ts` 及 `shared/*.ts` 通过 `sw.js` + `ts-blank-space` 在浏览器里现场去类型后执行。需要 localhost 或 HTTPS。
 
 ## 目录结构
 
@@ -61,24 +63,50 @@ articles/
 ├─ content/                  # 发布的内容；URL 严格对应这里的路径
 ├─ meta/                     # 构建产物：每篇 sidecar + index.json
 ├─ render/
-│  ├─ app.ts                 # SPA：路由、取数、adapter 分发
+│  ├─ boot.js                # 注册 Service Worker，再 import app.ts
+│  ├─ app.ts                 # SPA：路由、取数、adapter 分发（TS 源文件）
+│  ├─ lib/*.ts               # 客户端运行时（TS 源文件）
+│  ├─ markdown_deps.ts       # 浏览器 markdown 管线（TS，动态 import）
 │  ├─ index.template.html    # 外壳模板（构建时注入 import map）
 │  ├─ style.css              # 外壳样式（4 空格缩进）
 │  ├─ shadow.css             # Shadow DOM 基础样式
-│  ├─ markdown.css           # Markdown 排版
-│  └─ markdown_deps.ts       # 浏览器 markdown 管线（vendor 入口）
+│  └─ markdown.css           # Markdown 排版
 ├─ scripts/                  # Node + TypeScript 构建期
 │  ├─ build.ts               # 全量构建
 │  ├─ metadata.ts            # 只生成元数据
-│  ├─ bundle.ts              # 只生成客户端 bundle
+│  ├─ bundle.ts              # 只生成 node_modules vendor + shell + sw
 │  ├─ dev.ts                 # 本地静态服务器（模拟 Pages 回退）
 │  └─ gen/                   # metadata / sitemap / atom / feed / stage ...
-├─ shared/                   # Node 与浏览器共享的纯逻辑
+├─ shared/                   # Node 与浏览器共享的纯逻辑（浏览器直接加载 TS）
+├─ sw.template.js            # Service Worker 模板（构建生成 sw.js）
+├─ vendor/                   # 构建产物：node_modules 依赖的 ESM bundle
 ├─ site.json                 # 站点标题、URL、作者、语言
 ├─ _redirects                # /* → /index.html 200
 ├─ _headers                  # Cloudflare Pages 缓存头
 └─ .forgejo/workflows/       # Codeberg CI（act 兼容）
 ```
+
+## 客户端 TypeScript 执行
+
+项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 esbuild 打包到 `vendor/`。
+
+```text
+render/index.html
+  └─ render/boot.js               # 注册 sw.js，等待它接管页面
+       └─ import("/render/app.ts")
+            └─ Service Worker 拦截 .ts 请求
+                 ├─ fetch 源文件
+                 ├─ ts-blank-space 去类型（保留行列位置）
+                 └─ 返回 text/javascript 给浏览器原生 ESM
+```
+
+- Service Worker 位于站点根目录，scope 是 `/`。
+- 只有 `request.mode != "navigate"` 的 `.ts` 请求会被编译；直接访问 `.ts` 文件仍然看到源码。
+- 相对 import（如 `../shared/ext.ts`）保持原 URL，浏览器会继续触发 Service Worker。
+- 裸 import（`vfile`、`yaml`、`unified` 等）由构建生成的 import map 指向 `vendor/*.js`。
+- `sw.template.js` 构建时注入 `ts-blank-space` 的哈希 URL，生成 `sw.js`。
+- `ts-blank-space` 只擦除类型，不做降级；本项目遵守 `erasableSyntaxOnly`。
+
 
 ## adapter 契约
 
@@ -261,9 +289,10 @@ URL 严格对应 `content/` 下的路径：
 ## 依赖：Node 与浏览器共享同一份版本
 
 - Node 侧直接从 `node_modules` 解析。
-- 浏览器侧只加载两类依赖：`yaml`、`@site/markdown`，由 `vendor/` 里的 esbuild bundle 提供。
+- 浏览器侧**只加载 `node_modules` 依赖的 ESM vendor bundle**：`vfile`、`yaml`、`unified`、`remark-*`、`rehype-stringify`、`ts-blank-space`。
 - `render/index.html` 的 import map 由构建生成，URL 带内容哈希；`package-lock.json` 是唯一的依赖真相。
-- adapter 的源码是浏览器直接执行的 `.js`，不是编译产物；读者可以查看、复制、审计。
+- 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
+- `sw.js` 由 `sw.template.js` 生成，注入 `ts-blank-space` 的哈希 URL；它自身使用 `Cache-Control: no-cache`。
 
 ## CI 与 Cloudflare Pages
 
@@ -272,7 +301,7 @@ URL 严格对应 `content/` 下的路径：
 1. `actions/checkout@v4`，`fetch-depth: 0`（git 时间是元数据来源之一）；
 2. `actions/setup-node@v4` + `npm ci`；
 3. `npm run typecheck`、`npm test`；
-4. `npm run bundle`（客户端 shell）、`npm run metadata`（只生成元数据）、`npm run stage`；**不渲染任何页面**；
+4. `npm run bundle`（node_modules vendor + shell + sw）、`npm run metadata`（只生成元数据）、`npm run stage`；**不渲染任何页面**；
 5. `node scripts/deploy.ts`：`wrangler pages deploy dist`。
 
 需要配置：
@@ -290,7 +319,7 @@ URL 严格对应 `content/` 下的路径：
 /*    /index.html    200
 ```
 
-`_headers` 给 `meta/`、`content/` 设置 60 秒缓存 + `stale-while-revalidate`，`vendor/` 使用长缓存。
+`_headers` 给 `meta/`、`content/` 设置 60 秒缓存 + `stale-while-revalidate`，带哈希的 `vendor/` 使用长缓存，`sw.js` 不缓存。
 
 本地用 [act](https://github.com/nektos/act) 跑同一份 workflow：
 
@@ -363,7 +392,7 @@ export default class DemoPage extends WebElements {
 - CSS 设计令牌定义在 `body`，深色模式用 `prefers-color-scheme` 覆盖同名变量。
 - 不使用前端框架；页面是原生 DOM。
 
-与旧仓库的必要差异：新栈要求 `package.json` / `tsconfig.json` / esbuild / import map；adapter 按本项目的契约使用 **default export class**（旧 loader 是具名 `Loader`）。
+与旧仓库的必要差异：新栈要求 `package.json` / `tsconfig.json` / import map；esbuild 只用于把 `node_modules` 依赖打成 `vendor/`，不打包项目代码；adapter 按本项目的契约使用 **default export class**（旧 loader 是具名 `Loader`）。
 
 ## 许可
 

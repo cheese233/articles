@@ -15,7 +15,7 @@
     "dev": "node scripts/build.ts && node scripts/dev.ts",
     "stage": "node scripts/stage.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/ext.test.ts tests/order.test.ts tests/adapters.test.ts",
+    "test": "node --test tests/ext.test.ts tests/order.test.ts tests/adapters.test.ts tests/typescript.test.ts",
     "deploy": "node scripts/build.ts && node scripts/deploy.ts"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
+    "ts-blank-space": "^0.9.0",
     "unified": "^11.0.5",
     "vfile": "^6.0.3",
     "yaml": "^2.9.1"
