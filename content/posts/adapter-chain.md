@@ -16,61 +16,78 @@ tags:
 
 例如：
 
-| 文件 | 负责的扩展名 | 由谁处理 |
+| 文件 | 负责的扩展名 | 形态 |
 |---|---|---|
-| `md.ext.pages.js` | `md` | `pages.js.ext.js` |
-| `html.ext.pages.js` | `html` | `pages.js.ext.js` |
-| `[...].ext.pages.js` | 目录 | `pages.js.ext.js` |
-| `pages.js.ext.js` | `pages.js` | 自身是页面根；由 `js.ext.js` loader 创建 |
-| `js.ext.js` | `js` | 语言 loader；不是 HTMLElement |
+| `md.ext.pages.js` | `md` | 函数 adapter |
+| `html.ext.pages.js` | `html` | 函数 adapter |
+| `[...].ext.pages.js` | 目录 | 函数 adapter |
+| `pages.js.ext.js` | `pages.js` | 函数 adapter |
+| `js.ext.js` | `js` | 函数 adapter + `WebElements` 宿主 |
 
-## loader 与页面组件
+## 函数 adapter
 
-`js.ext.js` 是 `.js` 的语言 loader。它不继承 `HTMLElement`，只做两件事：
-
-1. 解析 `.js` 文件头部的 JSDoc；
-2. `create()` 出 `pages.js.ext.js` 提供的 `WebElements`，交给运行时挂载。
-
-真正的页面 Web Component 是 `pages.js.ext.js` 里唯一的 `WebElements`：
-
-```text
-js.ext.js  (JavaScriptAdapter, .js；语言 loader)
-  └─ pages.js.ext.js  (WebElements, .pages.js)
-       ├─ md.ext.pages.js    (.md)
-       ├─ html.ext.pages.js  (.html)
-       └─ [...].ext.pages.js (directory)
-```
-
-`pages.js.ext.js` 只导出 `WebElements` 这一个 class。`js.ext.js` 加载它之后，在模块顶层注册 `web-elements`，并通过 `WebElements.definePage` 按需注册页面内容 class；`md` / `html` / 目录 adapter 都继承 `WebElements`。
-
-运行时把 `js` 和 `pages.js` 当作根；加载任何页面 adapter 前先加载 `js` loader，确保注册完成。加载其他 adapter 时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`，因为它是页面根，不是 loader 的子类。
-
-## 挂载即渲染
-
-`.js` / `.pages.js` 文件的 default export 如果是自定义元素 class，`WebElements` 会先 define 再挂载；如果是函数，则把当前页面的 `ShadowRoot` 作为参数调用。
-
-挂载完成就 dispatch `rendered`，失败就 dispatch `error`。没有 `module()` / `render()` 两个阶段。
-
-## 构造器收到的是 VFile
-
-`WebElements` 的 `constructor` 接收一个 [vfile](https://github.com/vfile/vfile)。元信息放在类上的 `const meta`（实现为 `static meta`）：
+adapter 不继承 class。每个模块导出三样东西：
 
 ```js
-const meta = Object.freeze({
-  ext: "pages.js",
-  lang: "js",
-  priority: 10,
+export const meta = Object.freeze({
+  ext: "md",
+  lang: "pages.js",
+  priority: 20,
 });
 
-export default class WebElements extends HTMLElement {
-  static meta = meta;
+export const parse = async (file) => ({
+  title: "标题",
+  routable: true,
+});
 
-  async parse() {
-    return { ...parseJsDoc(String(this.file)), routable: true };
+export default async function (file, shadow, context) {
+  // 把页面写进 shadow
+}
+```
+
+`parse(file)` 只给 CI 提取元数据，不碰 DOM；default 函数在浏览器里收到源文件、宿主的 `ShadowRoot` 和站点 context。函数返回时，页面就渲染完成。
+
+## WebElements 宿主
+
+`js.ext.js` 额外定义唯一的 Web Component：
+
+```js
+export class WebElements extends HTMLElement {
+  constructor(file) {
+    super();
+    this.file = file;
+    this.attachShadow({ mode: "open" });
   }
 }
 ```
 
-`[...]` 表示 adapter 接受目录。客户端对 `/`、`/posts/` 这类没有文件扩展名的路径，会去找目录 adapter，把 `meta/index.json` 里的条目交给它。
+运行时创建这个宿主，把样式和页面内容都放进它的 ShadowRoot，然后调用当前 adapter 的 default 函数。没有每个 adapter 各自的自定义元素，也没有 class 继承链。
 
-> 根目录 `/` 也是一个目录；它没有单独的 `index.html` 页面。
+`.js` 和 `.pages.js` 内容文件默认导出 `function(shadowDom)`：
+
+```js
+export default function (shadow) {
+  const article = document.createElement("article");
+  article.textContent = "内容";
+  shadow.append(article);
+}
+```
+
+`js.ext.js` / `pages.js.ext.js` 的 default 函数负责 `import` 这个内容模块并调用它的 `default(shadow)`。`md` / `html` / 目录 adapter 则各自实现 `default(file, shadow, context)`，不 import `pages.js.ext.js`。
+
+## 目录 adapter
+
+目录 adapter 没有源文件内容，它的 default 函数从 context 读取：
+
+```js
+export default async function (file, shadow, context) {
+  const { route, entries, site } = context;
+  // 渲染列表
+}
+```
+
+`[...]` 表示 adapter 接受目录；`posts.[...]` 只接受 `/posts/` 及其子目录。
+
+## 构造器收到的是 VFile
+
+没有 adapter class，也没有 constructor。CI 把 [vfile](https://github.com/vfile/vfile) 传给 `parse(file)`；浏览器把同一个 vfile 和 ShadowRoot 传给 default 函数。

@@ -76,27 +76,6 @@ export interface ParsedMeta {
   summary?: string;
 }
 
-export interface AdapterFields {
-  file: VFile;
-  parse?: () => Promise<ParsedMeta>;
-  site?: SiteConfig;
-  entries: ManifestEntry[];
-  route?: string;
-  entry?: EntryMeta | null;
-}
-
-export interface AdapterInstance extends HTMLElement, AdapterFields {
-  connected?: boolean;
-}
-
-/**
- * The `.js` language loader is not an element. It creates the `pages.js`
- * Web Component that the runtime mounts instead.
- */
-export interface AdapterLoader extends AdapterFields {
-  create: () => AdapterInstance;
-}
-
 export interface AdapterStatics {
   ext: string;
   lang: string;
@@ -104,7 +83,24 @@ export interface AdapterStatics {
   priority?: number;
 }
 
-export interface AdapterConstructor {
-  new (file: VFile): AdapterInstance | AdapterLoader;
+export interface AdapterContext {
+  site: SiteConfig;
+  entries: ManifestEntry[];
+  route: string;
+  entry: EntryMeta | null;
+}
+
+/**
+ * An adapter module: named `meta` / `parse` plus a default render function.
+ * The render function receives the source file, the page ShadowRoot, and the
+ * current site context. It returns when rendering is complete.
+ */
+export interface AdapterModule {
   meta: AdapterStatics;
+  parse: (file: VFile) => Promise<ParsedMeta> | ParsedMeta;
+  default: (
+    file: VFile,
+    shadow: ShadowRoot,
+    context: AdapterContext,
+  ) => void | Promise<void>;
 }

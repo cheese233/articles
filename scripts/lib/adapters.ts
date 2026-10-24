@@ -1,4 +1,4 @@
-// Must precede adapter imports: they extend HTMLElement when evaluated.
+// Must precede adapter imports: the js host extends HTMLElement.
 import "./dom.ts";
 import { readdir } from "node:fs/promises";
 import * as path from "node:path";
@@ -6,13 +6,13 @@ import { pathToFileURL } from "node:url";
 import { VFile } from "vfile";
 import { parseAdapterName } from "../../shared/ext.ts";
 import type {
-  AdapterConstructor,
   AdapterInfo,
+  AdapterModule,
   ParsedMeta,
 } from "../../shared/types.ts";
 import { paths } from "./paths.ts";
 
-const cache = new Map<string, AdapterConstructor>();
+const cache = new Map<string, AdapterModule>();
 
 export const listAdapters = async () => {
   const names = await readdir(paths.adapters);
@@ -23,19 +23,21 @@ export const listAdapters = async () => {
     .sort((a, b) => (a.ext < b.ext ? -1 : a.ext > b.ext ? 1 : 0));
 };
 
-export const loadAdapterClass = async (info: AdapterInfo) => {
+export const loadAdapter = async (info: AdapterInfo) => {
   const cached = cache.get(info.file);
   if (cached) return cached;
 
   const file = path.join(paths.adapters, path.basename(info.file));
-  const mod = await import(pathToFileURL(file).href) as {
-    default: AdapterConstructor;
-  };
-  if (typeof mod.default != "function")
-    throw new Error(`adapter ${info.file} has no default class`);
+  const mod = await import(pathToFileURL(file).href) as AdapterModule;
 
-  cache.set(info.file, mod.default);
-  return mod.default;
+  if (typeof mod.default != "function")
+    throw new Error(`adapter ${info.file} has no default function`);
+  if (typeof mod.parse != "function")
+    throw new Error(`adapter ${info.file} has no parse function`);
+  if (!mod.meta) throw new Error(`adapter ${info.file} has no meta`);
+
+  cache.set(info.file, mod);
+  return mod;
 };
 
 /**
@@ -47,16 +49,12 @@ export const parseFile = async (
   rel: string,
   source: string,
 ): Promise<ParsedMeta> => {
-  const Adapter = await loadAdapterClass(info);
-  const adapter = new Adapter(
-    new VFile({ path: rel, value: source, cwd: paths.content }),
-  );
-
-  if (!adapter.parse)
-    throw new Error(`adapter .${info.ext} cannot extract metadata (${rel})`);
+  const adapter = await loadAdapter(info);
 
   try {
-    const meta = await adapter.parse();
+    const meta = await adapter.parse(
+      new VFile({ path: rel, value: source, cwd: paths.content }),
+    );
     if (!meta || typeof meta != "object")
       throw new Error(`adapter .${info.ext} returned invalid metadata`);
     return meta;

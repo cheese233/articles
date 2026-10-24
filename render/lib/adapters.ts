@@ -1,85 +1,28 @@
-import type { VFile } from "vfile";
-import type {
-  AdapterConstructor,
-  AdapterIndex,
-  AdapterInstance,
-  AdapterLoader,
-} from "../../shared/types.ts";
+import type { AdapterIndex, AdapterModule } from "../../shared/types.ts";
 
-const cache = new Map<string, AdapterConstructor>();
-const tags = new Map<string, string>();
+const cache = new Map<string, AdapterModule>();
 
 /**
- * The browser can only construct a custom element class after it has been
- * registered. The adapter class remains the page; registration is just the
- * Web Components requirement.
+ * Import an adapter module by extension. Adapters are functions: named
+ * `meta` / `parse` plus a default render function; there is no class chain.
  */
-const define = (ext: string, Adapter: AdapterConstructor) => {
-  // `js` is a loader, and `pages.js` registers its own component.
-  if (ext == "js" || ext == "pages.js") return;
-  if (tags.has(ext)) return;
-
-  const base = ext
-    .replace(/[^a-z0-9]+/gi, "-")
-    .replace(/^-+|-+$/g, "") || "root";
-  const tag = `page-${base}-${tags.size}`;
-
-  if (!customElements.get(tag)) {
-    customElements.define(
-      tag,
-      Adapter as unknown as CustomElementConstructor,
-    );
-  }
-
-  tags.set(ext, tag);
-};
-
-/**
- * Every adapter is imported directly. The `js` loader and the `pages.js`
- * component are roots; other adapters extend their language parent
- * (`md.ext.pages.js` extends `pages.js`). Loading the parent first enforces
- * that chain; no separate module() call exists.
- */
-export const loadAdapterClass = async (
+export const loadAdapter = async (
   ext: string,
   index: AdapterIndex,
-  stack: string[] = [],
-): Promise<AdapterConstructor> => {
+): Promise<AdapterModule> => {
   const cached = cache.get(ext);
   if (cached) return cached;
-
-  if (stack.includes(ext))
-    throw new Error(`adapter cycle: ${[...stack, ext].join(" -> ")}`);
 
   const info = index.adapters.find((adapter) => adapter.ext == ext);
   if (!info) throw new Error(`no adapter for .${ext}`);
 
-  // The js loader registers the page classes before any page adapter loads.
-  if (ext != "js") {
-    await loadAdapterClass("js", index, [...stack, ext]);
-  }
+  const mod = await import(info.file) as AdapterModule;
+  if (typeof mod.default != "function")
+    throw new Error(`adapter .${ext} has no default function`);
+  if (typeof mod.parse != "function")
+    throw new Error(`adapter .${ext} has no parse function`);
+  if (!mod.meta) throw new Error(`adapter .${ext} has no meta`);
 
-  const mod = await import(info.file);
-  const Adapter = mod.default as AdapterConstructor;
-  if (typeof Adapter != "function")
-    throw new Error(`adapter .${ext} has no default class`);
-
-  if (ext != "js" && ext != "pages.js") {
-    const Parent = await loadAdapterClass(
-      info.lang,
-      index,
-      [...stack, ext],
-    );
-    if (!(Adapter.prototype instanceof Parent))
-      throw new Error(`adapter .${ext} must extend .${info.lang}`);
-  }
-
-  define(ext, Adapter);
-  cache.set(ext, Adapter);
-  return Adapter;
+  cache.set(ext, mod);
+  return mod;
 };
-
-export const instantiate = (
-  Adapter: AdapterConstructor,
-  file: VFile,
-): AdapterInstance | AdapterLoader => new Adapter(file);
