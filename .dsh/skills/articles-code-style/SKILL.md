@@ -29,14 +29,15 @@ code disagree, follow the current code and do not silently change the architectu
 - Page adapters form a chain; `md.ext.pages.js`, `html.ext.pages.js`, and
   `[...].ext.pages.js` extend `PagesAdapter`. The runtime loads the parent first and verifies
   `Adapter.prototype instanceof Parent`.
-- `pages.js.ext.js` is the page root. It declares
-  `export class WebElements extends HTMLElement`, `PagesAdapter extends WebElements`, and
-  registers `web-elements` and `pages-element` at module scope.
-- `js.ext.js` is a pure `.js` language loader, not an HTMLElement. It parses JSDoc and
-  `create()`s a `PagesAdapter`; the runtime mounts that component. The runtime treats both
-  `js` and `pages.js` as roots, so `pages.js` must not extend `js.ext.js`.
+- `pages.js.ext.js` is the page root. It only exports classes:
+  `export class WebElements extends HTMLElement` and `PagesAdapter extends WebElements`.
+  Do not call `customElements.define` or add registration side effects there.
+- `js.ext.js` is a pure `.js` language loader, not an HTMLElement. It parses JSDoc,
+  `create()`s a `PagesAdapter`, and registers `web-elements` and `pages-element`. The runtime
+  treats both `js` and `pages.js` as roots, so `pages.js` must not extend `js.ext.js`. The
+  runtime loads `js` before any page adapter so registration always happens first.
 - The browser runtime only registers child adapters (`md`, `html`, directory). The
-  `web-elements` and `pages-element` registrations belong to `pages.js.ext.js`; do not register
+  `web-elements` and `pages-element` registrations belong to `js.ext.js`; do not register
   them a second time.
 - Node metadata generation installs a minimal `HTMLElement` / `customElements` shim in
   `scripts/lib/dom.ts`. Keep `WebElements` native; never reintroduce a `Base` fallback class
@@ -106,13 +107,14 @@ export default class MarkdownAdapter extends PagesAdapter {
 }
 ```
 
-- `pages.js.ext.js` exports `WebElements` (named) and `PagesAdapter` (default). Page content
-  classes import `{ WebElements }` from `../adapters/pages.js.ext.js`; child adapters import
-  the default `PagesAdapter` from the same file. Keep the module-level `customElements.define`
-  calls for `web-elements` and `pages-element` there.
-- `js.ext.js` default-exports the plain `JavaScriptAdapter` loader. It parses JSDoc and
-  `create()`s a `PagesAdapter`; it must not extend `HTMLElement` or import the content module
-  directly. Do not put `WebElements` back in `js.ext.js`.
+- `pages.js.ext.js` exports `WebElements` (named) and `PagesAdapter` (default) only. Page
+  content classes import `{ WebElements }` from `../adapters/pages.js.ext.js`; child adapters
+  import the default `PagesAdapter` from the same file. Do not add registration side effects
+  to `pages.js.ext.js`.
+- `js.ext.js` default-exports the plain `JavaScriptAdapter` loader. It parses JSDoc,
+  `create()`s a `PagesAdapter`, and registers `web-elements` / `pages-element`; it must not
+  extend `HTMLElement` or import the content module directly. Do not put `WebElements` back in
+  `js.ext.js`.
 
 ### Adapter filename contract
 

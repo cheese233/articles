@@ -55,8 +55,8 @@ npm run deploy     # build + wrangler pages deploy dist
 ```text
 articles/
 ├─ adapters/                 # 每个 adapter 都是可被浏览器执行/加载的源文件
-│  ├─ js.ext.js              # .js 语言 loader；不继承 HTMLElement
-│  ├─ pages.js.ext.js        # WebElements + PagesAdapter；处理 .pages.js
+│  ├─ js.ext.js              # .js 语言 loader；注册页面 class
+│  ├─ pages.js.ext.js        # WebElements + PagesAdapter；只导出 class
 │  ├─ md.ext.pages.js        # 处理 .md；class 继承 PagesAdapter
 │  ├─ html.ext.pages.js      # 处理 .html；class 继承 PagesAdapter
 │  └─ [...].ext.pages.js     # 处理目录；class 继承 PagesAdapter
@@ -131,8 +131,8 @@ render/index.html
 `pages.js.ext.js` 是页面 Web Component 的根，`js.ext.js` 只是 `.js` 的语言 loader：
 
 ```text
-js.ext.js  (JavaScriptAdapter, .js；不继承 HTMLElement)
-  └─ pages.js.ext.js  (WebElements + PagesAdapter, .pages.js)
+js.ext.js  (JavaScriptAdapter, .js；loader + 注册)
+  └─ pages.js.ext.js  (WebElements + PagesAdapter, .pages.js；只导出 class)
        ├─ md.ext.pages.js    (.md)
        ├─ html.ext.pages.js  (.html)
        └─ [...].ext.pages.js (directory)
@@ -142,13 +142,16 @@ js.ext.js  (JavaScriptAdapter, .js；不继承 HTMLElement)
 
 ```js
 // js.ext.js
-import PagesAdapter from "./pages.js.ext.js";
+import PagesAdapter, { WebElements } from "./pages.js.ext.js";
 
 export default class JavaScriptAdapter {
   create() {
     return new PagesAdapter(this.file);
   }
 }
+
+customElements.define("web-elements", WebElements);
+customElements.define("pages-element", PagesAdapter);
 
 // pages.js.ext.js
 export class WebElements extends HTMLElement {}
@@ -159,9 +162,9 @@ import PagesAdapter from "./pages.js.ext.js";
 export default class MarkdownAdapter extends PagesAdapter {}
 ```
 
-- `js.ext.js` 是唯一不继承 `HTMLElement` 的 adapter；它只解析 JSDoc，并 `create()` 出 `pages.js` 的 Web Component。运行时负责挂载这个返回的元素。
-- `pages.js.ext.js` 原生 `export class WebElements extends HTMLElement`；`PagesAdapter` 继承它，并在模块顶层注册 `web-elements` 和 `pages-element`。
-- 运行时把 `js` 和 `pages.js` 当作根；`md` / `html` / 目录 adapter 仍然继承 `pages.js`，加载时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`。
+- `js.ext.js` 是唯一不继承 `HTMLElement` 的 adapter；它解析 JSDoc，`create()` 出 `pages.js` 的 Web Component，并负责注册 `web-elements` 与 `pages-element`。
+- `pages.js.ext.js` 只导出 class：原生 `export class WebElements extends HTMLElement`，`PagesAdapter` 继承它；不在这里调用 `customElements.define`。
+- 运行时在加载任何页面 adapter 前先加载 `js` loader，确保注册完成；`md` / `html` / 目录 adapter 仍然继承 `pages.js`，加载时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`。
 - `.js` / `.pages.js` 内容如果 default export 自定义元素 class，`PagesAdapter` 会 define + 挂载；如果 default export 函数，则把页面的 `ShadowRoot` 作为参数调用。
 - 没有 `module()` / `render()` 两个阶段；挂载组件就是渲染。
 

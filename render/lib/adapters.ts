@@ -54,6 +54,11 @@ export const loadAdapterClass = async (
   const info = index.adapters.find((adapter) => adapter.ext == ext);
   if (!info) throw new Error(`no adapter for .${ext}`);
 
+  // The js loader registers the page classes before any page adapter loads.
+  if (ext != "js") {
+    await loadAdapterClass("js", index, [...stack, ext]);
+  }
+
   const mod = await import(info.file);
   const Adapter = mod.default as AdapterConstructor;
   if (typeof Adapter != "function")

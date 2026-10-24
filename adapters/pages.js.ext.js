@@ -40,9 +40,9 @@ const definePage = (Page) => {
 };
 
 /**
- * The page Web Component. It is the root of the page hierarchy:
- * `pages.js.ext.js` registers it, and the markdown/html/directory adapters
- * extend `PagesAdapter`.
+ * The page Web Component. It is the root of the page hierarchy: `js.ext.js`
+ * registers it, and the markdown/html/directory adapters extend
+ * `PagesAdapter`.
  */
 export class WebElements extends HTMLElement {
   /** @type {VFile} */
@@ -116,18 +116,4 @@ export default class PagesAdapter extends WebElements {
   async parse() {
     return { ...(await super.parse()), routable: true };
   }
-}
-
-if (!customElements.get("web-elements")) {
-  customElements.define(
-    "web-elements",
-    /** @type {CustomElementConstructor} */ (WebElements),
-  );
-}
-
-if (!customElements.get("pages-element")) {
-  customElements.define(
-    "pages-element",
-    /** @type {CustomElementConstructor} */ (PagesAdapter),
-  );
 }

@@ -1,4 +1,4 @@
-import PagesAdapter from "./pages.js.ext.js";
+import PagesAdapter, { WebElements } from "./pages.js.ext.js";
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("vfile").VFile} VFile */
@@ -14,6 +14,7 @@ const meta = Object.freeze({
 /**
  * The plain `.js` language loader. It is not an HTMLElement: it parses
  * metadata and creates the `pages.js` Web Component that actually renders.
+ * It also registers the page classes; `pages.js.ext.js` only exports them.
  */
 export default class JavaScriptAdapter {
   static meta = meta;
@@ -48,4 +49,18 @@ export default class JavaScriptAdapter {
     page.entry = this.entry;
     return page;
   }
+}
+
+if (!customElements.get("web-elements")) {
+  customElements.define(
+    "web-elements",
+    /** @type {CustomElementConstructor} */ (WebElements),
+  );
+}
+
+if (!customElements.get("pages-element")) {
+  customElements.define(
+    "pages-element",
+    /** @type {CustomElementConstructor} */ (PagesAdapter),
+  );
 }
