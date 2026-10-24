@@ -1,36 +1,53 @@
+import { builtinModules } from "node:module";
 import * as path from "node:path";
-import type { Plugin } from "esbuild";
+import type { Plugin } from "rollup";
 import { paths } from "./paths.ts";
 
 const nodeModules = path.join(paths.root, "node_modules") + path.sep;
+const builtins = new Set(builtinModules);
 
 /**
- * Resolve virtual `vendor:<specifier>` entries through esbuild, then reject
- * any loaded file outside node_modules.
+ * Resolve virtual `vendor:<specifier>` entries with Rollup's resolver, and
+ * reject any module that does not live under node_modules.
  */
 export const onlyNodeModules = (): Plugin => ({
   name: "only-node-modules",
-  setup(build) {
-    build.onResolve({ filter: /^vendor:/ }, async (args) => {
-      const specifier = args.path.slice("vendor:".length);
-      const resolved = await build.resolve(specifier, {
-        kind: "import-statement",
-        resolveDir: paths.root,
-      });
+  async resolveId(source) {
+    if (!source.startsWith("vendor:")) return null;
 
-      if (resolved.errors.length) return { errors: resolved.errors };
+    const specifier = source.slice("vendor:".length);
+    const resolved = await this.resolve(
+      specifier,
+      path.join(paths.root, "index.js"),
+      { skipSelf: true },
+    );
 
-      return { path: resolved.path };
-    });
+    if (!resolved) throw new Error(`cannot resolve dependency: ${specifier}`);
+    return resolved;
+  },
+  load(id) {
+    if (id.startsWith("\0")) return null;
+    if (!path.resolve(id).startsWith(nodeModules)) {
+      this.error(`refusing to vendor a file outside node_modules: ${id}`);
+    }
+    return null;
+  },
+});
 
-    build.onLoad({ filter: /.*/ }, (args) => {
-      if (args.namespace != "file") return undefined;
-      if (!path.resolve(args.path).startsWith(nodeModules)) {
-        throw new Error(
-          `refusing to vendor a file outside node_modules: ${args.path}`,
-        );
-      }
-      return undefined;
-    });
+/**
+ * TypeScript's Node entry probes fs/os/crypto behind a runtime check. Rollup
+ * cannot leave those imports in a browser bundle, so give them empty stubs.
+ */
+export const builtinStubs = (): Plugin => ({
+  name: "builtin-stubs",
+  resolveId(source) {
+    if (source.startsWith("node:") || builtins.has(source)) {
+      return { id: `\0builtin:${source}`, moduleSideEffects: false };
+    }
+    return null;
+  },
+  load(id) {
+    if (id.startsWith("\0builtin:")) return "export default {};";
+    return null;
   },
 });

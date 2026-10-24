@@ -88,7 +88,7 @@ articles/
 
 ## 客户端 TypeScript 执行
 
-项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 esbuild 打包到 `vendor/`。
+项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 Rollup 打包到 `vendor/`。
 
 ```text
 render/index.html
@@ -290,9 +290,10 @@ URL 严格对应 `content/` 下的路径：
 
 - Node 侧直接从 `node_modules` 解析。
 - 浏览器侧**只加载从源码 import 自动发现的 `node_modules` 依赖**，不存在手写包列表。
-- 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `sw.template.js`，不需要额外的 esbuild 分析构建。
-- `scripts/gen/vendor.ts` 只做一次 esbuild build：虚拟入口 `vendor:<specifier>` 由插件通过 `build.resolve()` 解析到 node_modules；`onLoad` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
-- `render/index.html` 的 import map 由构建生成，URL 带内容哈希；`package-lock.json` 是唯一的依赖真相。
+- 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `sw.template.js`，不需要额外的 build。
+- `scripts/gen/vendor.ts` 只做一次 Rollup 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()`（`@rollup/plugin-node-resolve`）解析到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
+- Rollup 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`；构建结束后会检查每个非空 module 只属于一个 chunk，发现重复打包直接失败。
+- `render/index.html` 的 import map 由构建生成，entry 文件名带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
 - `sw.js` 由 `sw.template.js` 生成：模板里写普通的 `from "ts-blank-space"`，构建时按同一份依赖表改写成带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。
 
@@ -394,7 +395,7 @@ export default class DemoPage extends WebElements {
 - CSS 设计令牌定义在 `body`，深色模式用 `prefers-color-scheme` 覆盖同名变量。
 - 不使用前端框架；页面是原生 DOM。
 
-与旧仓库的必要差异：新栈要求 `package.json` / `tsconfig.json` / import map；esbuild 只用于把 `node_modules` 依赖打成 `vendor/`，不打包项目代码；adapter 按本项目的契约使用 **default export class**（旧 loader 是具名 `Loader`）。
+与旧仓库的必要差异：新栈要求 `package.json` / `tsconfig.json` / import map；Rollup 只用于把 `node_modules` 依赖打成 `vendor/`，不打包项目代码；adapter 按本项目的契约使用 **default export class**（旧 loader 是具名 `Loader`）。
 
 ## 许可
 
