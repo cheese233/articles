@@ -1,25 +1,23 @@
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("vfile").VFile} VFile */
+/** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
-/** @type {import("../shared/types.ts").AdapterStatics} */
-const meta = Object.freeze({
+/** @type {AdapterStatics} */
+export const meta = Object.freeze({
   ext: "pages.js",
   lang: "js",
   priority: 10,
 });
 
 /**
- * The single page class. The `.js` loader creates it for plain `.js` files;
- * the `.pages.js` adapter is this class itself. Markdown, HTML, and directory
- * adapters extend it.
+ * The page class. `js.ext.js` asks it to create an adapter class:
+ * `WebElements.create(file)` imports `*.ext.pages.js`, calls its default
+ * factory with this class, and returns the generated class.
  */
-export class WebElements extends HTMLElement {
+export default class WebElements extends HTMLElement {
   static meta = meta;
-
-  /** @type {((Page: Function) => string) | undefined} */
-  static definePage;
 
   /** @type {VFile} */
   file;
@@ -40,14 +38,39 @@ export class WebElements extends HTMLElement {
     this.file = file;
   }
 
+  /**
+   * Import an adapter module and turn its default factory into a class.
+   * `pages.js.ext.js` is itself a class and is returned directly.
+   *
+   * @param {string} file
+   * @returns {Promise<typeof WebElements>}
+   */
+  static async create(file) {
+    const mod = await import(file);
+    const factory = mod.default;
+
+    if (typeof factory != "function")
+      throw new Error(`${file}: default export must be a class or factory`);
+
+    if (factory === WebElements || factory.prototype instanceof WebElements)
+      return /** @type {typeof WebElements} */ (factory);
+
+    const Adapter = factory(WebElements);
+    if (typeof Adapter != "function" || !(Adapter.prototype instanceof WebElements))
+      throw new Error(`${file}: factory must return a WebElements class`);
+
+    if (mod.meta && !Adapter.meta) Adapter.meta = mod.meta;
+    return Adapter;
+  }
+
   /** @returns {Promise<ParsedMeta>} */
   async parse() {
     return { ...parseJsDoc(String(this.file)), routable: true };
   }
 
   /**
-   * A `.js` or `.pages.js` module is mounted directly: a class is appended
-   * as a custom element, a function receives the page's ShadowRoot.
+   * A `.js` or `.pages.js` module is mounted directly: a function receives the
+   * page's ShadowRoot.
    */
   async connectedCallback() {
     if (this.connected) return;
@@ -62,20 +85,11 @@ export class WebElements extends HTMLElement {
       const root = this.getRootNode();
       const target = root instanceof ShadowRoot ? root : this;
 
-      if (!Page) throw new Error(`${path}: default export is missing`);
-
-      if (Page.prototype instanceof HTMLElement) {
-        const definePage = /** @type {typeof WebElements} */ (this.constructor)
-          .definePage;
-        if (!definePage) throw new Error("page registration is not ready");
-        definePage(Page);
-        this.append(new Page(this.file));
-      } else if (typeof Page == "function") {
-        await Page(target);
-      } else {
-        throw new Error(`${path}: default export is not a class or function`);
+      if (typeof Page != "function") {
+        throw new Error(`${path}: default export must be a function`);
       }
 
+      await Page(target);
       this.dispatchEvent(new Event("rendered"));
     } catch (error) {
       console.error(error);
@@ -83,5 +97,3 @@ export class WebElements extends HTMLElement {
     }
   }
 }
-
-export default WebElements;

@@ -18,76 +18,104 @@ tags:
 
 | 文件 | 负责的扩展名 | 形态 |
 |---|---|---|
-| `md.ext.pages.js` | `md` | class；继承 `WebElements` |
-| `html.ext.pages.js` | `html` | class；继承 `WebElements` |
-| `[...].ext.pages.js` | 目录 | class；继承 `WebElements` |
+| `md.ext.pages.js` | `md` | 工厂 function |
+| `html.ext.pages.js` | `html` | 工厂 function |
+| `[...].ext.pages.js` | 目录 | 工厂 function |
 | `pages.js.ext.js` | `pages.js` | 页面基类 `WebElements` |
-| `js.ext.js` | `js` | `function(file)`，直接 define adapter class |
+| `js.ext.js` | `js` | `function(file)`，生成并 define class |
 
-## loader 元素
+## 链式调用
 
-`js.ext.js` 接收一个 adapter `.js` 文件，读取 `meta.ext`，直接把这个 class 定义成自定义元素：
+```text
+js.ext.js
+  → WebElements.create(adapterFile)
+      → import(adapterFile).default(WebElements)
+          → class
+  → customElements.define(tag, class)
+```
+
+`pages.js.ext.js` 既是基类，也是调度器：
 
 ```js
-const adapter = await import(file);
-const Adapter = adapter.default;
-const ext = adapter.meta?.ext ?? Adapter.meta.ext;
+export default class WebElements extends HTMLElement {
+  static async create(file) {
+    const mod = await import(file);
+    const factory = mod.default;
+
+    if (factory === WebElements || factory.prototype instanceof WebElements)
+      return factory;
+
+    return factory(WebElements);
+  }
+}
+```
+
+`js.ext.js` 拿到 class 后直接定义：
+
+```js
+const Adapter = await WebElements.create(file);
+const ext = Adapter.meta.ext;
 const tag = `${ext.replaceAll(".", "-")}-loader`;
 
 customElements.define(tag, Adapter);
 ```
 
-没有包装 class，也没有 `PagesAdapter`。例如：
+例如：
 
-- `md.ext.pages.js` → `<md-loader>`
+- `md.ext.pages.js` 的工厂生成 `MarkdownAdapter` → `<md-loader>`
 - `html.ext.pages.js` → `<html-loader>`
 - `[...].ext.pages.js` → `<directory-loader>`
-- `pages.js.ext.js` → `<pages-js-loader>`
+- `pages.js.ext.js` 自身 → `<pages-js-loader>`
 
-## 页面 class
+## 工厂 function
 
-`pages.js.ext.js` 是共享基类：
+`md` / `html` / 目录 adapter 默认导出一个工厂函数，不 import `pages.js`；基类由 `pages.js` 传进来：
 
 ```js
-export class WebElements extends HTMLElement {
-  static meta = meta;
+export const meta = Object.freeze({
+  ext: "md",
+  lang: "pages.js",
+  priority: 20,
+});
 
-  constructor(file) {
-    super();
-    this.file = file;
-  }
+export const parse = async (file) => ({
+  title: "标题",
+  routable: true,
+});
 
-  async parse() {
-    return { ...parseJsDoc(String(this.file)), routable: true };
-  }
+export default function (WebElements) {
+  return class MarkdownAdapter extends WebElements {
+    static meta = meta;
 
-  async connectedCallback() {
-    // 渲染，然后 dispatchEvent(new Event("rendered"))
-    // 失败时 dispatchEvent(new Event("error"))
-  }
+    async parse() {
+      return parse(this.file);
+    }
+
+    async connectedCallback() {
+      // 渲染，然后 dispatchEvent(new Event("rendered"))
+      // 失败时 dispatchEvent(new Event("error"))
+    }
+  };
 }
 ```
 
-`md` / `html` / 目录 adapter 都继承它，并各自实现 `parse()` 和 `connectedCallback()`。
+`meta.ext` 是最终扩展名，用来生成 loader 标签；`parse(file)` 只给 CI 提取元数据，不碰 DOM。
 
-运行时通过 `js.ext.js` 定义 `<ext>-loader`，创建它、设置 `site` / `entries` / `route` / `entry`，然后 append 到页面 ShadowRoot，等待 `rendered` / `error`。
+运行时创建 loader、设置 `site` / `entries` / `route` / `entry`，append 到页面的 ShadowRoot，然后等待 `rendered` / `error`。
 
-`.js` 和 `.pages.js` 内容文件可以默认导出 `function(shadowDom)`；`pages.js` 的 `connectedCallback` 会 import 内容模块并调用它。因此 `.js` 内容复用 `pages.js`（旧的 js adapter 现在是 pages），loader 标签是 `pages-js-loader`。
+## `.js` / `.pages.js` 内容
 
-## 目录 adapter
-
-目录 adapter 没有源文件内容，它从实例字段读取：
+内容文件保持简单：默认导出 `function(shadowDom)`，由 `pages.js` 的 `connectedCallback` import 并调用。
 
 ```js
-async connectedCallback() {
-  const route = this.route ?? "/";
-  const entries = this.entries;
-  const site = this.site;
-  // 渲染列表
+export default function (shadow) {
+  const article = document.createElement("article");
+  article.textContent = "内容";
+  shadow.append(article);
 }
 ```
 
-`[...]` 表示 adapter 接受目录；`posts.[...]` 只接受 `/posts/` 及其子目录。
+因此 `.js` 内容复用 `pages.js`，loader 是 `pages-js-loader`。
 
 ## 构造器收到的是 VFile
 

@@ -1,28 +1,22 @@
 import { parse as parseYaml } from "yaml";
-import WebElements from "./pages.js.ext.js";
 
 /** @typedef {import("vfile").VFile} VFile */
+/** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
-/** @type {import("../shared/types.ts").AdapterStatics} */
-const meta = Object.freeze({
+/** @type {AdapterStatics} */
+export const meta = Object.freeze({
   ext: "md",
   lang: "pages.js",
   priority: 20,
 });
 
-/**
- * @param {unknown} value
- */
-const asText = (value) => {
+const asText = (/** @type {unknown} */ value) => {
   if (value instanceof Date) return value.toISOString();
   return String(value).trim();
 };
 
-/**
- * @param {unknown} tags
- */
-const normalizeTags = (tags) => {
+const normalizeTags = (/** @type {unknown} */ tags) => {
   if (tags == null) return undefined;
   if (Array.isArray(tags)) return tags.map((tag) => asText(tag));
   return asText(tags)
@@ -31,10 +25,7 @@ const normalizeTags = (tags) => {
     .filter(Boolean);
 };
 
-/**
- * @param {string} source
- */
-const splitFrontmatter = (source) => {
+const splitFrontmatter = (/** @type {string} */ source) => {
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);
   if (!match) {
     return {
@@ -53,10 +44,7 @@ const splitFrontmatter = (source) => {
   };
 };
 
-/**
- * @param {string} text
- */
-const stripMarkdown = (text) =>
+const stripMarkdown = (/** @type {string} */ text) =>
   text
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/<!--[\s\S]*?-->/g, " ")
@@ -67,54 +55,58 @@ const stripMarkdown = (text) =>
     .replace(/\s+/g, " ")
     .trim();
 
-/**
- * @param {string} body
- */
-const summaryOf = (body) => {
+const summaryOf = (/** @type {string} */ body) => {
   const marker = body.indexOf("<!-- more -->");
   const text = marker >= 0 ? body.slice(0, marker) : body;
   return stripMarkdown(text).slice(0, 280);
 };
 
-export default class MarkdownAdapter extends WebElements {
-  static meta = meta;
+/** @param {VFile} file @returns {Promise<ParsedMeta>} */
+export const parse = async (file) => {
+  const source = String(file);
+  const { data, body } = splitFrontmatter(source);
+  const heading = /^#\s+(.+)$/m.exec(body)?.[1]?.trim();
+  const title = data.title != null ? asText(data.title) : heading;
 
-  /** @returns {Promise<ParsedMeta>} */
-  async parse() {
-    const source = String(this.file);
-    const { data, body } = splitFrontmatter(source);
-    const heading = /^#\s+(.+)$/m.exec(body)?.[1]?.trim();
-    const title = data.title != null ? asText(data.title) : heading;
+  return {
+    title: title || undefined,
+    date: data.date != null ? asText(data.date) : undefined,
+    updated: data.updated != null ? asText(data.updated) : undefined,
+    author: data.author != null ? asText(data.author) : undefined,
+    tags: normalizeTags(data.tags),
+    routable: data.routable === false ? false : true,
+    summary: data.summary != null ? asText(data.summary) : summaryOf(body),
+  };
+};
 
-    return {
-      title: title || undefined,
-      date: data.date != null ? asText(data.date) : undefined,
-      updated: data.updated != null ? asText(data.updated) : undefined,
-      author: data.author != null ? asText(data.author) : undefined,
-      tags: normalizeTags(data.tags),
-      routable: data.routable === false ? false : true,
-      summary: data.summary != null
-        ? asText(data.summary)
-        : summaryOf(body),
-    };
-  }
+/**
+ * `pages.js` calls this factory with the page base class; the returned class
+ * is passed to `js.ext.js` for definition.
+ *
+ * @param {typeof import("./pages.js.ext.js").default} WebElements
+ */
+export default function (WebElements) {
+  return class MarkdownAdapter extends WebElements {
+    static meta = meta;
 
-  /**
-   * Mounting the Web Component is the render: there is no separate
-   * module/render phase.
-   */
-  async connectedCallback() {
-    if (this.connected) return;
-    this.connected = true;
-
-    try {
-      const { renderMarkdown } = await import("../render/markdown_deps.ts");
-      this.classList.add("markdown");
-      this.innerHTML = renderMarkdown(String(this.file));
-      this.dispatchEvent(new Event("rendered"));
-    } catch (error) {
-      console.error(error);
-      this.dispatchEvent(new Event("error"));
+    /** @returns {Promise<ParsedMeta>} */
+    async parse() {
+      return parse(this.file);
     }
-  }
+
+    async connectedCallback() {
+      if (this.connected) return;
+      this.connected = true;
+
+      try {
+        const { renderMarkdown } = await import("../render/markdown_deps.ts");
+        this.classList.add("markdown");
+        this.innerHTML = renderMarkdown(String(this.file));
+        this.dispatchEvent(new Event("rendered"));
+      } catch (error) {
+        console.error(error);
+        this.dispatchEvent(new Event("error"));
+      }
+    }
+  };
 }

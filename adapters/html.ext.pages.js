@@ -1,10 +1,9 @@
-import WebElements from "./pages.js.ext.js";
-
 /** @typedef {import("vfile").VFile} VFile */
+/** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
-/** @type {import("../shared/types.ts").AdapterStatics} */
-const meta = Object.freeze({
+/** @type {AdapterStatics} */
+export const meta = Object.freeze({
   ext: "html",
   lang: "pages.js",
   priority: 30,
@@ -19,19 +18,13 @@ const entities = {
   nbsp: " ",
 };
 
-/**
- * @param {string} value
- */
-const decode = (value) =>
+const decode = (/** @type {string} */ value) =>
   value.replace(/&(#?\w+);/g, (entity, name) => {
     const key = /** @type {keyof typeof entities} */ (name);
     return entities[key] ?? entity;
   });
 
-/**
- * @param {string} source
- */
-const metaTags = (source) => {
+const metaTags = (/** @type {string} */ source) => {
   /** @type {Map<string, string>} */
   const tags = new Map();
 
@@ -46,19 +39,15 @@ const metaTags = (source) => {
   return tags;
 };
 
-/**
- * @param {string} source
- */
-const titleOf = (source) => {
+const titleOf = (/** @type {string} */ source) => {
   const title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(source)?.[1];
   return title ? decode(title.trim()) : undefined;
 };
 
-/**
- * @param {ShadowRoot | HTMLElement} target
- * @param {HTMLElement} content
- */
-const execute = async (target, content) => {
+const execute = async (
+  /** @type {ShadowRoot | HTMLElement} */ target,
+  /** @type {HTMLElement} */ content,
+) => {
   const scripts = [...content.querySelectorAll("script")];
 
   for (const script of scripts) {
@@ -95,46 +84,52 @@ const execute = async (target, content) => {
   }
 };
 
-export default class HtmlAdapter extends WebElements {
-  static meta = meta;
+/** @param {VFile} file @returns {Promise<ParsedMeta>} */
+export const parse = async (file) => {
+  const source = String(file);
+  const tags = metaTags(source);
 
-  /** @returns {Promise<ParsedMeta>} */
-  async parse() {
-    const source = String(this.file);
-    const tags = metaTags(source);
+  return {
+    title: tags.get("title") ?? tags.get("og:title") ?? titleOf(source),
+    author: tags.get("author") ?? tags.get("article:author"),
+    date: tags.get("date"),
+    tags: tags.get("tags")?.split(",").map((tag) => tag.trim()),
+    routable: tags.get("routable") != "false",
+    summary: tags.get("description") ?? tags.get("og:description"),
+  };
+};
 
-    return {
-      title: tags.get("title") ?? tags.get("og:title") ?? titleOf(source),
-      author: tags.get("author") ?? tags.get("article:author"),
-      date: tags.get("date"),
-      tags: tags.get("tags")?.split(",").map((tag) => tag.trim()),
-      routable: tags.get("routable") != "false",
-      summary: tags.get("description") ?? tags.get("og:description"),
-    };
-  }
+/**
+ * @param {typeof import("./pages.js.ext.js").default} WebElements
+ */
+export default function (WebElements) {
+  return class HtmlAdapter extends WebElements {
+    static meta = meta;
 
-  /**
-   * Mounting the Web Component is the render: there is no separate
-   * module/render phase.
-   */
-  async connectedCallback() {
-    if (this.connected) return;
-    this.connected = true;
-
-    try {
-      const source = String(this.file);
-      const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
-
-      this.classList.add("html-page", "markdown");
-      this.innerHTML = body;
-      this.querySelectorAll("meta").forEach((tag) => tag.remove());
-
-      const root = this.getRootNode();
-      await execute(root instanceof ShadowRoot ? root : this, this);
-      this.dispatchEvent(new Event("rendered"));
-    } catch (error) {
-      console.error(error);
-      this.dispatchEvent(new Event("error"));
+    /** @returns {Promise<ParsedMeta>} */
+    async parse() {
+      return parse(this.file);
     }
-  }
+
+    async connectedCallback() {
+      if (this.connected) return;
+      this.connected = true;
+
+      try {
+        const source = String(this.file);
+        const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
+
+        this.classList.add("html-page", "markdown");
+        this.innerHTML = body;
+        this.querySelectorAll("meta").forEach((tag) => tag.remove());
+
+        const root = this.getRootNode();
+        await execute(root instanceof ShadowRoot ? root : this, this);
+        this.dispatchEvent(new Event("rendered"));
+      } catch (error) {
+        console.error(error);
+        this.dispatchEvent(new Event("error"));
+      }
+    }
+  };
 }

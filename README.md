@@ -57,9 +57,9 @@ articles/
 ├─ adapters/                 # 每个 adapter 都是可被浏览器执行/加载的源文件
 │  ├─ js.ext.js              # 定义 <ext>-loader；直接 define adapter class
 │  ├─ pages.js.ext.js        # 页面基类 WebElements
-│  ├─ md.ext.pages.js        # .md class；继承 WebElements
-│  ├─ html.ext.pages.js      # .html class；继承 WebElements
-│  └─ [...].ext.pages.js     # 目录 class；继承 WebElements
+│  ├─ md.ext.pages.js        # .md 工厂：返回 class extends WebElements
+│  ├─ html.ext.pages.js      # .html 工厂
+│  └─ [...].ext.pages.js     # 目录工厂
 ├─ content/                  # 发布的内容；URL 严格对应这里的路径
 ├─ meta/                     # 构建产物：每篇 sidecar + index.json
 ├─ render/
@@ -120,96 +120,100 @@ render/index.html
 
 | 文件 | 负责 | 形态 |
 |---|---|---|
-| `js.ext.js` | `.js` | `function(file)`：import adapter class，直接 `customElements.define(tag, Adapter)` |
-| `pages.js.ext.js` | `.pages.js` | 页面 class `WebElements` |
-| `md.ext.pages.js` | `.md` | class；继承 `WebElements` |
-| `html.ext.pages.js` | `.html` | class；继承 `WebElements` |
-| `[...].ext.pages.js` | 目录 | class；继承 `WebElements` |
+| `js.ext.js` | `.js` | `function(file)`：让 `pages.js` 生成 class，再 `customElements.define(tag, Adapter)` |
+| `pages.js.ext.js` | `.pages.js` | 页面基类 `WebElements`；`create(file)` 调 adapter 工厂 |
+| `md.ext.pages.js` | `.md` | 工厂 function：`(WebElements) => class extends WebElements` |
+| `html.ext.pages.js` | `.html` | 工厂 function |
+| `[...].ext.pages.js` | 目录 | 工厂 function |
 
-### loader 与页面 class
+### 链式调用
 
-`js.ext.js` 的 default 函数接收 **adapter `.js` 文件**，读取 `meta.ext`，直接把这个 class 定义成自定义元素：
+链路是：
 
-```js
-const adapter = await import(file);
-const Adapter = adapter.default;
-const ext = adapter.meta?.ext ?? Adapter.meta.ext;
-const tag = `${ext.replaceAll(".", "-")}-loader`;
-
-customElements.define(tag, Adapter);
+```text
+js.ext.js
+  → WebElements.create(adapterFile)
+      → import(adapterFile).default(WebElements)
+          → class
+  → customElements.define(tag, class)
 ```
 
-没有包装 class，也没有 `PagesAdapter`。例如：
-
-- `md.ext.pages.js` → `<md-loader>`
-- `html.ext.pages.js` → `<html-loader>`
-- `[...].ext.pages.js` → `<directory-loader>`
-- `pages.js.ext.js` → `<pages-js-loader>`
-
-`pages.js.ext.js` 是页面基类：
+`pages.js.ext.js` 是基类，也是工厂调度器：
 
 ```js
-export class WebElements extends HTMLElement {
+export default class WebElements extends HTMLElement {
   static meta = meta;
-  file;
-  connected = false;
-  site;
-  entries = [];
-  route;
-  entry = null;
 
   constructor(file) {
     super();
     this.file = file;
   }
 
-  async parse() {
-    return { ...parseJsDoc(String(this.file)), routable: true };
-  }
+  static async create(file) {
+    const mod = await import(file);
+    const factory = mod.default;
 
-  async connectedCallback() {
-    // 渲染，然后 dispatchEvent(new Event("rendered"))
-    // 失败时 dispatchEvent(new Event("error"))
+    if (factory === WebElements || factory.prototype instanceof WebElements)
+      return factory;
+
+    return factory(WebElements);
   }
 }
 ```
 
-- `md` / `html` / 目录 class 继承 `WebElements`。
-- 运行时把 adapter class 定义为 `<final-ext>-loader`，创建它、设置 `site/entries/route/entry`，然后 append 到页面 ShadowRoot 并等待 `rendered` / `error`。
-- `.js` 内容复用 `pages.js` class（旧的 js adapter 现在是 pages），所以它的 loader 是 `pages-js-loader`。
-- `.js` / `.pages.js` 内容模块可以 default-export `function(shadow)`，由 `pages.js` 的 `connectedCallback` 调用。
-- `meta.ext` 是最终扩展名，决定 loader 标签。
-
-### Adapter class 接口
+`js.ext.js` 不包装 class，直接 define 生成出来的 class：
 
 ```js
-const meta = Object.freeze({
+const Adapter = await WebElements.create(file);
+const ext = Adapter.meta.ext;
+const tag = `${ext.replaceAll(".", "-")}-loader`;
+
+customElements.define(tag, Adapter);
+```
+
+例如：
+
+- `md.ext.pages.js` 的工厂生成 `MarkdownAdapter` → `<md-loader>`
+- `html.ext.pages.js` → `<html-loader>`
+- `[...].ext.pages.js` → `<directory-loader>`
+- `pages.js.ext.js` 自身 → `<pages-js-loader>`
+
+### Adapter 工厂
+
+`md` / `html` / 目录 adapter 默认导出一个工厂函数，不 import `pages.js`；运行时把基类传进来：
+
+```js
+export const meta = Object.freeze({
   ext: "md",
   lang: "pages.js",
   priority: 20,
 });
 
-export default class MarkdownAdapter extends WebElements {
-  static meta = meta;
+export const parse = async (file) => ({
+  title: "...",
+  routable: true,
+});
 
-  /** 只给构建期用：解析元数据，不碰 DOM。 */
-  async parse() {
-    return { ... };
-  }
+export default function (WebElements) {
+  return class MarkdownAdapter extends WebElements {
+    static meta = meta;
 
-  /** 浏览器生命周期：挂载即渲染。 */
-  async connectedCallback() {
-    // dispatchEvent(new Event("rendered"))
-    // dispatchEvent(new Event("error"))
-  }
+    async parse() {
+      return parse(this.file);
+    }
+
+    async connectedCallback() {
+      // 渲染，然后 dispatchEvent(new Event("rendered"))
+      // 失败时 dispatchEvent(new Event("error"))
+    }
+  };
 }
 ```
 
-- `static meta` 保存 `ext` / `lang` / `priority`；目录 class 另有 `directory: true`。
-- `constructor(file)` 接收 [vfile](https://github.com/vfile/vfile)。
-- `parse()` 只读取 `this.file`，不碰 DOM；CI 用它生成元数据。
-- `connectedCallback()` 是唯一的渲染钩子；挂载组件即渲染。
-- `routable` 由 adapter 决定：**不返回 `routable` 就是中间件**（不进路由表、不进 feed）。
+- `meta.ext` 是最终扩展名，`js.ext.js` 用它生成 loader 标签。
+- `parse(file)` 只给构建期用，不碰 DOM。
+- 工厂返回的 class 继承 `WebElements`；运行时创建它、设置 `site/entries/route/entry`，append 后等待 `rendered` / `error`。
+- `.js` / `.pages.js` 内容模块默认导出 `function(shadow)`，由 `pages.js` 的 `connectedCallback` 调用。
 - `[...]` 表示 adapter 接受目录；`posts.[...]` 只接受 `/posts/` 及其子目录。
 - 在 Node 构建期，`scripts/lib/dom.ts` 为 `HTMLElement` / `customElements` 安装最小 shim。
 
@@ -218,10 +222,10 @@ export default class MarkdownAdapter extends WebElements {
 | 文件 | 元数据来源 | 渲染方式 |
 |---|---|---|
 | `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | 由 `pages.js` class 调用内容 `default(shadow)` |
-| `pages.js.ext.js` | 同上，但默认 routable | 页面基类，挂载内容函数/class |
-| `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | `connectedCallback` 里跑 unified + remark + rehype |
-| `html.ext.pages.js` | `<meta name="title/date/tags/description">` | `connectedCallback` 里 `innerHTML` + 执行 module script |
-| `[...].ext.pages.js` | — | `connectedCallback` 里用 `meta/index.json` 渲染列表 |
+| `pages.js.ext.js` | 同上，但默认 routable | 页面基类，挂载内容函数 |
+| `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂 class 的 `connectedCallback` |
+| `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂 class 的 `connectedCallback` |
+| `[...].ext.pages.js` | — | 工厂 class 的 `connectedCallback` |
 ## 路由与 404
 
 URL 严格对应 `content/` 下的路径：
@@ -389,13 +393,12 @@ export default function (shadow) {
 
 在 `adapters/` 新建 `<负责的扩展名>.ext.<语言扩展名>`：
 
-1. 声明 `const meta = Object.freeze({...})` 与 `static meta`；
-2. class 继承 `WebElements`；
-3. 如果需要自定义 `constructor`，接收 vfile 并调用 `super(file)`；
-4. `parse()` 只给构建期提取元数据；
-5. `connectedCallback()` 负责渲染，完成后 dispatch `rendered`（失败 dispatch `error`）。
+1. `export const meta = Object.freeze({...})`；
+2. `export const parse = async (file) => ({...})`，只给构建期提取元数据；
+3. `export default function (WebElements) { return class extends WebElements {...}; }`；
+4. 工厂返回的 class 实现 `connectedCallback()`，完成后 dispatch `rendered`（失败 dispatch `error`）。
 
-运行时通过 `meta/index.json` 里的 adapter 表发现它；`js.ext.js` 读取 `meta.ext` 定义 `<final-ext>-loader`，直接 `customElements.define(tag, adapterClass)`。没有包装 class，也没有 `PagesAdapter`。
+运行时通过 `meta/index.json` 里的 adapter 表发现它；`js.ext.js` 调 `WebElements.create(adapterFile)`，后者 import 工厂并执行 `factory(WebElements)`，最后直接 `customElements.define(tag, Adapter)`。没有包装 class，也没有 `PagesAdapter`。
 
 ## 代码风格
 

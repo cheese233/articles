@@ -3,12 +3,15 @@ import "../scripts/lib/dom.ts";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { VFile } from "vfile";
-import HtmlAdapter from "../adapters/html.ext.pages.js";
+import HtmlFactory from "../adapters/html.ext.pages.js";
 import JavaScriptLoader, * as JavaScript from "../adapters/js.ext.js";
-import MarkdownAdapter from "../adapters/md.ext.pages.js";
-import PagesAdapter, { WebElements } from "../adapters/pages.js.ext.js";
+import MarkdownFactory from "../adapters/md.ext.pages.js";
+import WebElements from "../adapters/pages.js.ext.js";
 
-test("page adapters form a WebElements inheritance chain", () => {
+const MarkdownAdapter = MarkdownFactory(WebElements);
+const HtmlAdapter = HtmlFactory(WebElements);
+
+test("adapter factories return WebElements classes", () => {
   assert.ok(WebElements.prototype instanceof HTMLElement);
   assert.ok(MarkdownAdapter.prototype instanceof WebElements);
   assert.ok(HtmlAdapter.prototype instanceof WebElements);
@@ -87,7 +90,7 @@ test("pages.js defaults to routable", async () => {
     value: "/**\n * # About\n */\nexport default function () {}",
   });
 
-  const meta = await new PagesAdapter(file).parse();
+  const meta = await new WebElements(file).parse();
   assert.equal(meta.title, "About");
   assert.equal(meta.routable, true);
 });
