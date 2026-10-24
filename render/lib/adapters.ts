@@ -3,6 +3,7 @@ import type {
   AdapterConstructor,
   AdapterIndex,
   AdapterInstance,
+  AdapterLoader,
 } from "../../shared/types.ts";
 
 const cache = new Map<string, AdapterConstructor>();
@@ -14,8 +15,8 @@ const tags = new Map<string, string>();
  * Web Components requirement.
  */
 const define = (ext: string, Adapter: AdapterConstructor) => {
-  // `js.ext.js` registers WebElements itself; only child adapters need a tag.
-  if (ext == "js") return;
+  // `js` is a loader, and `pages.js` registers its own component.
+  if (ext == "js" || ext == "pages.js") return;
   if (tags.has(ext)) return;
 
   const base = ext
@@ -34,10 +35,10 @@ const define = (ext: string, Adapter: AdapterConstructor) => {
 };
 
 /**
- * Every adapter is imported directly. Its parent adapter is its superclass:
- * `pages.js.ext.js` extends `js.ext.js`, and `md.ext.pages.js` extends the
- * `pages.js` adapter. Loading the parent first also enforces that chain; no
- * separate module() call exists.
+ * Every adapter is imported directly. The `js` loader and the `pages.js`
+ * component are roots; other adapters extend their language parent
+ * (`md.ext.pages.js` extends `pages.js`). Loading the parent first enforces
+ * that chain; no separate module() call exists.
  */
 export const loadAdapterClass = async (
   ext: string,
@@ -58,7 +59,7 @@ export const loadAdapterClass = async (
   if (typeof Adapter != "function")
     throw new Error(`adapter .${ext} has no default class`);
 
-  if (ext != "js") {
+  if (ext != "js" && ext != "pages.js") {
     const Parent = await loadAdapterClass(
       info.lang,
       index,
@@ -73,5 +74,7 @@ export const loadAdapterClass = async (
   return Adapter;
 };
 
-export const instantiate = (Adapter: AdapterConstructor, file: VFile) =>
-  new Adapter(file) as AdapterInstance;
+export const instantiate = (
+  Adapter: AdapterConstructor,
+  file: VFile,
+): AdapterInstance | AdapterLoader => new Adapter(file);

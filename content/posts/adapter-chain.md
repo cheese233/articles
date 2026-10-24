@@ -16,28 +16,44 @@ tags:
 
 例如：
 
-| 文件 | 负责的扩展名 | 由谁加载 |
+| 文件 | 负责的扩展名 | 由谁处理 |
 |---|---|---|
-| `md.ext.js` | `md` | `js.ext.js` |
-| `pages.js.ext.js` | `pages.js` | `js.ext.js` |
-| `[...].ext.js` | 目录 | `js.ext.js` |
-| `js.ext.js` | `js` | 直接 `import()` |
+| `md.ext.pages.js` | `md` | `pages.js.ext.js` |
+| `html.ext.pages.js` | `html` | `pages.js.ext.js` |
+| `[...].ext.pages.js` | 目录 | `pages.js.ext.js` |
+| `pages.js.ext.js` | `pages.js` | 自身是页面根；由 `js.ext.js` loader 创建 |
+| `js.ext.js` | `js` | 语言 loader；不是 HTMLElement |
 
-## 为什么需要父 adapter
+## loader 与页面组件
 
-一个 adapter 自己也是源文件。`pages.js.ext.js` 是用 JavaScript 写的，所以它要被“处理 `.js` 的 adapter”执行——也就是 `js.ext.js`。
+`js.ext.js` 是 `.js` 的语言 loader。它不继承 `HTMLElement`，只做两件事：
 
-`js.ext.js` 是唯一被直接 `import()` 的 adapter。它负责：
+1. 解析 `.js` 文件头部的 JSDoc；
+2. `create()` 出 `pages.js.ext.js` 提供的 `PagesAdapter`，交给运行时挂载。
 
-1. 作为 `.js` 内容的渲染器；
-2. 作为所有 `*.ext.js` adapter 的加载器；
-3. 通过动态 `import()` 把 adapter 的 default class 交给运行时。
+真正的页面 Web Component 在 `pages.js.ext.js`：
 
-如果它也要通过父 adapter 加载自己，就会形成自环。所以它被特殊对待，直接执行。
+```text
+js.ext.js  (JavaScriptAdapter, .js；语言 loader)
+  └─ pages.js.ext.js  (WebElements + PagesAdapter, .pages.js)
+       ├─ md.ext.pages.js    (.md)
+       ├─ html.ext.pages.js  (.html)
+       └─ [...].ext.pages.js (directory)
+```
+
+`pages.js.ext.js` 里 `WebElements` 原生继承 `HTMLElement`，并注册 `web-elements` 与 `pages-element`。`PagesAdapter` 继承 `WebElements`；`md` / `html` / 目录 adapter 再继承 `PagesAdapter`。
+
+运行时把 `js` 和 `pages.js` 当作根；加载其他 adapter 时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`，因为它是页面根，不是 loader 的子类。
+
+## 挂载即渲染
+
+`.js` / `.pages.js` 文件的 default export 如果是自定义元素 class，`PagesAdapter` 会先 define 再挂载；如果是函数，则把当前页面的 `ShadowRoot` 作为参数调用。
+
+挂载完成就 dispatch `rendered`，失败就 dispatch `error`。没有 `module()` / `render()` 两个阶段。
 
 ## 构造器收到的是 VFile
 
-每个 adapter 的 `constructor` 都接收一个 [vfile](https://github.com/vfile/vfile)。元信息放在类上的 `const meta`（实现为 `static meta`）：
+`WebElements` 的 `constructor` 接收一个 [vfile](https://github.com/vfile/vfile)。元信息放在类上的 `const meta`（实现为 `static meta`）：
 
 ```js
 const meta = Object.freeze({
@@ -46,12 +62,11 @@ const meta = Object.freeze({
   priority: 10,
 });
 
-export default class PagesAdapter extends JavaScriptAdapter {
+export default class PagesAdapter extends WebElements {
   static meta = meta;
 
-  /** @param {import("vfile").VFile} file */
-  constructor(file) {
-    this.file = file;
+  async parse() {
+    return { ...(await super.parse()), routable: true };
   }
 }
 ```

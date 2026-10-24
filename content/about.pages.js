@@ -1,4 +1,4 @@
-import WebElements from "../adapters/js.ext.js";
+import { WebElements } from "../adapters/pages.js.ext.js";
 
 /**
  * # 关于
@@ -17,8 +17,9 @@ export default class AboutPage extends WebElements {
       </p>
       <p>
         这个页面本身是 <code>content/about.pages.js</code>，扩展名是
-        <code>pages.js</code>，因此由 <code>pages.js.ext.js</code> 处理；
-        而后者又是由 <code>js.ext.js</code> 执行起来的。
+        <code>pages.js</code>，因此由 <code>pages.js.ext.js</code> 的
+        <code>WebElements</code> 处理；<code>js.ext.js</code> 只负责把
+        <code>.js</code> 文件交给它。
       </p>
       <p>
         类继承自 <code>WebElements</code>。挂载这个 Web Component 就是渲染，

@@ -76,14 +76,25 @@ export interface ParsedMeta {
   summary?: string;
 }
 
-export interface AdapterInstance extends HTMLElement {
+export interface AdapterFields {
   file: VFile;
   parse?: () => Promise<ParsedMeta>;
   site?: SiteConfig;
   entries: ManifestEntry[];
   route?: string;
   entry?: EntryMeta | null;
+}
+
+export interface AdapterInstance extends HTMLElement, AdapterFields {
   connected?: boolean;
+}
+
+/**
+ * The `.js` language loader is not an element. It creates the `pages.js`
+ * Web Component that the runtime mounts instead.
+ */
+export interface AdapterLoader extends AdapterFields {
+  create: () => AdapterInstance;
 }
 
 export interface AdapterStatics {
@@ -94,6 +105,6 @@ export interface AdapterStatics {
 }
 
 export interface AdapterConstructor {
-  new (file: VFile): AdapterInstance;
+  new (file: VFile): AdapterInstance | AdapterLoader;
   meta: AdapterStatics;
 }

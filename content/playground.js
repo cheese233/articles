@@ -12,7 +12,8 @@ export default function (shadow) {
     <h1>JS 游乐场</h1>
     <p>
       这篇内容是一个 <code>.js</code> 文件。它的默认导出是一个函数，
-      由 <code>js.ext.js</code> 调用，参数是当前页面的 ShadowRoot。
+      由 <code>pages.js</code> 适配器调用，参数是当前页面的 ShadowRoot；
+      <code>js.ext.js</code> 只负责加载。
     </p>
     <p>
       <button type="button">点我</button>

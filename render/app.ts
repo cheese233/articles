@@ -2,6 +2,7 @@ import { VFile } from "vfile";
 import { findDirectoryAdapter, matchFileAdapter, stripExt } from "../shared/ext.ts";
 import type {
   AdapterInstance,
+  AdapterLoader,
   EntryMeta,
   Manifest,
 } from "../shared/types.ts";
@@ -68,11 +69,16 @@ const createHost = (route: string) => {
 };
 
 /**
- * The adapter is a Web Component: mounting it is the render. No module() or
- * render() call exists; the runtime waits for the component's lifecycle
- * event instead.
+ * The adapter is a Web Component: mounting it is the render. The `.js`
+ * language loader is the exception; it creates the `pages.js` component
+ * before mounting. No module() or render() call exists; the runtime waits
+ * for the component's lifecycle event instead.
  */
-const mount = async (element: AdapterInstance, route: string) => {
+const mount = async (
+  adapter: AdapterInstance | AdapterLoader,
+  route: string,
+) => {
+  const element = "create" in adapter ? adapter.create() : adapter;
   const shadow = createHost(route);
   element.style.display = "block";
   let timeout = 0;

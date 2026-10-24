@@ -26,18 +26,21 @@ code disagree, follow the current code and do not silently change the architectu
   non-erasable syntax. `npm test` checks this.
 - The SPA fetches source, mounts an adapter Web Component, and renders in the browser. The CI
   generates metadata only; it never renders final pages.
-- Adapters form a chain; a child adapter must extend its parent class. The runtime loads the
-  parent first and verifies `Adapter.prototype instanceof Parent`.
-- `js.ext.js` is the root `WebElements` and has no parent. It declares
-  `export class WebElements extends HTMLElement` and registers itself with
-  `customElements.define("web-elements", WebElements)`. `pages.js.ext.js` extends
-  `WebElements`; `md.ext.pages.js`, `html.ext.pages.js`, and `[...].ext.pages.js` extend
-  `PagesAdapter`.
-- The browser runtime only registers child adapters. The `js` root is already registered by
-  `js.ext.js`; do not register it a second time.
+- Page adapters form a chain; `md.ext.pages.js`, `html.ext.pages.js`, and
+  `[...].ext.pages.js` extend `PagesAdapter`. The runtime loads the parent first and verifies
+  `Adapter.prototype instanceof Parent`.
+- `pages.js.ext.js` is the page root. It declares
+  `export class WebElements extends HTMLElement`, `PagesAdapter extends WebElements`, and
+  registers `web-elements` and `pages-element` at module scope.
+- `js.ext.js` is a pure `.js` language loader, not an HTMLElement. It parses JSDoc and
+  `create()`s a `PagesAdapter`; the runtime mounts that component. The runtime treats both
+  `js` and `pages.js` as roots, so `pages.js` must not extend `js.ext.js`.
+- The browser runtime only registers child adapters (`md`, `html`, directory). The
+  `web-elements` and `pages-element` registrations belong to `pages.js.ext.js`; do not register
+  them a second time.
 - Node metadata generation installs a minimal `HTMLElement` / `customElements` shim in
-  `scripts/lib/dom.ts`. Keep adapter source native; never reintroduce a `Base` fallback
-  class inside `js.ext.js` to satisfy Node.
+  `scripts/lib/dom.ts`. Keep `WebElements` native; never reintroduce a `Base` fallback class
+  inside `js.ext.js` or `pages.js.ext.js` to satisfy Node.
 - Every adapter has a static `meta` with `ext` and `lang`; use `directory: true` only for a
   `[...]` directory adapter. Do not invent fields.
 - The constructor receives a `vfile`. `parse()` reads metadata only and must not touch the DOM.
@@ -103,23 +106,26 @@ export default class MarkdownAdapter extends PagesAdapter {
 }
 ```
 
-- `js.ext.js` default-exports `WebElements`; child adapters import it as a default import
-  (`import WebElements from "./js.ext.js";`). Keep the module-level
-  `customElements.define("web-elements", WebElements)` registration there. Do not switch this
-  back to a named import or a fallback HTML element base without changing the runtime, Node
-  shim, and all adapters.
-- Keep adapter class names descriptive (`MarkdownAdapter`, `HtmlAdapter`, `DirectoryAdapter`,
-  `PagesAdapter`). Keep the filename contract exact; do not rename adapters casually.
+- `pages.js.ext.js` exports `WebElements` (named) and `PagesAdapter` (default). Page content
+  classes import `{ WebElements }` from `../adapters/pages.js.ext.js`; child adapters import
+  the default `PagesAdapter` from the same file. Keep the module-level `customElements.define`
+  calls for `web-elements` and `pages-element` there.
+- `js.ext.js` default-exports the plain `JavaScriptAdapter` loader. It parses JSDoc and
+  `create()`s a `PagesAdapter`; it must not extend `HTMLElement` or import the content module
+  directly. Do not put `WebElements` back in `js.ext.js`.
 
 ### Adapter filename contract
 
 | File | Handles | Parent |
 | --- | --- | --- |
-| `js.ext.js` | `.js` | none; direct import |
-| `pages.js.ext.js` | `.pages.js` | `js.ext.js` |
+| `js.ext.js` | `.js` | none; language loader (not an element) |
+| `pages.js.ext.js` | `.pages.js` | `js.ext.js` loader; no class inheritance; page root |
 | `md.ext.pages.js` | `.md` | `pages.js.ext.js` |
 | `html.ext.pages.js` | `.html` | `pages.js.ext.js` |
 | `[...].ext.pages.js` | directory | `pages.js.ext.js` |
+
+The runtime treats `js` and `pages.js` as roots; parent instanceof checks apply to `md`,
+`html`, and directory adapters.
 
 `[...]` denotes a directory adapter. A prefix such as `posts.[...]` narrows it to that
 directory. Keep `meta.ext`, `meta.lang`, and `meta.directory` consistent with the filename and
@@ -196,9 +202,9 @@ npm run build
 - [ ] File name, indentation (2 or 4), double quotes, semicolons, trailing commas.
 - [ ] Import types separated with `import type`; relative `.ts` imports include `.ts`.
 - [ ] No non-erasable TypeScript; no `as any` / `satisfies` / `#private` / enums.
-- [ ] Adapter extends the correct parent, has static `meta`, constructor `vfile`, `parse()` only
-      metadata, and `connectedCallback()` as the only render path. `js.ext.js` is native
-      `extends HTMLElement` and registers `web-elements` itself.
+- [ ] Page adapters extend the correct parent, have static `meta`, constructor `vfile`,
+      `parse()` only metadata, and `connectedCallback()` as the only render path. `pages.js.ext.js`
+      is native `extends HTMLElement`; `js.ext.js` is a non-element loader.
 - [ ] No `module()` / `render()` split, no CI page rendering, no hardcoded vendor list.
 - [ ] Only node_modules are vendored; application source remains unbundled.
 - [ ] Deterministic output; generated files are not committed.
@@ -241,7 +247,11 @@ async render() {} // wrong lifecycle; use connectedCallback()
 
 ```js
 const Base = globalThis.HTMLElement ?? class {}; // wrong: use the Node shim
-export class WebElements extends Base {}           // source must extend HTMLElement
+export class WebElements extends Base {}           // pages.js must extend HTMLElement
+```
+
+```js
+export default class JavaScriptAdapter extends HTMLElement {} // js.ext.js is a loader
 ```
 
 Also wrong: bundling `render/app.ts`, adding a central vendor package array, committing

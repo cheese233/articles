@@ -55,8 +55,8 @@ npm run deploy     # build + wrangler pages deploy dist
 ```text
 articles/
 ├─ adapters/                 # 每个 adapter 都是可被浏览器执行/加载的源文件
-│  ├─ js.ext.js              # 根 WebElements + .js；直接 import，不属于任何父 adapter
-│  ├─ pages.js.ext.js        # 处理 .pages.js；class 继承 WebElements
+│  ├─ js.ext.js              # .js 语言 loader；不继承 HTMLElement
+│  ├─ pages.js.ext.js        # WebElements + PagesAdapter；处理 .pages.js
 │  ├─ md.ext.pages.js        # 处理 .md；class 继承 PagesAdapter
 │  ├─ html.ext.pages.js      # 处理 .html；class 继承 PagesAdapter
 │  └─ [...].ext.pages.js     # 处理目录；class 继承 PagesAdapter
@@ -123,26 +123,35 @@ render/index.html
 | `md.ext.pages.js` | `.md` | `pages.js.ext.js` |
 | `html.ext.pages.js` | `.html` | `pages.js.ext.js` |
 | `[...].ext.pages.js` | 目录 | `pages.js.ext.js` |
-| `pages.js.ext.js` | `.pages.js` | `js.ext.js` |
-| `js.ext.js` | `.js` | **无，直接 `import()`** |
+| `pages.js.ext.js` | `.pages.js` | `js.ext.js`（loader；不继承） |
+| `js.ext.js` | `.js` | **无；语言 loader** |
 
-### Web Components 与父 adapter 链
+### Web Components 与 loader
 
-所有页面 adapter 都是 Web Component，基类叫 `WebElements`：
+`pages.js.ext.js` 是页面 Web Component 的根，`js.ext.js` 只是 `.js` 的语言 loader：
 
 ```text
-js.ext.js  (WebElements, .js)
-  └─ pages.js.ext.js  (PagesAdapter, .pages.js)
+js.ext.js  (JavaScriptAdapter, .js；不继承 HTMLElement)
+  └─ pages.js.ext.js  (WebElements + PagesAdapter, .pages.js)
        ├─ md.ext.pages.js    (.md)
        ├─ html.ext.pages.js  (.html)
        └─ [...].ext.pages.js (directory)
 ```
 
-父 adapter 不是通过 `module()` 调用的，而是通过 **ESM import + class extends**：
+箭头表示“由 loader 创建”，不是 class 继承：
 
 ```js
+// js.ext.js
+import PagesAdapter from "./pages.js.ext.js";
+
+export default class JavaScriptAdapter {
+  create() {
+    return new PagesAdapter(this.file);
+  }
+}
+
 // pages.js.ext.js
-import WebElements from "./js.ext.js";
+export class WebElements extends HTMLElement {}
 export default class PagesAdapter extends WebElements {}
 
 // md.ext.pages.js
@@ -150,10 +159,11 @@ import PagesAdapter from "./pages.js.ext.js";
 export default class MarkdownAdapter extends PagesAdapter {}
 ```
 
-- 运行时直接 `import()` adapter 文件，父 adapter 的模块/类会随 import 链执行；运行时会先加载父 adapter，并检查 `Adapter.prototype instanceof Parent`，不满足就直接报错。
-- `js.ext.js` 是唯一没有父 adapter 的模块，直接执行，避免自环；它原生 `export class WebElements extends HTMLElement`，并在模块顶层用 `customElements.define("web-elements", WebElements)` 注册自己。
-- 运行时只为子 adapter 注册自定义元素；`js` 根 adapter 已由 `js.ext.js` 自己注册。挂载仍然是 `new Adapter(vfile)`，没有 `module()` / `render()` 两个阶段。
-- 一个 `.pages.js` 或 `.js` 模块如果 default export 的是自定义元素 class，`js.ext.js` 会直接 define + 挂载它；如果是函数，则把页面的 `ShadowRoot` 作为参数调用。
+- `js.ext.js` 是唯一不继承 `HTMLElement` 的 adapter；它只解析 JSDoc，并 `create()` 出 `pages.js` 的 Web Component。运行时负责挂载这个返回的元素。
+- `pages.js.ext.js` 原生 `export class WebElements extends HTMLElement`；`PagesAdapter` 继承它，并在模块顶层注册 `web-elements` 和 `pages-element`。
+- 运行时把 `js` 和 `pages.js` 当作根；`md` / `html` / 目录 adapter 仍然继承 `pages.js`，加载时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`。
+- `.js` / `.pages.js` 内容如果 default export 自定义元素 class，`PagesAdapter` 会 define + 挂载；如果 default export 函数，则把页面的 `ShadowRoot` 作为参数调用。
+- 没有 `module()` / `render()` 两个阶段；挂载组件就是渲染。
 
 ### 类接口
 
@@ -167,17 +177,10 @@ const meta = Object.freeze({
 export default class PagesAdapter extends WebElements {
   static meta = meta;
 
-  /** @type {import("vfile").VFile} */
-  file;
-
-  /** @param {import("vfile").VFile} file */
-  constructor(file) {
-    super();
-    this.file = file;
-  }
-
   /** 只给构建期用：解析元数据，不碰 DOM。 */
-  async parse() {}
+  async parse() {
+    return { ...(await super.parse()), routable: true };
+  }
 
   /** 浏览器生命周期：挂载即渲染。 */
   async connectedCallback() {
@@ -188,19 +191,19 @@ export default class PagesAdapter extends WebElements {
 ```
 
 - `static meta` 保存 adapter 的元信息（`meta` 常量在模块级声明）。
-- `constructor` 接收一个 [vfile](https://github.com/vfile/vfile)。
+- `constructor` 接收一个 [vfile](https://github.com/vfile/vfile)；页面基类 `WebElements` 已实现。
 - `parse()` 只读取 `this.file`，不碰 DOM；CI 用它生成元数据。
 - `connectedCallback()` 是唯一的渲染钩子；挂载组件即可，不再有 `module()` / `render()` 拆分。
 - `routable` 由 adapter 决定：**不返回 `routable` 就是中间件**（不进路由表、不进 feed）。
 - `[...]` 表示 adapter 接受目录；`posts.[...]` 只接受 `/posts/` 及其子目录。
-- 在 Node 构建期，`scripts/lib/dom.ts` 为 `HTMLElement` / `customElements` 安装最小 shim；adapter 源码本身保持原生 `extends HTMLElement`，`parse()` 因此可以在没有 DOM 的环境执行。
+- 在 Node 构建期，`scripts/lib/dom.ts` 为 `HTMLElement` / `customElements` 安装最小 shim；页面 adapter 源码（`pages.js.ext.js`）保持原生 `extends HTMLElement`，`parse()` 因此可以在没有 DOM 的环境执行。
 
 ### 已实现的 adapter
 
 | 文件 | 元数据来源 | 渲染方式 |
 |---|---|---|
-| `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | 挂载 default export 的 class，或调用函数 |
-| `pages.js.ext.js` | 同上，但默认 routable | 继承 `WebElements` |
+| `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | 语言 loader；`create()` 出 `PagesAdapter` |
+| `pages.js.ext.js` | 同上，但默认 routable | `WebElements` / `PagesAdapter`，挂载 default 的 class 或函数 |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | `connectedCallback` 里跑 unified + remark + rehype |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | `connectedCallback` 里 `innerHTML` + 执行 module script |
 | `[...].ext.pages.js` | — | `connectedCallback` 里用 `meta/index.json` 渲染列表 |
@@ -354,7 +357,7 @@ tags: [meta, blog]
 ```
 
 ```js
-import WebElements from "../adapters/js.ext.js";
+import { WebElements } from "../adapters/pages.js.ext.js";
 
 /**
  * # 标题
@@ -375,12 +378,12 @@ export default class DemoPage extends WebElements {
 在 `adapters/` 新建 `<负责的扩展名>.ext.<语言扩展名>`：
 
 1. 声明 `const meta = Object.freeze({...})` 与 `static meta`；
-2. class 继承 `WebElements`（根）或 `PagesAdapter`（页面 adapter）；
-3. `constructor(file)` 保存 vfile；
+2. class 继承 `WebElements`（页面基类）或 `PagesAdapter`（页面 adapter）；
+3. 如果需要自定义 `constructor`，接收 vfile 并调用 `super(file)`；
 4. `parse()` 只给构建期提取元数据；
 5. `connectedCallback()` 负责渲染，完成后 dispatch `rendered`（失败 dispatch `error`）。
 
-运行时通过 `meta/index.json` 里的 adapter 表发现它，直接 `import()` 并注册成自定义元素；父 adapter 通过 class 继承链参与，不再需要 `module()` 加载器。
+运行时通过 `meta/index.json` 里的 adapter 表发现它，直接 `import()` 并注册成自定义元素；`js` 是 loader，`pages.js` 是页面根，其余 adapter 通过 class 继承链参与，不再需要 `module()` 加载器。
 
 ## 代码风格
 
