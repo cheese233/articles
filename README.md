@@ -289,11 +289,11 @@ URL 严格对应 `content/` 下的路径：
 ## 依赖：Node 与浏览器共享同一份版本
 
 - Node 侧直接从 `node_modules` 解析。
-- 浏览器侧**只加载 `node_modules` 依赖的 ESM vendor bundle**：`vfile`、`yaml`、`unified`、`remark-*`、`rehype-stringify`、`ts-blank-space`。
-- `scripts/gen/vendor.ts` 只调用一次 esbuild：虚拟入口 `vendor:<pkg>` 由插件通过 `build.resolve()` 解析到 node_modules；`onLoad` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
+- 浏览器侧**只加载从源码 import 自动发现的 `node_modules` 依赖**：`scripts/lib/imports.ts` 扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `sw.template.js` 的静态/动态 import，不存在手写包列表。
+- `scripts/gen/vendor.ts` 只调用一次 esbuild：虚拟入口 `vendor:<specifier>` 由插件通过 `build.resolve()` 解析到 node_modules；`onLoad` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
 - `render/index.html` 的 import map 由构建生成，URL 带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
-- `sw.js` 由 `sw.template.js` 生成，注入 `ts-blank-space` 的哈希 URL；它自身使用 `Cache-Control: no-cache`。
+- `sw.js` 由 `sw.template.js` 生成：模板里写普通的 `from "ts-blank-space"`，构建时按同一份依赖表改写成带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。
 
 ## CI 与 Cloudflare Pages
 

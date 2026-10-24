@@ -1,4 +1,5 @@
-import tsBlankSpace from "<!-- @ts-blank-space -->";
+// The build rewrites this bare import to its hashed /vendor URL.
+import tsBlankSpace from "ts-blank-space";
 
 const javascript = (body) =>
   new Response(body, {

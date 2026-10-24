@@ -2,18 +2,24 @@ import { readFile } from "node:fs/promises";
 import { writeText } from "../lib/fs.ts";
 import { paths } from "../lib/paths.ts";
 
-const placeholder = "<!-- @ts-blank-space -->";
-
 export default async function (vendors: Map<string, string>) {
-  const url = vendors.get("ts-blank-space");
-  if (!url) throw new Error("missing ts-blank-space vendor bundle");
+  let code = await readFile(`${paths.root}/sw.template.js`, "utf8");
 
-  const template = await readFile(`${paths.root}/sw.template.js`, "utf8");
-  if (!template.includes(placeholder))
-    throw new Error("sw.template.js has no ts-blank-space placeholder");
+  for (const [specifier, url] of vendors) {
+    code = code.replaceAll(JSON.stringify(specifier), JSON.stringify(url));
+  }
 
-  await writeText(
-    `${paths.root}/sw.js`,
-    template.replace(placeholder, url),
-  );
+  const unresolved = [...code.matchAll(/\bfrom\s+["']([^"']+)["']/g)]
+    .map((match) => match[1] ?? "")
+    .filter((specifier) =>
+      !specifier.startsWith(".") && !specifier.startsWith("/")
+    );
+
+  if (unresolved.length) {
+    throw new Error(
+      `unresolved service worker imports: ${unresolved.join(", ")}`,
+    );
+  }
+
+  await writeText(`${paths.root}/sw.js`, code);
 }
