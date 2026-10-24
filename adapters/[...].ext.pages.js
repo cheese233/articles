@@ -1,9 +1,10 @@
+import WebElements from "./pages.js.ext.js";
+
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ManifestEntry} ManifestEntry */
-/** @typedef {import("../shared/types.ts").AdapterContext} AdapterContext */
 
 /** @type {import("../shared/types.ts").AdapterStatics} */
-export const meta = Object.freeze({
+const meta = Object.freeze({
   ext: "[...]",
   lang: "pages.js",
   priority: 0,
@@ -45,44 +46,52 @@ const card = (entry) => `
     <a class="post-source" data-raw href="${escape(entry.file)}">source</a>
   </li>`;
 
-/** @returns {Promise<import("../shared/types.ts").ParsedMeta>} */
-export const parse = async () => ({ routable: true });
-
 /**
- * @param {VFile} _file
- * @param {ShadowRoot} shadow
- * @param {AdapterContext} context
+ * A directory page is also a Web Component. `js.ext.js` mounts the class;
+ * mounting it renders the listing into the page's ShadowRoot.
  */
-export default async function (_file, shadow, context) {
-  const route = context.route;
-  const entries = route == "/"
-    ? context.entries
-    : context.entries.filter((entry) => entry.route.startsWith(route));
+export default class DirectoryAdapter extends WebElements {
+  static meta = meta;
 
-  const site = context.site;
-  const title = route == "/" ? site.title : label(route);
-  const description = route == "/"
-    ? site.description
-    : `${entries.length} 篇内容`;
+  async connectedCallback() {
+    if (this.connected) return;
+    this.connected = true;
 
-  const breadcrumb = route == "/"
-    ? ""
-    : `<a class="crumb" href="/">${escape(site.title)}</a>
-      <span class="crumb-sep">/</span>
-      <span>${escape(title)}</span>`;
+    try {
+      const route = this.route ?? "/";
+      const entries = route == "/"
+        ? this.entries
+        : this.entries.filter((entry) => entry.route.startsWith(route));
 
-  const article = document.createElement("article");
-  article.className = "listing";
-  article.innerHTML = `
-    <header class="listing-header">
-      ${breadcrumb}
-      <h1>${escape(title)}</h1>
-      <p>${escape(description)}</p>
-    </header>
-    <ul class="post-list">
-      ${entries.map(card).join("")}
-    </ul>
-    ${entries.length ? "" : '<p class="empty">这里还没有内容。</p>'}`;
+      const site = this.site;
+      const title = route == "/" ? site?.title ?? "Blog" : label(route);
+      const description = route == "/"
+        ? site?.description ?? ""
+        : `${entries.length} 篇内容`;
 
-  shadow.append(article);
+      const breadcrumb = route == "/"
+        ? ""
+        : `<a class="crumb" href="/">${escape(site?.title ?? "Home")}</a>
+          <span class="crumb-sep">/</span>
+          <span>${escape(title)}</span>`;
+
+      this.innerHTML = `
+        <article class="listing">
+          <header class="listing-header">
+            ${breadcrumb}
+            <h1>${escape(title)}</h1>
+            <p>${escape(description)}</p>
+          </header>
+          <ul class="post-list">
+            ${entries.map(card).join("")}
+          </ul>
+          ${entries.length ? "" : '<p class="empty">这里还没有内容。</p>'}
+        </article>`;
+
+      this.dispatchEvent(new Event("rendered"));
+    } catch (error) {
+      console.error(error);
+      this.dispatchEvent(new Event("error"));
+    }
+  }
 }

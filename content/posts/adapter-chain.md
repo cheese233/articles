@@ -18,92 +18,71 @@ tags:
 
 | 文件 | 负责的扩展名 | 形态 |
 |---|---|---|
-| `md.ext.pages.js` | `md` | 函数 adapter |
-| `html.ext.pages.js` | `html` | 函数 adapter |
-| `[...].ext.pages.js` | 目录 | 函数 adapter |
+| `md.ext.pages.js` | `md` | class；继承 `WebElements` |
+| `html.ext.pages.js` | `html` | class；继承 `WebElements` |
+| `[...].ext.pages.js` | 目录 | class；继承 `WebElements` |
 | `pages.js.ext.js` | `pages.js` | 页面基类 `WebElements` |
-| `js.ext.js` | `js` | `function(file)`，定义 `<ext>-loader` |
+| `js.ext.js` | `js` | `function(file)`，直接 define adapter class |
 
 ## loader 元素
 
-`js.ext.js` 接收一个 adapter `.js` 文件，读取它的 `meta.ext`，定义：
-
-```text
-<meta.ext 里的点换成横线>-loader
-```
-
-例如 `md.ext.pages.js` → `md-loader`，`pages.js.ext.js` → `pages-js-loader`。
-
-所有 loader 都继承 `pages.js.ext.js` 的 `WebElements`：
+`js.ext.js` 接收一个 adapter `.js` 文件，读取 `meta.ext`，直接把这个 class 定义成自定义元素：
 
 ```js
-export default class WebElements extends HTMLElement {
-  constructor(file, context) {
+const adapter = await import(file);
+const Adapter = adapter.default;
+const ext = adapter.meta?.ext ?? Adapter.meta.ext;
+const tag = `${ext.replaceAll(".", "-")}-loader`;
+
+customElements.define(tag, Adapter);
+```
+
+没有包装 class，也没有 `PagesAdapter`。例如：
+
+- `md.ext.pages.js` → `<md-loader>`
+- `html.ext.pages.js` → `<html-loader>`
+- `[...].ext.pages.js` → `<directory-loader>`
+- `pages.js.ext.js` → `<pages-js-loader>`
+
+## 页面 class
+
+`pages.js.ext.js` 是共享基类：
+
+```js
+export class WebElements extends HTMLElement {
+  static meta = meta;
+
+  constructor(file) {
     super();
     this.file = file;
-    this.context = context;
-    this.attachShadow({ mode: "open" });
+  }
+
+  async parse() {
+    return { ...parseJsDoc(String(this.file)), routable: true };
   }
 
   async connectedCallback() {
-    if (this.constructor.adapter) {
-      await this.constructor.adapter.default(
-        this.file,
-        this.shadowRoot,
-        this.context,
-      );
-    } else {
-      const mod = await import(this.file.path);
-      await mod.default(this.shadowRoot);
-    }
+    // 渲染，然后 dispatchEvent(new Event("rendered"))
+    // 失败时 dispatchEvent(new Event("error"))
   }
 }
 ```
 
-`md` / `html` / 目录 adapter 是函数，`js.ext.js` 把它们挂到 loader 的静态 `adapter` 上；`js` / `pages.js` 没有 adapter，loader 直接 import 内容模块并调用 `default(shadow)`。
+`md` / `html` / 目录 adapter 都继承它，并各自实现 `parse()` 和 `connectedCallback()`。
 
-## 函数 adapter
+运行时通过 `js.ext.js` 定义 `<ext>-loader`，创建它、设置 `site` / `entries` / `route` / `entry`，然后 append 到页面 ShadowRoot，等待 `rendered` / `error`。
 
-`md` / `html` / 目录 adapter 导出三样东西：
-
-```js
-export const meta = Object.freeze({
-  ext: "md",
-  lang: "pages.js",
-  priority: 20,
-});
-
-export const parse = async (file) => ({
-  title: "标题",
-  routable: true,
-});
-
-export default async function (file, shadow, context) {
-  // 把页面写进 shadow
-}
-```
-
-`parse(file)` 只给 CI 提取元数据，不碰 DOM；default 函数在浏览器里收到源文件、loader 的 `ShadowRoot` 和站点 context。
-
-`.js` 和 `.pages.js` 内容文件默认导出 `function(shadowDom)`：
-
-```js
-export default function (shadow) {
-  const article = document.createElement("article");
-  article.textContent = "内容";
-  shadow.append(article);
-}
-```
-
-`js-loader` / `pages-js-loader` 负责 import 这个内容模块并调用它的 `default(shadow)`。
+`.js` 和 `.pages.js` 内容文件可以默认导出 `function(shadowDom)`；`pages.js` 的 `connectedCallback` 会 import 内容模块并调用它。因此 `.js` 内容复用 `pages.js`（旧的 js adapter 现在是 pages），loader 标签是 `pages-js-loader`。
 
 ## 目录 adapter
 
-目录 adapter 没有源文件内容，它的 default 函数从 context 读取：
+目录 adapter 没有源文件内容，它从实例字段读取：
 
 ```js
-export default async function (file, shadow, context) {
-  const { route, entries, site } = context;
+async connectedCallback() {
+  const route = this.route ?? "/";
+  const entries = this.entries;
+  const site = this.site;
   // 渲染列表
 }
 ```
@@ -112,4 +91,4 @@ export default async function (file, shadow, context) {
 
 ## 构造器收到的是 VFile
 
-`WebElements` loader 的 constructor 接收 `(file, context)`；CI 仍然把 [vfile](https://github.com/vfile/vfile) 传给 `parse(file)`。没有 `module()` / `render()` 两个阶段。
+页面 class 的 constructor 接收 `(file)`；CI 把 [vfile](https://github.com/vfile/vfile) 传给实例的 `parse()`。没有 `module()` / `render()` 两个阶段。

@@ -1,8 +1,6 @@
-import WebElements from "./pages.js.ext.js";
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("vfile").VFile} VFile */
-/** @typedef {import("../shared/types.ts").AdapterModule} AdapterModule */
 /** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
@@ -17,16 +15,18 @@ export const meta = Object.freeze({
 export const parse = async (file) => parseJsDoc(String(file));
 
 /**
- * Import an adapter `.js` file, read its final `meta.ext`, and define
- * `<final-ext>-loader`. The loader extends `pages.js`; for `md` / `html` /
- * directory it calls the adapter function, while `js` / `pages.js` fall back to
- * the content module's `default(shadow)`.
+ * Import an adapter `.js` class and define its `<final-ext>-loader` element.
+ * The adapter class is registered directly; there is no wrapper base class.
  *
  * @param {string} file
  */
 export default async function (file) {
   const adapter = await import(file);
-  const ext = adapter.meta?.ext;
+  const Adapter = adapter.default;
+  if (typeof Adapter != "function" || !(Adapter.prototype instanceof HTMLElement))
+    throw new Error(`${file}: default export must be a custom element class`);
+
+  const ext = adapter.meta?.ext ?? Adapter.meta?.ext;
   if (!ext) throw new Error(`${file}: adapter has no meta.ext`);
 
   const base = ext
@@ -35,13 +35,8 @@ export default async function (file) {
     .replace(/^-+|-+$/g, "");
   const tag = `${base}-loader`;
   const existing = customElements.get(tag);
-  if (existing) return /** @type {typeof WebElements} */ (existing);
-
-  const Adapter = class extends WebElements {
-    static meta = adapter.meta;
-    static adapter = ext == "js" || ext == "pages.js" ? null : adapter;
-  };
+  if (existing) return /** @type {CustomElementConstructor} */ (existing);
 
   customElements.define(tag, Adapter);
-  return Adapter;
+  return /** @type {CustomElementConstructor} */ (Adapter);
 }

@@ -68,28 +68,28 @@ const createHost = (route: string) => {
 };
 
 /**
- * `<final-ext>-loader` classes extend the pages.js WebElements class. The
- * runtime appends the loader, then waits for its rendered/error lifecycle.
+ * Adapter classes are defined as `<final-ext>-loader` elements. They render
+ * into their own light DOM, inside the page host's ShadowRoot.
  */
+type AdapterElement = HTMLElement & {
+  site?: import("../shared/types.ts").SiteConfig;
+  entries: import("../shared/types.ts").ManifestEntry[];
+  route?: string;
+  entry: EntryMeta | null;
+};
+
 const mount = async (
   Loader: LoaderConstructor,
   file: VFile,
   route: string,
   context: AdapterContext,
 ) => {
-  const element = new Loader(file, context);
-  element.className = "page";
-  element.dataset.route = route;
-
-  const shadow = element.shadowRoot;
-  if (!shadow) throw new Error("missing page shadow root");
-
-  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
-    const stylesheet = document.createElement("link");
-    stylesheet.rel = "stylesheet";
-    stylesheet.href = href;
-    shadow.append(stylesheet);
-  }
+  const shadow = createHost(route);
+  const element = new Loader(file) as AdapterElement;
+  element.site = context.site;
+  element.entries = context.entries;
+  element.route = context.route;
+  element.entry = context.entry;
 
   let timeout = 0;
 
@@ -110,7 +110,7 @@ const mount = async (
   document.body.classList.add("is-loading");
 
   try {
-    main.replaceChildren(element);
+    shadow.append(element);
     await rendered;
   } finally {
     window.clearTimeout(timeout);

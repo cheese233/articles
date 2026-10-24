@@ -1,225 +1,97 @@
 ---
 name: articles-code-style
-description: Enforce the articles repository's code style and architecture when editing, adding, or reviewing files. Use for TypeScript, JavaScript, adapters, renderer code, build scripts, tests, CSS, HTML, JSON, or documentation in this project.
-whenToUse: Load before changing any file in this repository, especially when adding an adapter, page, dependency, client module, build step, or test; also load when reviewing a diff for style or architectural drift.
+description: Apply this repository's code formatting and TypeScript, JavaScript, CSS, HTML, JSON, and test style when writing or reviewing files. Use for any code-style question or diff review in this project.
+whenToUse: Load before writing, editing, or reviewing code in this repository. Use it for formatting, naming, imports, JSDoc, and test style; use README.md for architecture and behavior.
 ---
 
 # articles code style
 
-This skill is the short, enforceable contract for this repository. `README.md` is the design
-source; the nearest existing file is the formatting source. If a README snippet and the current
-code disagree, follow the current code and do not silently change the architecture.
-
-## Read before editing
-
-- `README.md` — page/adapter pipeline, client TypeScript execution, CI, deployment.
-- `package.json`, `tsconfig.json`, `.forgejo/workflows/deploy.yml` — actual build and checks.
-- The nearest file of the same kind; imitate its imports, naming, comments, and spacing.
-- Do not introduce a formatter, linter, framework, or dependency just to enforce this skill.
-
-## Non-negotiable architecture
-
-- Application code is **never bundled**. Only `node_modules` packages are bundled into
-  `vendor/`; `render/*.ts`, `shared/*.ts`, and `adapters/*.js` stay source files.
-- Client TypeScript is executed by `ts-blank-space` in a Service Worker. It must remain
-  erasable: no enums, runtime namespaces, parameter properties, decorators, or other
-  non-erasable syntax. `npm test` checks this.
-- The SPA asks `js.ext.js` for a loader class, creates `<final-ext>-loader`, and waits for the
-  loader's `rendered` / `error` event. The CI generates metadata only; it never renders final
-  pages.
-- `pages.js.ext.js` is the `WebElements extends HTMLElement` page base. It is a class, not a
-  render function.
-- `js.ext.js` default-exports `async function(file)` where `file` is an adapter `.js` file. It
-  imports the adapter, reads `meta.ext`, and defines `<ext-with-dashes>-loader` (for example
-  `md.ext.pages.js` → `md-loader`) as a subclass of `WebElements`.
-- `md.ext.pages.js`, `html.ext.pages.js`, and `[...].ext.pages.js` are function adapters:
-  named `meta` / `parse` plus a default `(file, shadow, context)` render function. They do not
-  import `pages.js.ext.js`.
-- For `md` / `html` / directory loaders, `WebElements.connectedCallback` calls the adapter
-  function. For `js` / `pages.js`, it imports the content module and calls
-  `default(shadow)`.
-- The `<ext>-loader>` elements are the only custom elements. Do not create a separate host per
-  adapter or a `PagesAdapter` class.
-- Node metadata generation installs a minimal `HTMLElement` / `customElements` shim in
-  `scripts/lib/dom.ts`. Keep `WebElements` native; never reintroduce a `Base` fallback class.
-- Every adapter exports `meta` with `ext` and `lang`; use `directory: true` only for a
-  `[...]` directory adapter. `meta.ext` is the final extension used for the loader tag.
-- `parse(file)` reads metadata only and must not touch the DOM. The default function writes
-  into the ShadowRoot; it may read `context.site`, `context.entries`, `context.route`, and
-  `context.entry`. There is no `module()` / `render()` split.
-- `routable` is an adapter decision: no `routable` means the file is middleware and must not
-  enter the route table or feeds. `.pages.js` is routable by default.
-- Do not add generated output to Git: `vendor/`, `dist/`, `render/index.html`, `sw.js`,
-  `meta/`, `sitemap.xml`, `atom.xml`, `feed.json`, `robots.txt` remain generated.
-- Do not reintroduce esbuild for the site. `wrangler` may bring its own transitive esbuild;
-  the repository's own build uses Rollup.
+This skill covers code style only. Use `README.md` for architecture and behavior. When a rule
+here and the surrounding code disagree, follow the surrounding code unless the user asks for a
+cleanup.
 
 ## Formatting
 
 | Kind | Rule |
 | --- | --- |
-| TypeScript, JavaScript, JSON | 2 spaces, double quotes, semicolons, trailing commas in multiline literals/params |
+| TypeScript, JavaScript, JSON | 2 spaces, double quotes, semicolons, trailing commas in multiline literals/parameters |
 | CSS, HTML | 4 spaces, double quotes, lowercase tags/attributes, self-closing void elements |
-| Wrapping | Keep near 80 columns; break long calls, attributes, and unions before they sprawl |
-| Files | `snake_case.ts` / `snake_case.js`; adapter filenames are fixed by the extension contract |
-| Whitespace | No tabs, no trailing spaces, one blank line between logical blocks |
+| Wrapping | Keep near 80 columns; break long calls, unions, and attributes before they sprawl |
+| Files | `snake_case.ts` / `snake_case.js`; lowercase, no spaces |
+| Whitespace | No tabs, no trailing whitespace, one blank line between logical blocks |
 | Diffs | Never reformat unrelated code; do not normalize equality or quote style in a drive-by change |
 
-The codebase deliberately uses `==` / `!=` for comparisons against literals and null in many
-places (`chunk.type != "chunk"`, `module.renderedLength == 0`, `title != site`). Match the
-surrounding file; do not mass-rewrite those to `===` / `!==` in an unrelated change. Never use
-loose equality for objects or values that can coerce unexpectedly.
+The codebase commonly uses `==` / `!=` for comparisons against literals and null
+(`chunk.type != "chunk"`, `module.renderedLength == 0`, `title != site`). Match the surrounding
+file; do not mass-rewrite those to `===` / `!==` in an unrelated change. Never use loose
+equality for objects.
 
-### TypeScript
+## TypeScript
 
-- Use `import type` for type-only imports; `verbatimModuleSyntax` is enabled.
+- Use `import type` for type-only imports.
 - Relative TypeScript imports include the extension: `../shared/types.ts`.
-- Node builtins use the `node:` prefix: `node:fs/promises`, `node:path`, `node:crypto`.
+- Node builtins use the `node:` prefix: `node:fs/promises`, `node:path`.
 - Prefer `interface` for object shapes and exported contracts. Use `type` only for unions or
   aliases where an interface is wrong.
 - Use `const` and `let`, never `var`. Prefer early returns over deep nesting.
 - No `satisfies`, no `as any`, no `#private`, no enums, no namespaces, no parameter
-  properties, no decorators. A narrow `as unknown as` is acceptable only at a real
-  third-party type boundary (see `scripts/lib/vendor_bundle.ts`), with a surrounding reason.
-- Export named helpers. Reserve `export default` for adapter render functions, the
-  `WebElements` host, page content functions, and CLI entry points.
-- Do not add `// @ts-ignore` / `// @ts-nocheck` to silence a real type problem.
-- Error messages are short, lowercase, and contextual: `throw new Error("missing #main")`.
+  properties, no decorators. A narrow `as unknown as` is acceptable only at a real third-party
+  type boundary, with a reason nearby.
+- Client TypeScript must remain erasable by `ts-blank-space`; do not add syntax that requires
+  a transform.
+- Use explicit return types only where inference is unclear or the boundary is public.
+- Do not add `// @ts-ignore` or `// @ts-nocheck` to silence a real type problem.
 
-### JavaScript and adapters
+## JavaScript and JSDoc
 
 - `.js` files are checked by `tsc` with `checkJs`; type them with JSDoc.
-- Use `/** @type {...} */` for fields/statics, `@param` / `@returns` for functions, and
-  `@typedef` for local shapes. Import shared types from `../shared/types.ts` in JSDoc.
-- Freeze adapter metadata and export the three module members:
+- Use `/** @type {...} */` for fields and constants, `@param` / `@returns` for functions, and
+  `@typedef` for local shapes.
+- Import shared types from `../shared/types.ts` inside JSDoc when needed.
+- Keep JSDoc comments in English; keep user-facing README and content Chinese.
+- Arrow functions for small local helpers; named function/class declarations for public or
+  recursive modules.
+- Avoid line-wide casts. Prefer a narrow JSDoc cast at the exact expression that needs it.
 
-```js
-/** @type {import("../shared/types.ts").AdapterStatics} */
-export const meta = Object.freeze({
-  ext: "md",
-  lang: "pages.js",
-});
+## Naming and comments
 
-/** @param {VFile} file */
-export const parse = async (file) => ({ ... });
+- Classes, interfaces, and type names: `PascalCase`.
+- Functions, variables, fields: `camelCase`. Module constants: `camelCase`, not `UPPER_CASE`.
+- CSS classes: `kebab-case`; custom properties: `--kebab-case`.
+- Boolean names start with `is` / `has` / `can` when the meaning benefits.
+- Comments explain why, not what. Wrap near 80 columns and use `//` with a space.
+- Error messages are short, lowercase, and contextual: `throw new Error("missing #main")`.
+- Do not leave commented-out code or debug logging in a final diff.
 
-/**
- * @param {VFile} file
- * @param {ShadowRoot} shadow
- * @param {AdapterContext} context
- */
-export default async function (file, shadow, context) {
-  // render into shadow
-}
-```
+## CSS and HTML
 
-- `.js` / `.pages.js` content modules default-export `function(shadowDom)`; their loaders call
-  that function.
-- `js.ext.js` default-exports `async function(adapterFile)`: it imports the adapter, reads
-  `meta.ext`, and defines `<ext>-loader` as a subclass of `WebElements`.
-- `pages.js.ext.js` is the `WebElements` class base. It is not a function and does not import
-  `js.ext.js` or md/html adapters.
-- Do not create a `PagesAdapter` class, a base class chain, or a separate host per adapter.
-  The `<ext>-loader>` elements themselves are the hosts.
+- Plain modern CSS; no preprocessor, utility framework, or inline style blocks.
+- One selector per rule; group related custom properties at the top of a component block.
+- Use semantic HTML and existing `aria-*` / `data-*` naming.
+- Double-quoted attributes. Put one attribute per line when a tag is long.
+- Void elements self-close: `<meta ... />`, `<link ... />`, `<img ... />`.
+- Avoid `!important` unless overriding a third-party rule; document the reason.
 
-### Adapter filename contract
+## Tests
 
-| File | Handles | Shape |
-| --- | --- | --- |
-| `js.ext.js` | `.js` | `function(adapterFile)` → defines `js-loader` |
-| `pages.js.ext.js` | `.pages.js` | class `WebElements`; `pages-js-loader` |
-| `md.ext.pages.js` | `.md` | function adapter; `md-loader` |
-| `html.ext.pages.js` | `.html` | function adapter; `html-loader` |
-| `[...].ext.pages.js` | directory | function adapter; `directory-loader` |
-
-The runtime asks `js.ext.js` for the loader class, creates `<final-ext>-loader`, and waits for
-its `rendered` / `error` event. There is no parent instanceof check.
-
-`[...]` denotes a directory adapter. A prefix such as `posts.[...]` narrows it to that
-directory. Keep `meta.ext`, `meta.lang`, and `meta.directory` consistent with the filename and
-the runtime's lookup.
-
-### Client runtime
-
-- The shell loads `render/boot.js`, which registers `sw.js`, waits for it to control the page,
-  then imports `./app.ts`. Do not bypass the Service Worker; the app intentionally has no
-  pre-bundled fallback.
-- The Service Worker transforms non-navigate `.ts` responses. Relative imports stay relative;
-  bare imports resolve through the generated import map.
-- `render/index.html` is generated from `render/index.template.html`; edit the template, not
-  the generated shell.
-- `sw.template.js` is source; `sw.js` is generated. A bare `ts-blank-space` import in the
-  template is expected and is rewritten to the hashed vendor URL at build time.
-- Service Worker features require `localhost` or HTTPS. When testing a client change, use
-  `npm run dev` and a real browser, not just `curl`.
-
-### Vendor and dependencies
-
-- Vendor discovery is automatic: `scripts/lib/imports.ts` blanks types with `ts-blank-space`
-  and reads imports with `es-module-lexer`. Never add a hardcoded package list in
-  `scripts/gen/vendor.ts` or `scripts/lib/vendor_bundle.ts`.
-- Node-side or build-only packages do not belong in `vendor/` unless a browser source
-  imports them. Adding a dependency means importing it from client code (or the service
-  worker template), then running `npm test` and `npm run build`.
-- Rollup resolves `vendor:<specifier>` through the plugin and rejects any module outside
-  `node_modules`. Do not add a fallback that bundles project code into `vendor/`.
-- Rollup code-splits shared dependencies into `vendor/chunks/`. `npm test` verifies that every
-  non-empty module appears in exactly one chunk. If you change the vendor graph, keep that
-  test green; do not weaken it to make a duplicate build pass.
-- Generated `vendor/`, hashed chunk names, and the import map must stay deterministic.
-
-### Metadata and determinism
-
-- `parse()` is CI-only metadata extraction; it must work without a DOM.
-- Dates come from frontmatter, then git history, then `SOURCE_DATE_EPOCH`, then a warned
-  mtime fallback. Do not use `Date.now()` or random values in metadata generation.
-- Sort entries deterministically (date desc, then route) and keep feed/sitemap ordering stable.
-- For changes that affect generated metadata, run `npm run build` twice and compare outputs.
-
-### CSS, HTML, Markdown
-
-- CSS uses 4 spaces, kebab-case classes, `--custom-properties`, and plain modern CSS. No
-  preprocessor or utility framework.
-- HTML uses 4 spaces, double-quoted attributes, semantic elements, and one attribute per line
-  when a tag is long. Keep the existing `aria-*` and `data-*` naming.
-- `README.md` and `content/` are Chinese; code comments and JSDoc are English. Keep that split.
-- Content filenames and routes follow `snake_case` / lowercase kebab-case as already present;
-  do not rename published routes without a redirect decision.
-
-## Testing and verification
-
-Run, in this order, before claiming a code change is complete:
-
-```sh
-npx tsc --noEmit
-npm test
-npm run build
-```
-
-- `npm test` uses `node:test` and `node:assert/strict`; add focused tests instead of a new
-  framework. Vendor tests must use `write: false` and must not mutate `vendor/`. A Node test
-  that imports `pages.js.ext.js` must import `../scripts/lib/dom.ts` first, because its
-  `WebElements` class extends `HTMLElement` during module evaluation.
-- For UI or adapter changes, also run `npm run dev` and check the route, a markdown page, a
-  `.pages.js` page, the directory listing, and 404.
-- For build, metadata, or vendor changes, build twice and compare the tree (determinism).
-- Finish with `git status --short`; generated output must not be staged.
+- Use `node:test` and `node:assert/strict`; do not add a test framework.
+- Test names are lowercase sentences describing behavior.
+- Prefer focused assertions over snapshots.
+- Tests must not depend on wall-clock time, randomness, or network access.
+- Tests should not mutate the repository; use in-memory data and temporary paths.
 
 ## Review checklist
 
-- [ ] File name, indentation (2 or 4), double quotes, semicolons, trailing commas.
-- [ ] Import types separated with `import type`; relative `.ts` imports include `.ts`.
-- [ ] No non-erasable TypeScript; no `as any` / `satisfies` / `#private` / enums.
-- [ ] `md` / `html` / directory adapters export named `meta`, named `parse`, and a default
-      `(file, shadow, context)` function. `pages.js.ext.js` is the `WebElements` class.
-- [ ] `js.ext.js` defines `<meta.ext>-loader` subclasses; no separate host per adapter and no
-      `PagesAdapter` class.
-- [ ] No `module()` / `render()` split, no CI page rendering, no hardcoded vendor list.
-- [ ] Only node_modules are vendored; application source remains unbundled.
-- [ ] Deterministic output; generated files are not committed.
-- [ ] `tsc`, `test`, `build` pass; browser smoke test done for client changes.
+- [ ] Indentation is 2 spaces for TS/JS/JSON, 4 for CSS/HTML.
+- [ ] Double quotes and semicolons; trailing commas in multiline literals.
+- [ ] `import type` for types; relative `.ts` imports include `.ts`; `node:` builtins.
+- [ ] No `satisfies`, `as any`, `#private`, enums, namespaces, or non-erasable client syntax.
+- [ ] Names follow the conventions above; no unrelated reformatting.
+- [ ] Comments are English, concise, and explain intent.
+- [ ] CSS/HTML use 4 spaces and semantic markup.
+- [ ] Tests use `node:test` / `node:assert/strict` and are deterministic.
 
-## Good and bad anchors
+## Examples
 
 Good:
 
@@ -231,25 +103,11 @@ export const newestFirst = (entries: EntryMeta[]) =>
 ```
 
 ```js
-/** @type {import("../shared/types.ts").AdapterStatics} */
-export const meta = Object.freeze({
-  ext: "md",
-  lang: "pages.js",
-});
+/** @type {Map<string, string>} */
+const tags = new Map();
 
-/** @param {VFile} file */
-export const parse = async (file) => ({ title: "..." });
-
-/**
- * @param {VFile} file
- * @param {ShadowRoot} shadow
- */
-export default async function (file, shadow) {
-  const article = document.createElement("article");
-  article.className = "markdown";
-  article.textContent = String(file);
-  shadow.append(article);
-}
+/** @param {string} value @returns {string} */
+export const normalize = (value) => value.trim();
 ```
 
 Bad:
@@ -259,34 +117,10 @@ const data = JSON.parse(raw) as any; // banned escape hatch
 enum Mode { List, Page }           // not erasable
 ```
 
-```js
-export default class MarkdownAdapter extends WebElements {} // wrong: adapters are functions
+```css
+.card { color:red } /* wrong indentation and spacing */
 ```
 
-```js
-export default class MarkdownPage extends HTMLElement { // wrong: only <ext>-loaders are hosts
-  static meta = { ext: "md" };
-}
+```html
+<div class=card><p>text</div> <!-- unquoted attribute, unclosed tags -->
 ```
-
-```ts
-async module() {}  // wrong lifecycle
-async render() {} // wrong lifecycle; write into shadow in the default function
-```
-
-```js
-const Base = globalThis.HTMLElement ?? class {}; // wrong: use the Node shim
-export class WebElements extends Base {}           // pages.js must extend HTMLElement
-```
-
-```js
-export default class PagesAdapter extends WebElements {} // wrong: pages.js is the base class
-```
-
-```js
-export default class JavaScriptAdapter extends HTMLElement {} // wrong: js.ext.js is a function
-```
-
-Also wrong: bundling `render/app.ts`, adding a central vendor package array, committing
-`vendor/` or `render/index.html`, introducing `Date.now()` into metadata, registering loader
-elements outside `js.ext.js`, or changing the adapter chain to a loader registry.

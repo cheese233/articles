@@ -1,8 +1,10 @@
+import WebElements from "./pages.js.ext.js";
+
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
 /** @type {import("../shared/types.ts").AdapterStatics} */
-export const meta = Object.freeze({
+const meta = Object.freeze({
   ext: "html",
   lang: "pages.js",
   priority: 30,
@@ -93,33 +95,46 @@ const execute = async (target, content) => {
   }
 };
 
-/** @param {VFile} file @returns {Promise<ParsedMeta>} */
-export const parse = async (file) => {
-  const source = String(file);
-  const tags = metaTags(source);
+export default class HtmlAdapter extends WebElements {
+  static meta = meta;
 
-  return {
-    title: tags.get("title") ?? tags.get("og:title") ?? titleOf(source),
-    author: tags.get("author") ?? tags.get("article:author"),
-    date: tags.get("date"),
-    tags: tags.get("tags")?.split(",").map((tag) => tag.trim()),
-    routable: tags.get("routable") != "false",
-    summary: tags.get("description") ?? tags.get("og:description"),
-  };
-};
+  /** @returns {Promise<ParsedMeta>} */
+  async parse() {
+    const source = String(this.file);
+    const tags = metaTags(source);
 
-/**
- * @param {VFile} file
- * @param {ShadowRoot} shadow
- */
-export default async function (file, shadow) {
-  const source = String(file);
-  const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
-  const article = document.createElement("article");
-  article.className = "html-page markdown";
-  article.innerHTML = body;
-  article.querySelectorAll("meta").forEach((tag) => tag.remove());
+    return {
+      title: tags.get("title") ?? tags.get("og:title") ?? titleOf(source),
+      author: tags.get("author") ?? tags.get("article:author"),
+      date: tags.get("date"),
+      tags: tags.get("tags")?.split(",").map((tag) => tag.trim()),
+      routable: tags.get("routable") != "false",
+      summary: tags.get("description") ?? tags.get("og:description"),
+    };
+  }
 
-  shadow.append(article);
-  await execute(shadow, article);
+  /**
+   * Mounting the Web Component is the render: there is no separate
+   * module/render phase.
+   */
+  async connectedCallback() {
+    if (this.connected) return;
+    this.connected = true;
+
+    try {
+      const source = String(this.file);
+      const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
+
+      this.classList.add("html-page", "markdown");
+      this.innerHTML = body;
+      this.querySelectorAll("meta").forEach((tag) => tag.remove());
+
+      const root = this.getRootNode();
+      await execute(root instanceof ShadowRoot ? root : this, this);
+      this.dispatchEvent(new Event("rendered"));
+    } catch (error) {
+      console.error(error);
+      this.dispatchEvent(new Event("error"));
+    }
+  }
 }

@@ -1,71 +1,79 @@
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("vfile").VFile} VFile */
-/** @typedef {import("../shared/types.ts").AdapterContext} AdapterContext */
-/** @typedef {import("../shared/types.ts").AdapterModule} AdapterModule */
-/** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
-/** @type {AdapterStatics} */
-export const meta = Object.freeze({
+/** @type {import("../shared/types.ts").AdapterStatics} */
+const meta = Object.freeze({
   ext: "pages.js",
   lang: "js",
   priority: 10,
 });
 
-/** @param {VFile} file @returns {Promise<ParsedMeta>} */
-export const parse = async (file) => ({
-  ...parseJsDoc(String(file)),
-  routable: true,
-});
-
 /**
- * The base page class. `js.ext.js` extends it for every adapter and defines
- * `<final-ext>-loader` elements. For `md` / `html` / directory the subclass
- * holds the adapter function; for `js` / `pages.js` it falls back to the content
- * module's `default(shadow)`.
+ * The single page class. The `.js` loader creates it for plain `.js` files;
+ * the `.pages.js` adapter is this class itself. Markdown, HTML, and directory
+ * adapters extend it.
  */
-export default class WebElements extends HTMLElement {
+export class WebElements extends HTMLElement {
   static meta = meta;
 
-  /** @type {AdapterModule | null} */
-  static adapter = null;
+  /** @type {((Page: Function) => string) | undefined} */
+  static definePage;
 
   /** @type {VFile} */
   file;
-  /** @type {AdapterContext} */
-  context;
+  connected = false;
 
-  /** @param {VFile} file @param {AdapterContext} context */
-  constructor(file, context) {
+  /** @type {import("../shared/types.ts").SiteConfig | undefined} */
+  site;
+  /** @type {import("../shared/types.ts").ManifestEntry[]} */
+  entries = [];
+  /** @type {string | undefined} */
+  route;
+  /** @type {import("../shared/types.ts").EntryMeta | null} */
+  entry = null;
+
+  /** @param {VFile} file */
+  constructor(file) {
     super();
     this.file = file;
-    this.context = context;
-    this.attachShadow({ mode: "open" });
   }
 
+  /** @returns {Promise<ParsedMeta>} */
+  async parse() {
+    return { ...parseJsDoc(String(this.file)), routable: true };
+  }
+
+  /**
+   * A `.js` or `.pages.js` module is mounted directly: a class is appended
+   * as a custom element, a function receives the page's ShadowRoot.
+   */
   async connectedCallback() {
-    const shadow = this.shadowRoot;
-    if (!shadow) {
-      this.dispatchEvent(new Event("error"));
-      return;
-    }
+    if (this.connected) return;
+    this.connected = true;
 
     try {
-      const AdapterClass = /** @type {typeof WebElements} */ (this.constructor);
-      const adapter = AdapterClass.adapter;
+      const path = this.file.path;
+      if (!path) throw new Error("vfile has no path");
 
-      if (adapter) {
-        await adapter.default(this.file, shadow, this.context);
+      const mod = await import(path);
+      const Page = mod.default;
+      const root = this.getRootNode();
+      const target = root instanceof ShadowRoot ? root : this;
+
+      if (!Page) throw new Error(`${path}: default export is missing`);
+
+      if (Page.prototype instanceof HTMLElement) {
+        const definePage = /** @type {typeof WebElements} */ (this.constructor)
+          .definePage;
+        if (!definePage) throw new Error("page registration is not ready");
+        definePage(Page);
+        this.append(new Page(this.file));
+      } else if (typeof Page == "function") {
+        await Page(target);
       } else {
-        const path = this.file.path;
-        if (!path) throw new Error("vfile has no path");
-
-        const mod = await import(path);
-        if (typeof mod.default != "function") {
-          throw new Error(`${path}: default export must be a function`);
-        }
-        await mod.default(shadow);
+        throw new Error(`${path}: default export is not a class or function`);
       }
 
       this.dispatchEvent(new Event("rendered"));
@@ -75,3 +83,5 @@ export default class WebElements extends HTMLElement {
     }
   }
 }
+
+export default WebElements;
