@@ -2,7 +2,7 @@
 
 import { spawnSync } from "node:child_process";
 
-const project = process.env.CLOUDFLARE_PROJECT_NAME ?? "articles";
+const project = process.env.CLOUDFLARE_PROJECT_NAME?.trim() || "articles";
 const command = [
   "wrangler",
   "pages",
