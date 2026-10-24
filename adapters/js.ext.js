@@ -1,4 +1,4 @@
-import PagesAdapter, { WebElements } from "./pages.js.ext.js";
+import WebElements from "./pages.js.ext.js";
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("vfile").VFile} VFile */
@@ -72,7 +72,7 @@ export default class JavaScriptAdapter {
 
   /** @returns {import("../shared/types.ts").AdapterInstance} */
   create() {
-    const page = new PagesAdapter(this.file);
+    const page = new WebElements(this.file);
     page.site = this.site;
     page.entries = this.entries;
     page.route = this.route;
@@ -85,12 +85,5 @@ if (!customElements.get("web-elements")) {
   customElements.define(
     "web-elements",
     /** @type {CustomElementConstructor} */ (WebElements),
-  );
-}
-
-if (!customElements.get("pages-element")) {
-  customElements.define(
-    "pages-element",
-    /** @type {CustomElementConstructor} */ (PagesAdapter),
   );
 }

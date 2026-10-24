@@ -1,4 +1,4 @@
-import PagesAdapter from "./pages.js.ext.js";
+import WebElements from "./pages.js.ext.js";
 
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
@@ -95,7 +95,7 @@ const execute = async (target, content) => {
   }
 };
 
-export default class HtmlAdapter extends PagesAdapter {
+export default class HtmlAdapter extends WebElements {
   static meta = meta;
 
   /** @returns {Promise<ParsedMeta>} */

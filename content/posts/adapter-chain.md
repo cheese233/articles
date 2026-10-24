@@ -29,25 +29,25 @@ tags:
 `js.ext.js` 是 `.js` 的语言 loader。它不继承 `HTMLElement`，只做两件事：
 
 1. 解析 `.js` 文件头部的 JSDoc；
-2. `create()` 出 `pages.js.ext.js` 提供的 `PagesAdapter`，交给运行时挂载。
+2. `create()` 出 `pages.js.ext.js` 提供的 `WebElements`，交给运行时挂载。
 
-真正的页面 Web Component 在 `pages.js.ext.js`：
+真正的页面 Web Component 是 `pages.js.ext.js` 里唯一的 `WebElements`：
 
 ```text
 js.ext.js  (JavaScriptAdapter, .js；语言 loader)
-  └─ pages.js.ext.js  (WebElements + PagesAdapter, .pages.js)
+  └─ pages.js.ext.js  (WebElements, .pages.js)
        ├─ md.ext.pages.js    (.md)
        ├─ html.ext.pages.js  (.html)
        └─ [...].ext.pages.js (directory)
 ```
 
-`pages.js.ext.js` 只导出 `WebElements` / `PagesAdapter` 两个 class。`js.ext.js` 加载它之后，在模块顶层注册 `web-elements` 与 `pages-element`，并通过 `WebElements.definePage` 按需注册页面内容 class；`PagesAdapter` 继承 `WebElements`，`md` / `html` / 目录 adapter 再继承 `PagesAdapter`。
+`pages.js.ext.js` 只导出 `WebElements` 这一个 class。`js.ext.js` 加载它之后，在模块顶层注册 `web-elements`，并通过 `WebElements.definePage` 按需注册页面内容 class；`md` / `html` / 目录 adapter 都继承 `WebElements`。
 
 运行时把 `js` 和 `pages.js` 当作根；加载任何页面 adapter 前先加载 `js` loader，确保注册完成。加载其他 adapter 时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`，因为它是页面根，不是 loader 的子类。
 
 ## 挂载即渲染
 
-`.js` / `.pages.js` 文件的 default export 如果是自定义元素 class，`PagesAdapter` 会先 define 再挂载；如果是函数，则把当前页面的 `ShadowRoot` 作为参数调用。
+`.js` / `.pages.js` 文件的 default export 如果是自定义元素 class，`WebElements` 会先 define 再挂载；如果是函数，则把当前页面的 `ShadowRoot` 作为参数调用。
 
 挂载完成就 dispatch `rendered`，失败就 dispatch `error`。没有 `module()` / `render()` 两个阶段。
 
@@ -62,11 +62,11 @@ const meta = Object.freeze({
   priority: 10,
 });
 
-export default class PagesAdapter extends WebElements {
+export default class WebElements extends HTMLElement {
   static meta = meta;
 
   async parse() {
-    return { ...(await super.parse()), routable: true };
+    return { ...parseJsDoc(String(this.file)), routable: true };
   }
 }
 ```

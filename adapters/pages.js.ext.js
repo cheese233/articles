@@ -11,11 +11,13 @@ const meta = Object.freeze({
 });
 
 /**
- * The page Web Component. It is the root of the page hierarchy: `js.ext.js`
- * registers it and supplies `definePage`, and the markdown/html/directory
- * adapters extend `PagesAdapter`.
+ * The single page class. The `.js` loader creates it for plain `.js` files;
+ * the `.pages.js` adapter is this class itself. Markdown, HTML, and directory
+ * adapters extend it.
  */
 export class WebElements extends HTMLElement {
+  static meta = meta;
+
   /** @type {((Page: Function) => string) | undefined} */
   static definePage;
 
@@ -40,7 +42,7 @@ export class WebElements extends HTMLElement {
 
   /** @returns {Promise<ParsedMeta>} */
   async parse() {
-    return parseJsDoc(String(this.file));
+    return { ...parseJsDoc(String(this.file)), routable: true };
   }
 
   /**
@@ -82,15 +84,4 @@ export class WebElements extends HTMLElement {
   }
 }
 
-/**
- * The `.pages.js` adapter. The `.js` loader creates this class for plain
- * `.js` files too; both paths share the same page lifecycle.
- */
-export default class PagesAdapter extends WebElements {
-  static meta = meta;
-
-  /** @returns {Promise<ParsedMeta>} */
-  async parse() {
-    return { ...(await super.parse()), routable: true };
-  }
-}
+export default WebElements;

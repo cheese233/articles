@@ -6,16 +6,15 @@ import { VFile } from "vfile";
 import HtmlAdapter from "../adapters/html.ext.pages.js";
 import JavaScriptAdapter from "../adapters/js.ext.js";
 import MarkdownAdapter from "../adapters/md.ext.pages.js";
-import PagesAdapter, { WebElements } from "../adapters/pages.js.ext.js";
+import WebElements from "../adapters/pages.js.ext.js";
 
 test("page adapters form a WebElements inheritance chain", () => {
   assert.ok(WebElements.prototype instanceof HTMLElement);
-  assert.ok(PagesAdapter.prototype instanceof WebElements);
-  assert.ok(MarkdownAdapter.prototype instanceof PagesAdapter);
-  assert.ok(HtmlAdapter.prototype instanceof PagesAdapter);
+  assert.ok(MarkdownAdapter.prototype instanceof WebElements);
+  assert.ok(HtmlAdapter.prototype instanceof WebElements);
   assert.ok(!(JavaScriptAdapter.prototype instanceof HTMLElement));
   assert.equal(JavaScriptAdapter.meta.ext, "js");
-  assert.equal(PagesAdapter.meta.ext, "pages.js");
+  assert.equal(WebElements.meta.ext, "pages.js");
   assert.equal(MarkdownAdapter.meta.lang, "pages.js");
   assert.equal(HtmlAdapter.meta.lang, "pages.js");
 });
@@ -89,7 +88,7 @@ test("js loader creates the pages.js component", () => {
 
   const page = adapter.create();
 
-  assert.ok(page instanceof PagesAdapter);
+  assert.ok(page instanceof WebElements);
   assert.equal(page.route, "/demo");
   assert.equal(page.file, file);
 });
@@ -100,7 +99,7 @@ test("pages.js defaults to routable", async () => {
     value: "/**\n * # About\n */\nexport default function () {}",
   });
 
-  const meta = await new PagesAdapter(file).parse();
+  const meta = await new WebElements(file).parse();
   assert.equal(meta.title, "About");
   assert.equal(meta.routable, true);
 });

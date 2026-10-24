@@ -1,5 +1,5 @@
 import { parse as parseYaml } from "yaml";
-import PagesAdapter from "./pages.js.ext.js";
+import WebElements from "./pages.js.ext.js";
 
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
@@ -76,7 +76,7 @@ const summaryOf = (body) => {
   return stripMarkdown(text).slice(0, 280);
 };
 
-export default class MarkdownAdapter extends PagesAdapter {
+export default class MarkdownAdapter extends WebElements {
   static meta = meta;
 
   /** @returns {Promise<ParsedMeta>} */

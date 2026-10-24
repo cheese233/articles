@@ -1,4 +1,4 @@
-import PagesAdapter from "./pages.js.ext.js";
+import WebElements from "./pages.js.ext.js";
 
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ManifestEntry} ManifestEntry */
@@ -50,7 +50,7 @@ const card = (entry) => `
  * A directory page is also a Web Component. `js.ext.js` mounts the class;
  * mounting it renders the listing into the page's ShadowRoot.
  */
-export default class DirectoryAdapter extends PagesAdapter {
+export default class DirectoryAdapter extends WebElements {
   static meta = meta;
 
   async connectedCallback() {

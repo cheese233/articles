@@ -55,11 +55,11 @@ npm run deploy     # build + wrangler pages deploy dist
 ```text
 articles/
 ├─ adapters/                 # 每个 adapter 都是可被浏览器执行/加载的源文件
-│  ├─ js.ext.js              # .js 语言 loader；注册页面 class
-│  ├─ pages.js.ext.js        # WebElements + PagesAdapter；只导出 class
-│  ├─ md.ext.pages.js        # 处理 .md；class 继承 PagesAdapter
-│  ├─ html.ext.pages.js      # 处理 .html；class 继承 PagesAdapter
-│  └─ [...].ext.pages.js     # 处理目录；class 继承 PagesAdapter
+│  ├─ js.ext.js              # .js 语言 loader；注册 WebElements
+│  ├─ pages.js.ext.js        # 唯一的页面 class WebElements；只导出 class
+│  ├─ md.ext.pages.js        # 处理 .md；class 继承 WebElements
+│  ├─ html.ext.pages.js      # 处理 .html；class 继承 WebElements
+│  └─ [...].ext.pages.js     # 处理目录；class 继承 WebElements
 ├─ content/                  # 发布的内容；URL 严格对应这里的路径
 ├─ meta/                     # 构建产物：每篇 sidecar + index.json
 ├─ render/
@@ -132,7 +132,7 @@ render/index.html
 
 ```text
 js.ext.js  (JavaScriptAdapter, .js；loader + 注册)
-  └─ pages.js.ext.js  (WebElements + PagesAdapter, .pages.js；只导出 class)
+  └─ pages.js.ext.js  (WebElements, .pages.js；唯一的页面 class)
        ├─ md.ext.pages.js    (.md)
        ├─ html.ext.pages.js  (.html)
        └─ [...].ext.pages.js (directory)
@@ -142,30 +142,29 @@ js.ext.js  (JavaScriptAdapter, .js；loader + 注册)
 
 ```js
 // js.ext.js
-import PagesAdapter, { WebElements } from "./pages.js.ext.js";
+import WebElements from "./pages.js.ext.js";
 
 export default class JavaScriptAdapter {
   create() {
-    return new PagesAdapter(this.file);
+    return new WebElements(this.file);
   }
 }
 
 customElements.define("web-elements", WebElements);
-customElements.define("pages-element", PagesAdapter);
 
 // pages.js.ext.js
 export class WebElements extends HTMLElement {}
-export default class PagesAdapter extends WebElements {}
+export default WebElements;
 
 // md.ext.pages.js
-import PagesAdapter from "./pages.js.ext.js";
-export default class MarkdownAdapter extends PagesAdapter {}
+import WebElements from "./pages.js.ext.js";
+export default class MarkdownAdapter extends WebElements {}
 ```
 
-- `js.ext.js` 是唯一不继承 `HTMLElement` 的 adapter；它解析 JSDoc，`create()` 出 `pages.js` 的 Web Component，并负责注册 `web-elements`、`pages-element`；页面内容 class 的按需注册也由它提供的 `WebElements.definePage` 完成。
-- `pages.js.ext.js` 只导出 class：原生 `export class WebElements extends HTMLElement`，`PagesAdapter` 继承它；不在这里调用 `customElements.define`。
-- 运行时在加载任何页面 adapter 前先加载 `js` loader，确保注册完成；`md` / `html` / 目录 adapter 仍然继承 `pages.js`，加载时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`。
-- `.js` / `.pages.js` 内容如果 default export 自定义元素 class，`PagesAdapter` 会 define + 挂载；如果 default export 函数，则把页面的 `ShadowRoot` 作为参数调用。
+- `js.ext.js` 是唯一不继承 `HTMLElement` 的 adapter；它解析 JSDoc、注册 `web-elements`，并用 `create()` 出 `WebElements`；页面内容 class 的按需注册也由它提供的 `WebElements.definePage` 完成。
+- `pages.js.ext.js` 只导出唯一的页面 class `WebElements`；它原生 `extends HTMLElement`，不在这里调用 `customElements.define`。
+- 运行时在加载任何页面 adapter 前先加载 `js` loader，确保注册完成；`md` / `html` / 目录 adapter 都直接继承 `WebElements`，加载时检查 `Adapter.prototype instanceof Parent`。`pages.js` 不再要求 `instanceof js.ext.js`。
+- `.js` / `.pages.js` 内容如果 default export 自定义元素 class，`WebElements` 会 define + 挂载；如果 default export 函数，则把页面的 `ShadowRoot` 作为参数调用。
 - 没有 `module()` / `render()` 两个阶段；挂载组件就是渲染。
 
 ### 类接口
@@ -177,12 +176,12 @@ const meta = Object.freeze({
   priority: 10,
 });
 
-export default class PagesAdapter extends WebElements {
+export default class WebElements extends HTMLElement {
   static meta = meta;
 
   /** 只给构建期用：解析元数据，不碰 DOM。 */
   async parse() {
-    return { ...(await super.parse()), routable: true };
+    return { ...parseJsDoc(String(this.file)), routable: true };
   }
 
   /** 浏览器生命周期：挂载即渲染。 */
@@ -194,7 +193,7 @@ export default class PagesAdapter extends WebElements {
 ```
 
 - `static meta` 保存 adapter 的元信息（`meta` 常量在模块级声明）。
-- `constructor` 接收一个 [vfile](https://github.com/vfile/vfile)；页面基类 `WebElements` 已实现。
+- `constructor` 接收一个 [vfile](https://github.com/vfile/vfile)；由页面 class `WebElements` 实现。
 - `parse()` 只读取 `this.file`，不碰 DOM；CI 用它生成元数据。
 - `connectedCallback()` 是唯一的渲染钩子；挂载组件即可，不再有 `module()` / `render()` 拆分。
 - `routable` 由 adapter 决定：**不返回 `routable` 就是中间件**（不进路由表、不进 feed）。
@@ -205,8 +204,8 @@ export default class PagesAdapter extends WebElements {
 
 | 文件 | 元数据来源 | 渲染方式 |
 |---|---|---|
-| `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | 语言 loader；`create()` 出 `PagesAdapter` |
-| `pages.js.ext.js` | 同上，但默认 routable | `WebElements` / `PagesAdapter`，挂载 default 的 class 或函数 |
+| `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | 语言 loader；`create()` 出 `WebElements` |
+| `pages.js.ext.js` | 同上，但默认 routable | `WebElements`，挂载 default 的 class 或函数 |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | `connectedCallback` 里跑 unified + remark + rehype |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | `connectedCallback` 里 `innerHTML` + 执行 module script |
 | `[...].ext.pages.js` | — | `connectedCallback` 里用 `meta/index.json` 渲染列表 |
@@ -381,7 +380,7 @@ export default class DemoPage extends WebElements {
 在 `adapters/` 新建 `<负责的扩展名>.ext.<语言扩展名>`：
 
 1. 声明 `const meta = Object.freeze({...})` 与 `static meta`；
-2. class 继承 `WebElements`（页面基类）或 `PagesAdapter`（页面 adapter）；
+2. class 继承 `WebElements`（唯一的页面 class）；
 3. 如果需要自定义 `constructor`，接收 vfile 并调用 `super(file)`；
 4. `parse()` 只给构建期提取元数据；
 5. `connectedCallback()` 负责渲染，完成后 dispatch `rendered`（失败 dispatch `error`）。
