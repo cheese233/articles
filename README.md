@@ -290,8 +290,8 @@ URL 严格对应 `content/` 下的路径：
 
 - Node 侧直接从 `node_modules` 解析。
 - 浏览器侧**只加载从源码 import 自动发现的 `node_modules` 依赖**，不存在手写包列表。
-- 采集用 esbuild 的解析器完成：`scripts/lib/imports.ts` 把 `render/`、`shared/`、`adapters/`、`content/` 的全部浏览器源文件（以及 `sw.template.js`）作为 entry；插件在 `onResolve` 里收集 bare import，并把相对 import 标成 external。每个源文件本身都是 entry，所以相对模块也会被解析。
-- `scripts/gen/vendor.ts` 再用一次 esbuild build：虚拟入口 `vendor:<specifier>` 由插件通过 `build.resolve()` 解析到 node_modules；`onLoad` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
+- 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `sw.template.js`，不需要额外的 esbuild 分析构建。
+- `scripts/gen/vendor.ts` 只做一次 esbuild build：虚拟入口 `vendor:<specifier>` 由插件通过 `build.resolve()` 解析到 node_modules；`onLoad` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
 - `render/index.html` 的 import map 由构建生成，URL 带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
 - `sw.js` 由 `sw.template.js` 生成：模板里写普通的 `from "ts-blank-space"`，构建时按同一份依赖表改写成带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。

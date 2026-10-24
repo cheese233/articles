@@ -1,14 +1,15 @@
 import { readdir, readFile } from "node:fs/promises";
 import { builtinModules } from "node:module";
 import * as path from "node:path";
-import { build } from "esbuild";
-import type { Plugin } from "esbuild";
+import { init, parse } from "es-module-lexer";
+import tsBlankSpace from "ts-blank-space";
 import { paths } from "./paths.ts";
 
 const roots = ["render", "shared", "adapters", "content"];
 const extraFiles = ["sw.template.js"];
 const extensions = new Set([".ts", ".js", ".mjs", ".html"]);
 const builtins = new Set(builtinModules);
+const ready = init();
 
 const isBare = (specifier: string) => {
   if (!specifier) return false;
@@ -27,23 +28,40 @@ const moduleScripts = (source: string) =>
     /<script\b(?=[^>]*\btype\s*=\s*["']module["'])[^>]*>([\s\S]*?)<\/script>/gi,
   )].map((match) => match[1] ?? "");
 
-const sourceEntries = async () => {
-  const entryPoints: (string | { in: string; out: string })[] = [];
-  const virtual = new Map<string, string>();
-  let index = 0;
+/**
+ * js + md/html adapters are JavaScript, client code is TypeScript. Blanking
+ * types first keeps es-module-lexer focused on the ESM syntax only.
+ */
+const scan = (source: string, file: string, found: Set<string>) => {
+  const errors: number[] = [];
+  const code = tsBlankSpace(source, (node) => errors.push(node.kind));
 
-  const addHtml = async (file: string) => {
-    const source = await readFile(file, "utf8");
+  if (errors.length) {
+    throw new Error(
+      `ts-blank-space cannot erase ${file} (${errors.length} nodes)`,
+    );
+  }
 
-    for (const script of moduleScripts(source)) {
-      if (!script.trim()) continue;
+  let imports: ReturnType<typeof parse>[0];
 
-      const id = `html:${file}#${index}`;
-      virtual.set(id, script);
-      entryPoints.push({ in: id, out: `html-${index}` });
-      index += 1;
-    }
-  };
+  try {
+    imports = parse(code)[0];
+  } catch (error) {
+    throw new Error(
+      `failed to parse imports in ${file}: ${(error as Error).message}`,
+    );
+  }
+
+  for (const item of imports) {
+    if (!("specifier" in item)) continue;
+
+    const specifier = item.specifier;
+    if (specifier && isBare(specifier)) found.add(specifier);
+  }
+};
+
+const sourceFiles = async () => {
+  const files = [];
 
   for (const root of roots) {
     for (const entry of await readdir(path.join(paths.root, root), {
@@ -57,57 +75,35 @@ const sourceEntries = async () => {
       if (file.endsWith("render/index.html")) continue;
       if (file.endsWith("render/app.js")) continue;
 
-      if (file.endsWith(".html")) await addHtml(file);
-      else entryPoints.push(file);
+      files.push(file);
     }
   }
 
-  for (const file of extraFiles) {
-    entryPoints.push(path.join(paths.root, file));
-  }
+  for (const file of extraFiles) files.push(path.join(paths.root, file));
 
-  return { entryPoints, virtual };
+  return files.sort();
 };
 
 /**
- * Let esbuild parse every browser source file. Imports are externalized so
- * esbuild only reports them through onResolve; relative modules are covered
- * because every source file is also an entry point.
+ * Bare imports in every browser-executed file. `import type` is removed by
+ * ts-blank-space, so only runtime specifiers reach the vendor build.
  */
 export const discoverSpecifiers = async () => {
-  const { entryPoints, virtual } = await sourceEntries();
+  await ready;
+
   const found = new Set<string>();
 
-  const collector: Plugin = {
-    name: "collect-imports",
-    setup(build) {
-      build.onResolve({ filter: /^html:/ }, (args) => ({
-        path: args.path,
-        namespace: "html",
-      }));
+  for (const file of await sourceFiles()) {
+    const source = await readFile(file, "utf8");
 
-      build.onLoad({ filter: /.*/, namespace: "html" }, (args) => ({
-        contents: virtual.get(args.path) ?? "",
-        loader: "js",
-      }));
-
-      build.onResolve({ filter: /.*/ }, (args) => {
-        if (args.kind == "entry-point") return undefined;
-        if (isBare(args.path)) found.add(args.path);
-        return { path: args.path, external: true };
-      });
-    },
-  };
-
-  await build({
-    entryPoints,
-    outdir: paths.vendor,
-    bundle: true,
-    write: false,
-    format: "esm",
-    logLevel: "silent",
-    plugins: [collector],
-  });
+    if (file.endsWith(".html")) {
+      for (const script of moduleScripts(source)) {
+        scan(script, file, found);
+      }
+    } else {
+      scan(source, file, found);
+    }
+  }
 
   return [...found].sort();
 };
