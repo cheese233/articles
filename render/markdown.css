@@ -1,33 +1,130 @@
-a {
-    color: var(--primary-color);
-    text-decoration: none;
+.markdown {
+    font-size: 1.02rem;
 }
 
-a:hover {
-    text-decoration: underline;
+.markdown > :first-child {
+    margin-top: 0;
 }
 
-ul {
-    padding-left: 2rem;
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+    margin: 2rem 0 0.7rem;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
 }
 
-pre {
-    background-color: var(--another-surface-color) !important;
-    border-radius: 6px;
-    padding: 1rem;
+.markdown h1 {
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 2rem;
 }
 
-pre code {
-    font-size: 100%;
+.markdown h2 {
+    font-size: 1.5rem;
+}
+
+.markdown h3 {
+    font-size: 1.2rem;
+}
+
+.markdown p,
+.markdown ul,
+.markdown ol,
+.markdown blockquote,
+.markdown table,
+.markdown pre {
+    margin: 0 0 1.1rem;
+}
+
+.markdown a {
+    color: var(--accent);
+}
+
+.markdown ul,
+.markdown ol {
+    padding-left: 1.4rem;
+}
+
+.markdown li + li {
+    margin-top: 0.25rem;
+}
+
+.markdown li > input[type="checkbox"] {
+    margin-right: 0.4rem;
+}
+
+.markdown blockquote {
+    padding: 0.2rem 1rem;
+    border-left: 3px solid var(--accent);
+    color: var(--muted);
+    background: color-mix(in srgb, var(--accent-soft) 40%, transparent);
+    border-radius: 0 6px 6px 0;
+}
+
+.markdown code {
+    padding: 0.12em 0.35em;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--line) 55%, transparent);
+    font-family: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", monospace;
+    font-size: 0.86em;
+}
+
+.markdown pre {
+    overflow-x: auto;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 45%, transparent);
+}
+
+.markdown pre code {
     padding: 0;
-    background: transparent;
-    border-radius: 0;
+    background: none;
+    font-size: 0.84rem;
 }
 
-code {
-    padding: 0.2em 0.4em;
-    margin: 0;
-    font-size: 85%;
-    border-radius: 6px;
-    background-color: var(--another-surface-color);
+.markdown table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.markdown th,
+.markdown td {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--line);
+    text-align: left;
+}
+
+.markdown th {
+    background: color-mix(in srgb, var(--accent-soft) 45%, transparent);
+}
+
+.markdown img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.markdown hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+}
+
+.markdown del {
+    color: var(--muted);
+}
+
+.markdown .footnotes {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
 }

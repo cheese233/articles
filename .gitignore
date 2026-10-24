@@ -1,6 +1,18 @@
+node_modules/
+dist/
+vendor/
+render/app.js
+render/index.html
+meta/
 sitemap.xml
 atom.xml
 feed.json
+robots.txt
 
-# Local Netlify folder
-.netlify
+# Local Wrangler state
+.wrangler/
+.dev.vars
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db

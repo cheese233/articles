@@ -1,108 +1,217 @@
-:root {
-    color-scheme: light dark;
-}
-
-.sr-only {
-    display: none;
-}
-
 body {
-    --seed-color: #ffb33f;
-    --accent-base-override: var(--primary-color);
-    --primary-color: #805611;
-    --on-primary-color: #ffffff;
-    --secondary-color: #705b40;
-    --on-secondary-color: #ffffff;
-    --outline-color: #d3c4b4;
-    --surface-color: #fff8f4;
-    --another-surface-color: #fff8f4;
-    --on-surface-color: #211b13;
-    background-color: var(--surface-color);
-    color: var(--on-surface-color);
+    --background: #f4f2ec;
+    --surface: #fffdf8;
+    --foreground: #1f1d1a;
+    --muted: #6f6a60;
+    --accent: #0f766e;
+    --accent-soft: #d9efe9;
+    --line: #e4dfd4;
+    --shadow: 0 20px 60px rgba(53, 45, 30, 0.08);
+    --radius: 10px;
+
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background:
+        radial-gradient(60rem 40rem at 85% -10%, var(--accent-soft), transparent 60%),
+        var(--background);
+    color: var(--foreground);
     font-family:
-        "Segoe UI",
-        "Segoe UI Web (West European)",
-        "Selawik",
-        -apple-system,
-        BlinkMacSystemFont,
-        Roboto,
-        "Helvetica Neue",
-        sans-serif;
+        "Inter", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+        "Microsoft YaHei", system-ui, sans-serif;
     font-size: 16px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
 }
 
 @media (prefers-color-scheme: dark) {
     body {
-        --primary-color: #f5bc6f;
-        --on-primary-color: #452b00;
-        --secondary-color: #dec2a1;
-        --on-secondary-color: #3e2d16;
-        --outline-color: #4f4539;
-        --surface-color: #18120b;
-        --another-surface-color: #3f3830;
-        --on-surface-color: #ede0d4;
-    }
-    .acrylic {
-        background-color: rgba(28, 28, 28, 0.75);
-        border-color: #ffffff55;
-        background-blend-mode: darken;
+        --background: #171614;
+        --surface: #201f1c;
+        --foreground: #efebe2;
+        --muted: #a39d91;
+        --accent: #5eead4;
+        --accent-soft: #123b37;
+        --line: #34312b;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     }
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    font-weight: 600;
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 a {
-    color: var(--primary-color);
+    color: var(--accent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
 }
 
-@font-face {
-    font-family: "Selawik";
-    unicode-range: U+0000-00FF;
-    src:
-        local("Selawik Light"),
-        url("/fonts/selawkl.ttf") format("truetype");
-    font-weight: 100;
+a:hover {
+    text-decoration-thickness: 2px;
 }
 
-@font-face {
-    font-family: "Selawik";
-    unicode-range: U+0000-00FF;
-    src:
-        local("Selawik Semilight"),
-        url("/fonts/selawksl.ttf") format("truetype");
-    font-weight: 200;
+::selection {
+    background: var(--accent-soft);
+    color: var(--foreground);
 }
 
-@font-face {
-    font-family: "Selawik";
-    unicode-range: U+0000-00FF;
-    src:
-        local("Selawik"),
-        url("/fonts/selawk.ttf") format("truetype");
-    font-weight: 400;
+.loader {
+    position: fixed;
+    inset: 0 0 auto;
+    height: 2px;
+    z-index: 100;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 160ms ease;
 }
 
-@font-face {
-    font-family: "Selawik";
-    unicode-range: U+0000-00FF;
-    src:
-        local("Selawik Semibold"),
-        url("/fonts/selawksb.ttf") format("truetype");
-    font-weight: 600;
+body.is-loading .loader {
+    opacity: 1;
+    animation: slide 1.1s ease-in-out infinite;
 }
 
-@font-face {
-    font-family: "Selawik";
-    unicode-range: U+0000-00FF;
-    src:
-        local("Selawik Bold"),
-        url("/fonts/selawkb.ttf") format("truetype");
+@keyframes slide {
+    from {
+        transform: translateX(-60%);
+    }
+
+    to {
+        transform: translateX(60%);
+    }
+}
+
+.site-header {
+    width: min(100% - 3rem, 62rem);
+    margin: 0 auto;
+    padding: 1.5rem 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.site-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--foreground);
     font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+}
+
+.site-mark {
+    color: var(--accent);
+    font-size: 0.9rem;
+}
+
+.site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.1rem;
+    font-size: 0.9rem;
+}
+
+.site-nav a {
+    color: var(--muted);
+    text-decoration: none;
+    padding-bottom: 0.1rem;
+    border-bottom: 1px solid transparent;
+}
+
+.site-nav a:hover {
+    color: var(--foreground);
+    border-bottom-color: var(--accent);
+}
+
+#main {
+    flex: 1;
+    width: min(100% - 3rem, 52rem);
+    margin: 0 auto;
+    padding: 2.5rem 0 5rem;
+    transition: opacity 160ms ease;
+}
+
+body.is-loading #main {
+    opacity: 0.55;
+}
+
+.site-footer {
+    width: min(100% - 3rem, 62rem);
+    margin: 0 auto;
+    padding: 1.4rem 0 2.4rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.footer-note {
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+}
+
+.fatal,
+.noscript dialog {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+}
+
+.fatal h1 {
+    margin-top: 0;
+    font-size: 1.25rem;
+}
+
+.fatal pre {
+    overflow-x: auto;
+    padding: 0.8rem;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--foreground);
+    font-size: 0.85rem;
+}
+
+.noscript {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background: rgba(20, 18, 15, 0.35);
+    backdrop-filter: blur(8px);
+}
+
+.noscript dialog {
+    max-width: 26rem;
+    color: var(--foreground);
+}
+
+.noscript h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 640px) {
+    .site-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #main {
+        padding-top: 1.5rem;
+    }
 }

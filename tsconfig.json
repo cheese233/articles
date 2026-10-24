@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "allowJs": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+  },
+  "include": [
+    "scripts",
+    "shared",
+    "render",
+    "adapters",
+    "tests",
+  ],
+  "exclude": [
+    "dist",
+    "vendor",
+    "node_modules",
+    "render/app.js",
+    "render/index.html",
+  ],
+}

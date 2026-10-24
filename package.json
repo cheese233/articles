@@ -1,0 +1,38 @@
+{
+  "name": "articles",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A client-rendered blog whose pages are generated in the browser from source files.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "metadata": "node scripts/metadata.ts",
+    "bundle": "node scripts/bundle.ts",
+    "build": "node scripts/build.ts",
+    "dev": "node scripts/build.ts && node scripts/dev.ts",
+    "stage": "node scripts/stage.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests",
+    "deploy": "node scripts/build.ts && node scripts/deploy.ts"
+  },
+  "dependencies": {
+    "fast-xml-builder": "^1.3.1",
+    "rehype-stringify": "^10.0.1",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5",
+    "vfile": "^6.0.3",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.152.0"
+  }
+}
