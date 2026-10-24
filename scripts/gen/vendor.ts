@@ -1,12 +1,13 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, rm, stat } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { build } from "esbuild";
+import type { Plugin } from "esbuild";
 import { paths } from "../lib/paths.ts";
 
 /**
- * Only packages from node_modules are bundled. Application code is served as
- * TypeScript and blanked in the browser by `ts-blank-space`.
+ * Browser-side packages. Their entry points are resolved by esbuild, so the
+ * package's own browser conditions are respected.
  */
 const packages = [
   "ts-blank-space",
@@ -20,76 +21,74 @@ const packages = [
   "rehype-stringify",
 ];
 
-const pickExport = (value: unknown): string | undefined => {
-  if (typeof value == "string") return value;
-  if (!value || typeof value != "object") return undefined;
-
-  const record = value as Record<string, unknown>;
-  for (const key of ["browser", "default", "import", "module", "node"]) {
-    const picked = pickExport(record[key]);
-    if (picked) return picked;
-  }
-  return undefined;
-};
-
-const resolveEntry = async (name: string) => {
-  const dir = path.join(paths.root, "node_modules", ...name.split("/"));
-  const meta = JSON.parse(
-    await readFile(path.join(dir, "package.json"), "utf8"),
-  ) as {
-    exports?: Record<string, unknown>;
-    browser?: string | Record<string, string>;
-    module?: string;
-    main?: string;
-  };
-
-  const exported = typeof meta.exports == "string"
-    ? meta.exports
-    : meta.exports?.["."];
-  const entry = pickExport(exported) ??
-    (typeof meta.browser == "string" ? meta.browser : undefined) ??
-    meta.module ??
-    meta.main;
-
-  if (!entry) throw new Error(`${name}: package has no entry point`);
-
-  const file = path.resolve(dir, entry);
-  await stat(file);
-  return file;
-};
-
 const safeName = (name: string) =>
   name.replace(/^@/, "").replace(/[\\/]/g, "-");
+
+const nodeModules = path.join(paths.root, "node_modules") + path.sep;
+
+/**
+ * The virtual entry is resolved through esbuild (so `yaml` picks its browser
+ * build, `vfile` its ESM entry, etc.). Everything that is actually loaded
+ * must live under node_modules; project files are rejected.
+ */
+const onlyNodeModules = (): Plugin => ({
+  name: "only-node-modules",
+  setup(build) {
+    build.onResolve({ filter: /^vendor:/ }, async (args) => {
+      const name = args.path.slice("vendor:".length);
+      const resolved = await build.resolve(name, {
+        kind: "import-statement",
+        resolveDir: paths.root,
+      });
+
+      if (resolved.errors.length) return { errors: resolved.errors };
+
+      return { path: resolved.path };
+    });
+
+    build.onLoad({ filter: /.*/ }, (args) => {
+      if (args.namespace != "file") return undefined;
+      if (!path.resolve(args.path).startsWith(nodeModules)) {
+        throw new Error(
+          `refusing to vendor a file outside node_modules: ${args.path}`,
+        );
+      }
+      return undefined;
+    });
+  },
+});
 
 export default async function () {
   await rm(paths.vendor, { recursive: true, force: true });
   await mkdir(paths.vendor, { recursive: true });
 
+  await build({
+    entryPoints: packages.map((name) => ({
+      in: `vendor:${name}`,
+      out: safeName(name),
+    })),
+    outdir: paths.vendor,
+    bundle: true,
+    format: "esm",
+    platform: "browser",
+    target: "es2022",
+    minify: true,
+    legalComments: "none",
+    logLevel: "silent",
+    plugins: [onlyNodeModules()],
+  });
+
   const urls = new Map<string, string>();
 
   for (const name of packages) {
-    const outfile = path.join(paths.vendor, `${safeName(name)}.js`);
-
-    await build({
-      entryPoints: [await resolveEntry(name)],
-      outfile,
-      bundle: true,
-      format: "esm",
-      platform: "browser",
-      target: "es2022",
-      minify: true,
-      legalComments: "none",
-      logLevel: "silent",
-    });
-
-    const content = await readFile(outfile);
+    const file = path.join(paths.vendor, `${safeName(name)}.js`);
+    const content = await readFile(file);
     const hash = createHash("sha256")
       .update(content)
       .digest("hex")
       .slice(0, 12);
-    const file = `/vendor/${safeName(name)}.js?v=${hash}`;
 
-    urls.set(name, file);
+    urls.set(name, `/vendor/${safeName(name)}.js?v=${hash}`);
   }
 
   return urls;
