@@ -1,7 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import { builtinModules } from "node:module";
 import * as path from "node:path";
-import ts from "typescript";
+import { build } from "esbuild";
+import type { Plugin } from "esbuild";
 import { paths } from "./paths.ts";
 
 const roots = ["render", "shared", "adapters", "content"];
@@ -21,51 +22,28 @@ const isBare = (specifier: string) => {
   return !builtins.has(name);
 };
 
-const scriptKind = (file: string) =>
-  file.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.JS;
-
-const addSpecifier = (node: ts.Node, found: Set<string>) => {
-  if (ts.isStringLiteral(node) && isBare(node.text)) found.add(node.text);
-};
-
-const collect = (source: string, file: string, found: Set<string>) => {
-  const sourceFile = ts.createSourceFile(
-    file,
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    scriptKind(file),
-  );
-
-  const walk = (node: ts.Node) => {
-    if (ts.isImportDeclaration(node)) {
-      if (!node.importClause?.isTypeOnly) addSpecifier(node.moduleSpecifier, found);
-    } else if (ts.isExportDeclaration(node)) {
-      if (!node.isTypeOnly && node.moduleSpecifier)
-        addSpecifier(node.moduleSpecifier, found);
-    } else if (ts.isCallExpression(node)) {
-      if (
-        node.expression.kind == ts.SyntaxKind.ImportKeyword &&
-        node.arguments.length == 1
-      ) {
-        const [specifier] = node.arguments;
-        if (specifier) addSpecifier(specifier, found);
-      }
-    }
-
-    ts.forEachChild(node, walk);
-  };
-
-  walk(sourceFile);
-};
-
 const moduleScripts = (source: string) =>
   [...source.matchAll(
     /<script\b(?=[^>]*\btype\s*=\s*["']module["'])[^>]*>([\s\S]*?)<\/script>/gi,
   )].map((match) => match[1] ?? "");
 
-const sourceFiles = async () => {
-  const files = [];
+const sourceEntries = async () => {
+  const entryPoints: (string | { in: string; out: string })[] = [];
+  const virtual = new Map<string, string>();
+  let index = 0;
+
+  const addHtml = async (file: string) => {
+    const source = await readFile(file, "utf8");
+
+    for (const script of moduleScripts(source)) {
+      if (!script.trim()) continue;
+
+      const id = `html:${file}#${index}`;
+      virtual.set(id, script);
+      entryPoints.push({ in: id, out: `html-${index}` });
+      index += 1;
+    }
+  };
 
   for (const root of roots) {
     for (const entry of await readdir(path.join(paths.root, root), {
@@ -79,33 +57,57 @@ const sourceFiles = async () => {
       if (file.endsWith("render/index.html")) continue;
       if (file.endsWith("render/app.js")) continue;
 
-      files.push(file);
+      if (file.endsWith(".html")) await addHtml(file);
+      else entryPoints.push(file);
     }
   }
 
-  for (const file of extraFiles) files.push(path.join(paths.root, file));
+  for (const file of extraFiles) {
+    entryPoints.push(path.join(paths.root, file));
+  }
 
-  return files.sort();
+  return { entryPoints, virtual };
 };
 
 /**
- * Bare imports found in browser-executed source. The service worker template
- * is included too, so its `ts-blank-space` import is vendored the same way.
+ * Let esbuild parse every browser source file. Imports are externalized so
+ * esbuild only reports them through onResolve; relative modules are covered
+ * because every source file is also an entry point.
  */
 export const discoverSpecifiers = async () => {
+  const { entryPoints, virtual } = await sourceEntries();
   const found = new Set<string>();
 
-  for (const file of await sourceFiles()) {
-    const source = await readFile(file, "utf8");
+  const collector: Plugin = {
+    name: "collect-imports",
+    setup(build) {
+      build.onResolve({ filter: /^html:/ }, (args) => ({
+        path: args.path,
+        namespace: "html",
+      }));
 
-    if (file.endsWith(".html")) {
-      for (const script of moduleScripts(source)) {
-        collect(script, file, found);
-      }
-    } else {
-      collect(source, file, found);
-    }
-  }
+      build.onLoad({ filter: /.*/, namespace: "html" }, (args) => ({
+        contents: virtual.get(args.path) ?? "",
+        loader: "js",
+      }));
+
+      build.onResolve({ filter: /.*/ }, (args) => {
+        if (args.kind == "entry-point") return undefined;
+        if (isBare(args.path)) found.add(args.path);
+        return { path: args.path, external: true };
+      });
+    },
+  };
+
+  await build({
+    entryPoints,
+    outdir: paths.vendor,
+    bundle: true,
+    write: false,
+    format: "esm",
+    logLevel: "silent",
+    plugins: [collector],
+  });
 
   return [...found].sort();
 };
