@@ -1,3 +1,8 @@
+:root {
+    --accent-base-override: light-dark(#0f766e, #5eead4);
+    --neutral-base-override: light-dark(#6f6a60, #a39d91);
+}
+
 body {
     --background: #f4f2ec;
     --surface: #fffdf8;
@@ -105,6 +110,8 @@ body.is-loading .loader {
     font-size: 1.05rem;
     letter-spacing: 0.01em;
     text-decoration: none;
+    --colorNeutralForeground2Link: var(--foreground);
+    --colorNeutralForeground2LinkHover: var(--accent);
 }
 
 .site-mark {
@@ -119,16 +126,15 @@ body.is-loading .loader {
     font-size: 0.9rem;
 }
 
-.site-nav a {
-    color: var(--muted);
-    text-decoration: none;
-    padding-bottom: 0.1rem;
-    border-bottom: 1px solid transparent;
+.site-nav fluent-link {
+    --colorNeutralForeground2Link: var(--muted);
+    --colorNeutralForeground2LinkHover: var(--foreground);
+    --colorNeutralForeground2LinkPressed: var(--accent);
 }
 
-.site-nav a:hover {
-    color: var(--foreground);
-    border-bottom-color: var(--accent);
+fluent-divider {
+    width: min(100% - 3rem, 62rem);
+    margin: 0 auto;
 }
 
 #main {

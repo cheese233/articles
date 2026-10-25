@@ -27,21 +27,23 @@
     <body>
         <div class="loader" aria-hidden="true"></div>
         <header class="site-header">
-            <a class="site-title" href="/">
+            <fluent-link class="site-title" href="/" appearance="subtle">
                 <span class="site-mark" aria-hidden="true">✦</span>
                 <span data-site-title>cheese233's blog</span>
-            </a>
+            </fluent-link>
             <nav class="site-nav">
-                <a href="/">Home</a>
-                <a href="/atom.xml" data-raw>Atom</a>
-                <a href="/feed.json" data-raw>JSON</a>
-                <a
+                <fluent-link href="/">Home</fluent-link>
+                <fluent-link href="/atom.xml" data-raw>Atom</fluent-link>
+                <fluent-link href="/feed.json" data-raw>JSON</fluent-link>
+                <fluent-link
                     href="https://codeberg.org/cheese233/articles"
+                    target="_blank"
                     rel="noopener"
-                >Source</a>
+                >Source</fluent-link>
             </nav>
         </header>
         <main id="main" aria-live="polite"></main>
+        <fluent-divider></fluent-divider>
         <footer class="site-footer">
             <span data-site-title>cheese233's blog</span>
             <span class="footer-note">

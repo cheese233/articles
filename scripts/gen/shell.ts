@@ -8,8 +8,11 @@ export default async function (vendors: Map<string, string>) {
     `${paths.render}/index.hbs`,
     "utf8",
   );
+  const imports = Object.fromEntries(vendors);
+  imports["fluentui-webcomponents/"] = "/vendor/fluentui/";
+
   const importmap = JSON.stringify(
-    { imports: Object.fromEntries(vendors) },
+    { imports },
     null,
     2,
   )

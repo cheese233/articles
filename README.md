@@ -39,7 +39,7 @@ npm run dev        # 构建到 dist/，然后在 http://127.0.0.1:8788 提供服
 ```bash
 npm run build      # vendor + shell + metadata + stage
 npm run metadata   # 只生成元数据（CI 的核心职责）
-npm run bundle     # 只生成 vendor/、sw.js、render/index.html
+npm run bundle     # 只生成 vendor/、fluentui、sw.js、render/index.html
 npm run stage      # 把站点树复制到 dist/
 npm run typecheck  # tsc --noEmit
 npm test           # web-test-runner (Chrome)
@@ -66,6 +66,7 @@ articles/
 ├─ render/
 │  ├─ boot.js                # 注册 Service Worker，再 import app.ts
 │  ├─ app.ts                 # SPA：路由、取数、adapter 分发（TS 源文件）
+│  ├─ fluent.ts              # Fluent UI 组件注册
 │  ├─ lib/*.ts               # 客户端运行时（TS 源文件）
 │  ├─ markdown_deps.ts       # 浏览器 markdown 管线（TS，动态 import）
 │  ├─ index.hbs              # 外壳 Handlebars 模板
@@ -89,7 +90,7 @@ articles/
 
 ## 客户端 TypeScript 执行
 
-项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 Rollup 打包到 `vendor/`。
+项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 Rollup 打包到 `vendor/`。`fluentui-webcomponents` 是例外：它需要保持组件文件与 CSS 的相对路径，因此整包复制到 `vendor/fluentui/`，由 import map 前缀映射。
 
 ```text
 render/index.html
@@ -104,10 +105,19 @@ render/index.html
 - Service Worker 位于站点根目录，scope 是 `/`。
 - 只有 `request.mode != "navigate"` 的 `.ts` 请求会被编译；直接访问 `.ts` 文件仍然看到源码。
 - 相对 import（如 `../shared/ext.ts`）保持原 URL，浏览器会继续触发 Service Worker。
-- 裸 import（`vfile`、`yaml`、`unified` 等）由构建生成的 import map 指向 `vendor/*.js`。
+- 裸 import（`vfile`、`yaml`、`unified` 等）由构建生成的 import map 指向 `vendor/*.js`；`fluentui-webcomponents/` 前缀指向 `vendor/fluentui/`。
 - `sw.js.hbs` 构建时注入 `ts-blank-space` 的哈希 URL，生成 `sw.js`。
 - `ts-blank-space` 只擦除类型，不做降级；本项目遵守 `erasableSyntaxOnly`。
 
+## UI 与配色
+
+- UI 使用 [`fluentui-webcomponents`](https://github.com/cheese233/fluentui-webcomponents)，由 `render/fluent.ts` 注册 `fluent-button`、`fluent-link`、`fluent-card`、`fluent-badge`、`fluent-divider`。
+- 组件整包复制到 `vendor/fluentui/`，import map 的 `fluentui-webcomponents/` 前缀指向它；组件内部的相对 CSS/JS 路径因此保持不变。
+- 页面骨架、目录列表、timeline、tag、交互按钮均使用 Fluent 组件；Markdown/HTML 正文仍由 adapter 渲染。
+- 颜色板沿用重写前 `9436e39` 的暖色主题：
+  - light：`#f4f2ec` 背景、`#fffdf8` 表面、`#1f1d1a` 前景、`#6f6a60` muted、`#0f766e` accent、`#d9efe9` accent-soft、`#e4dfd4` line
+  - dark：`#171614` 背景、`#201f1c` 表面、`#efebe2` 前景、`#a39d91` muted、`#5eead4` accent、`#123b37` accent-soft、`#34312b` line
+- Fluent tokens 通过 `--accent-base-override` / `--neutral-base-override` 接收这套色板，组件内部自动派生品牌色和中性色。
 
 ## adapter 契约
 
@@ -301,6 +311,7 @@ URL 严格对应 `content/` 下的路径：
 - 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `sw.js.hbs` 的 `@vendor` 指令，不需要额外的 build。
 - `scripts/lib/vendor_bundle.ts` 只做一次 Rollup 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()`（`@rollup/plugin-node-resolve`）解析到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
 - Rollup 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：浏览器测试通过 server command 用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
+- `fluentui-webcomponents` 由 `scripts/lib/fluent.ts` 整包复制到 `vendor/fluentui/`；`render/fluent.ts` 注册 `fluent-button`、`fluent-link`、`fluent-card`、`fluent-badge`、`fluent-divider`。它不经过 Rollup，因为组件 CSS 通过 `import.meta.url` 相对引用。
 - `render/index.html` 的 import map 由构建生成，entry 文件名带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
 - `sw.js` 由 `sw.js.hbs` 生成：模板用 Handlebars 变量注入带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。

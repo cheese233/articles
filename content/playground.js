@@ -15,7 +15,7 @@ export default function (shadow) {
       由 <code>js.ext.js</code> 调用，参数是当前页面的 ShadowRoot。
     </p>
     <p>
-      <button type="button">点我</button>
+      <fluent-button type="button">点我</fluent-button>
       <span class="counter">还没有点过。</span>
     </p>
     <p>
@@ -23,7 +23,7 @@ export default function (shadow) {
     </p>
   `;
 
-  const button = article.querySelector("button");
+  const button = article.querySelector("fluent-button");
   const counter = article.querySelector(".counter");
   let count = 0;
 

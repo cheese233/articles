@@ -24,6 +24,8 @@
 .crumb {
     color: var(--muted);
     text-decoration: none;
+    --colorBrandForegroundLink: var(--muted);
+    --colorBrandForegroundLinkHover: var(--accent);
 }
 
 .crumb:hover {
@@ -39,50 +41,50 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    border-top: 1px solid var(--line);
+    display: grid;
+    gap: 0.8rem;
 }
 
 .post-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.25rem 1.2rem;
-    padding: 1.15rem 0.15rem;
-    border-bottom: 1px solid var(--line);
-    transition: background-color 140ms ease, padding-left 140ms ease;
+    display: block;
+    padding: 0;
+    border-bottom: 0;
+    transition: transform 140ms ease;
 }
 
 .post-card:hover {
-    background: color-mix(in srgb, var(--accent-soft) 45%, transparent);
-    padding-left: 0.65rem;
+    transform: translateX(0.25rem);
+}
+
+.post-card fluent-card {
+    width: 100%;
 }
 
 .post-title {
-    grid-column: 1;
+    display: block;
     color: var(--foreground);
     font-size: 1.08rem;
     font-weight: 650;
     text-decoration: none;
     letter-spacing: -0.005em;
-}
-
-.post-title:hover {
-    color: var(--accent);
+    --colorBrandForegroundLink: var(--foreground);
+    --colorBrandForegroundLinkHover: var(--accent);
+    --colorBrandForegroundLinkPressed: var(--accent);
 }
 
 .post-meta {
-    grid-column: 1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.4rem 0.7rem;
     color: var(--muted);
     font-size: 0.82rem;
+    margin-top: 0.35rem;
 }
 
 .post-source {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
+    display: inline-block;
+    margin-top: 0.6rem;
     color: var(--muted);
     font-size: 0.72rem;
     letter-spacing: 0.06em;
@@ -90,11 +92,18 @@
     text-decoration: none;
     opacity: 0;
     transition: opacity 140ms ease;
+    --colorNeutralForeground2Link: var(--muted);
+    --colorNeutralForeground2LinkHover: var(--accent);
 }
 
 .post-card:hover .post-source,
 .post-source:focus-visible {
     opacity: 1;
+}
+
+fluent-badge {
+    --colorBrandBackground: var(--accent-soft);
+    --colorNeutralForegroundOnBrand: var(--accent);
 }
 
 .tag {
@@ -125,6 +134,8 @@
     gap: 0.15rem;
     color: var(--foreground);
     text-decoration: none;
+    --colorBrandForegroundLink: var(--foreground);
+    --colorBrandForegroundLinkHover: var(--accent);
 }
 
 .timeline-link:hover strong {
@@ -150,6 +161,8 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-decoration: none;
+    --colorNeutralForeground2Link: var(--muted);
+    --colorNeutralForeground2LinkHover: var(--accent);
 }
 
 .timeline-source:hover {

@@ -5,6 +5,7 @@ import type {
   EntryMeta,
   Manifest,
 } from "../shared/types.ts";
+import "./fluent.ts";
 import { loadLoader, type LoaderConstructor } from "./lib/adapters.ts";
 import {
   fetchEntry,
@@ -156,23 +157,23 @@ const appendTimeline = (shadow: ShadowRoot, meta: EntryMeta | null) => {
   nav.className = "page-timeline";
 
   const older = prev
-    ? `<a class="timeline-link" href="${prev.route}">
+    ? `<fluent-link class="timeline-link" href="${prev.route}">
         <span class="timeline-label">← older</span>
         <strong>${escapeHtml(prev.title)}</strong>
-      </a>`
+      </fluent-link>`
     : "<span></span>";
 
   const newer = next
-    ? `<a class="timeline-link timeline-next" href="${next.route}">
+    ? `<fluent-link class="timeline-link timeline-next" href="${next.route}">
         <span class="timeline-label">newer →</span>
         <strong>${escapeHtml(next.title)}</strong>
-      </a>`
+      </fluent-link>`
     : "<span></span>";
 
   nav.innerHTML = `
     ${older}
     ${newer}
-    <a class="timeline-source" data-raw href="${meta.file}">view source</a>`;
+    <fluent-link class="timeline-source" appearance="subtle" data-raw href="${meta.file}">view source</fluent-link>`;
 
   shadow.append(nav);
 };
@@ -370,11 +371,17 @@ document.addEventListener("click", (event) => {
   if (event.defaultPrevented || event.button != 0) return;
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-  const anchor = event.composedPath().find(
+  const path = event.composedPath();
+  const anchor = path.find(
     (node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement,
   );
   if (!anchor) return;
   if (anchor.target || anchor.hasAttribute("download")) return;
+  if (
+    path.some((node) =>
+      node instanceof Element && node.hasAttribute("data-raw")
+    )
+  ) return;
   if (anchor.hasAttribute("data-raw")) return;
 
   const url = new URL(anchor.href, location.href);

@@ -29,12 +29,14 @@ const label = (/** @type {string} */ route) => {
 
 const card = (/** @type {ManifestEntry} */ entry) => `
   <li class="post-card">
-    <a class="post-title" href="${escape(entry.route)}">${escape(entry.title)}</a>
-    <div class="post-meta">
-      <time datetime="${escape(entry.date)}">${entry.date.slice(0, 10)}</time>
-      ${entry.tags.map((tag) => `<span class="tag">${escape(tag)}</span>`).join("")}
-    </div>
-    <a class="post-source" data-raw href="${escape(entry.file)}">source</a>
+    <fluent-card appearance="outline" size="small">
+      <fluent-link class="post-title" href="${escape(entry.route)}">${escape(entry.title)}</fluent-link>
+      <div class="post-meta">
+        <time datetime="${escape(entry.date)}">${entry.date.slice(0, 10)}</time>
+        ${entry.tags.map((tag) => `<fluent-badge appearance="outline" size="small">${escape(tag)}</fluent-badge>`).join("")}
+      </div>
+      <fluent-link class="post-source" appearance="subtle" data-raw href="${escape(entry.file)}">source</fluent-link>
+    </fluent-card>
   </li>`;
 
 /**
@@ -60,7 +62,7 @@ const factory = (_file) => (/** @type {ShadowRoot} */ shadow) => {
 
   const breadcrumb = route == "/"
     ? ""
-    : `<a class="crumb" href="/">${escape(site?.title ?? "Home")}</a>
+    : `<fluent-link class="crumb" href="/">${escape(site?.title ?? "Home")}</fluent-link>
       <span class="crumb-sep">/</span>
       <span>${escape(title)}</span>`;
 
