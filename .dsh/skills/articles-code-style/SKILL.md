@@ -63,6 +63,19 @@ equality for objects.
 - Error messages are short, lowercase, and contextual: `throw new Error("missing #main")`.
 - Do not leave commented-out code or debug logging in a final diff.
 
+## 减少硬编码
+
+- Do not hardcode maps that an npm package or existing registry already owns: MIME types,
+  extensions, package lists, status text, locale tables.
+- Prefer a table, `Map`, or adapter registry over `if` / `switch` chains keyed by names.
+- Keep one source of truth. Derive tags, paths, and labels from metadata instead of repeating
+  literals in several files.
+- Extract a named constant when a literal appears more than once or carries protocol meaning.
+- A literal at a real boundary (HTTP status, DOM event name, file mode) is fine; a duplicated
+  branch table is not.
+- When a value is data, store it as data; when behavior differs, dispatch through the adapter
+  contract rather than checking the name.
+
 ## CSS and HTML
 
 - Plain modern CSS; no preprocessor, utility framework, or inline style blocks.
@@ -87,6 +100,8 @@ equality for objects.
 - [ ] Double quotes and semicolons; trailing commas in multiline literals.
 - [ ] `import type` for types; relative `.ts` imports include `.ts`; `node:` builtins.
 - [ ] No `satisfies`, `as any`, `#private`, enums, namespaces, or non-erasable client syntax.
+- [ ] No duplicated lookup tables or name-keyed `if` / `switch` chains; standard maps come from
+      an npm package or the existing registry.
 - [ ] Names follow the conventions above; no unrelated reformatting.
 - [ ] Comments are English, concise, and explain intent.
 - [ ] CSS/HTML use 4 spaces and semantic markup.

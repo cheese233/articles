@@ -4,28 +4,14 @@ import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import * as path from "node:path";
+import mime from "mime";
 import { paths } from "./lib/paths.ts";
 
 const port = Number(process.env.PORT ?? 8788);
 const root = paths.dist;
 
-const mime = new Map([
-  [".html", "text/html; charset=utf-8"],
-  [".js", "text/javascript; charset=utf-8"],
-  [".mjs", "text/javascript; charset=utf-8"],
-  [".ts", "text/typescript; charset=utf-8"],
-  [".css", "text/css; charset=utf-8"],
-  [".json", "application/json; charset=utf-8"],
-  [".md", "text/markdown; charset=utf-8"],
-  [".xml", "text/xml; charset=utf-8"],
-  [".txt", "text/plain; charset=utf-8"],
-  [".svg", "image/svg+xml"],
-  [".png", "image/png"],
-  [".ico", "image/x-icon"],
-  [".woff2", "font/woff2"],
-  [".ttf", "font/ttf"],
-  [".glb", "model/gltf-binary"],
-]);
+const contentType = (file: string) =>
+  mime.getType(file) ?? "application/octet-stream";
 
 const resolveFile = async (pathname: string) => {
   const target = path.resolve(root, `.${pathname}`);
@@ -46,8 +32,7 @@ const send = async (
   status = 200,
 ) => {
   const body = await readFile(file);
-  const type = mime.get(path.extname(file).toLowerCase()) ??
-    "application/octet-stream";
+  const type = contentType(file);
 
   response.writeHead(status, {
     "content-type": type,
@@ -82,8 +67,7 @@ const serve = async (request: IncomingMessage, response: ServerResponse) => {
   if (request.method == "HEAD") {
     const info = await stat(file);
     response.writeHead(200, {
-      "content-type": mime.get(path.extname(file).toLowerCase()) ??
-        "application/octet-stream",
+      "content-type": contentType(file),
       "content-length": info.size,
     });
     response.end();

@@ -44,6 +44,7 @@
     "@web/test-runner-chrome": "^1.0.1",
     "@web/test-runner-commands": "^1.0.1",
     "es-module-lexer": "^3.0.4",
+    "mime": "^4.1.1",
     "rollup": "^4.65.0",
     "typescript": "^5.9.3",
     "wrangler": "^4.152.0"
