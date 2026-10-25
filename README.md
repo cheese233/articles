@@ -329,11 +329,11 @@ URL 严格对应根目录下的内容路径。当前没有文章，首页只列�
 
 `.github/workflows/deploy.yml`：
 
-1. `actions/checkout@v4`，`fetch-depth: 0`（git 时间是元数据来源之一）；
-2. `actions/setup-node@v4` + `npm ci`；
+1. `actions/checkout@v5`，`fetch-depth: 0`（git 时间是元数据来源之一）；
+2. `actions/setup-node@v5` + `npm ci`；
 3. `npm run typecheck`、安装 Chrome、`npm test`；
 4. `npm run bundle`（node_modules vendor + shell + sw）、`npm run metadata`（只生成元数据）、`npm run stage`；**不渲染任何页面**；
-5. `node scripts/deploy.ts`：`wrangler pages deploy dist`。
+5. 检查 Cloudflare 凭据；缺失时跳过部署并给出 warning，存在时 `node scripts/deploy.ts`：`wrangler pages deploy dist`。
 
 需要配置：
 
