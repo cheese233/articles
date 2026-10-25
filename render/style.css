@@ -21,9 +21,14 @@ body {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    background:
-        radial-gradient(60rem 40rem at 85% -10%, var(--accent-soft), transparent 60%),
-        var(--background);
+    background-color: var(--background);
+    background-image:
+        radial-gradient(
+            oklch(from var(--accent) 0.84 0.05 h) 25%,
+            var(--background) 100%
+        );
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: var(--foreground);
     font-family:
         "Inter", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
@@ -44,11 +49,11 @@ body {
         --accent-soft: color-mix(in srgb, var(--seed-color) 22%, var(--background));
         --line: #4f4539;
         --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-        background-color: #202020;
+        background-color: #1a1a1a;
         background-image:
             radial-gradient(
-                oklch(from var(--accent) 0.248 0.04 h) 25%,
-                #202020 100%
+                oklch(from var(--accent) 0.23 0.035 h) 25%,
+                #1a1a1a 100%
             );
         background-repeat: no-repeat;
         background-attachment: fixed;
