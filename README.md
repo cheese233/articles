@@ -212,8 +212,8 @@ factory.meta = meta;
 
 | 文件 | 元数据来源 | 渲染方式 |
 |---|---|---|
-| `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | `pages-js-loader` import 内容 `default(shadow)` |
-| `pages.js.ext.js` | 同上，但默认 routable | `JSLoader` 调 factory |
+| `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | `js-loader` import 内容 `default(shadow)` |
+| `pages.js.ext.js` | 同上，但默认 routable | `pages-js-loader` import 内容 `default(shadow)` |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
 | `json.ext.html` | HTML 的 meta 标签 | 由 html 工厂渲染真实 HTML |
@@ -391,7 +391,7 @@ export default function (shadow) {
 3. `export default function (file) { return function (shadow) {...}; }`；
 4. 给工厂挂上 `factory.meta = meta`，让 loader class 拿到最终扩展名。
 
-运行时通过 `meta/index.json` 里的 adapter 表发现它；`js.ext.js(pages.js.ext(adapterFactory))` 生成并 define `<final-ext>-loader`。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/content/hello.md">`。
+运行时通过 `meta/index.json` 里的 adapter 表发现它；从内容扩展名沿 `meta.lang` 走到 js 根，逐层调用 `default`，最后由 `js.ext.js` 定义 `<final-ext>-loader`。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/content/hello.md">`。
 
 ## 代码风格
 

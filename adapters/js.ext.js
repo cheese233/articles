@@ -1,3 +1,4 @@
+import Pages from "./pages.js.ext.js";
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("vfile").VFile} VFile */
@@ -14,13 +15,8 @@ export const meta = Object.freeze({
 /** @param {VFile} file @returns {Promise<ParsedMeta>} */
 export const parse = async (file) => parseJsDoc(String(file));
 
-/**
- * Define the class produced by the pages.js wrapper. The class is generated
- * once per extension; the content path is an attribute at mount time.
- *
- * @param {typeof HTMLElement & { meta: AdapterStatics }} Adapter
- */
-export default function (Adapter) {
+/** @param {typeof HTMLElement & { meta: AdapterStatics }} Adapter */
+const define = (Adapter) => {
   const ext = Adapter.meta.ext;
   const base = ext
     .replaceAll("[...]", "directory")
@@ -32,4 +28,17 @@ export default function (Adapter) {
 
   customElements.define(tag, Adapter);
   return Adapter;
+};
+
+/**
+ * The js root receives either the class produced by pages.js or a raw content
+ * factory for a `.js` file.
+ *
+ * @param {Function & { meta?: AdapterStatics }} input
+ */
+export default function (input) {
+  if (input.prototype instanceof HTMLElement)
+    return define(/** @type {typeof HTMLElement & { meta: AdapterStatics }} */ (input));
+
+  return define(Pages(/** @type {((file: VFile) => (shadow: ShadowRoot) => unknown) & { meta?: AdapterStatics }} */ (input)));
 }

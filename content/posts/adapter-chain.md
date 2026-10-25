@@ -27,6 +27,8 @@ tags:
 
 ## 链式调用
 
+runtime 不判断具体扩展名，只从内容扩展名沿 `meta.lang` 往上走：
+
 ```text
 js.ext(
   pages.js.ext(
@@ -36,8 +38,18 @@ js.ext(
 ```
 
 - `md.ext.pages.js(file)` 返回 `function(shadow)`。
-- `pages.js.ext.js(mount)` 返回 `JSLoader` class。
+- `pages.js.ext.js(factory)` 返回 `JSLoader` class。
 - `js.ext.js(JSLoader)` 负责 define。
+
+HTML adapter 则把文件本身交给 html factory：
+
+```text
+js.ext(
+  pages.js.ext(
+    html.ext.pages.js(json.ext.html)
+  )
+)
+```
 
 内容路径通过属性传给实例：
 
@@ -93,11 +105,12 @@ factory.meta = meta;
 - `html.ext.pages.js` → `<html-loader>`
 - `json.ext.html` → `<json-loader>`；真实 HTML，由 html factory 执行，形成 `json → html → pages → js`
 - `[...].ext.pages.js` → `<directory-loader>`
+- `js.ext.js` → `<js-loader>`
 - `pages.js.ext.js` → `<pages-js-loader>`
 
 ## `.js` / `.pages.js` 内容
 
-内容文件保持简单：默认导出 `function(shadowDom)`，由 `pages.js` 的通用工厂 import 并调用。
+内容文件保持简单：默认导出 `function(shadowDom)`，由对应 JS loader 的通用工厂 import 并调用。
 
 ```js
 export default function (shadow) {
