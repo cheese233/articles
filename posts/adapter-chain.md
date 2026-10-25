@@ -51,7 +51,7 @@ json.ext.html
 内容路径通过属性传给实例：
 
 ```html
-<md-loader path="/content/hello.md"></md-loader>
+<md-loader path="/hello.md"></md-loader>
 ```
 
 loader class 每个扩展名只生成一次；`path` 在挂载时决定内容文件。

@@ -25,7 +25,7 @@ tags:
 ```text
 meta/index.json  →  路由 + 条目清单（构建期生成）
 meta/hello.json  →  这篇内容的变体、时间线邻居（构建期生成）
-content/hello.md  →  真正被浏览器取走并渲染的源文件
+hello.md  →  真正被浏览器取走并渲染的源文件
 ```
 
 下一站可以看看 [adapter 链](/posts/adapter-chain) 和 [浏览器渲染流程](/posts/client-side-rendering)。

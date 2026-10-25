@@ -1,5 +1,6 @@
 import { cp, mkdir, rm } from "node:fs/promises";
 import * as path from "node:path";
+import { contentFiles } from "../lib/content.ts";
 import { paths } from "../lib/paths.ts";
 
 const rootFiles = [
@@ -32,12 +33,18 @@ export default async function () {
     path.join(paths.dist, "index.html"),
   );
 
-  for (const dir of ["content", "adapters", "meta", "vendor", "shared"]) {
+  for (const dir of ["adapters", "meta", "vendor", "shared"]) {
     await cp(
       path.join(paths.root, dir),
       path.join(paths.dist, dir),
       { recursive: true },
     );
+  }
+
+  for (const rel of await contentFiles()) {
+    const target = path.join(paths.dist, rel);
+    await mkdir(path.dirname(target), { recursive: true });
+    await cp(path.join(paths.root, rel), target);
   }
 
   for (const file of rootFiles) {

@@ -7,7 +7,16 @@
 /meta/*
   Cache-Control: public, max-age=60, stale-while-revalidate=3600
 
-/content/*
+/posts/*
+  Cache-Control: public, max-age=60, stale-while-revalidate=3600
+
+/*.md
+  Cache-Control: public, max-age=60, stale-while-revalidate=3600
+
+/*.html
+  Cache-Control: public, max-age=60, stale-while-revalidate=3600
+
+/*.json
   Cache-Control: public, max-age=60, stale-while-revalidate=3600
 
 /vendor/*

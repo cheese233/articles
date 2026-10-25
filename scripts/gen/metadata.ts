@@ -12,8 +12,9 @@ import type {
   Variant,
 } from "../../shared/types.ts";
 import { listAdapters, parseFile } from "../lib/adapters.ts";
+import { contentFiles } from "../lib/content.ts";
 import { config } from "../lib/config.ts";
-import { walk, writeJson } from "../lib/fs.ts";
+import { writeJson } from "../lib/fs.ts";
 import { commitTime } from "../lib/git.ts";
 import { encodePath, paths } from "../lib/paths.ts";
 import buildAtom from "./feed_atom.ts";
@@ -76,7 +77,7 @@ const resolveTimes = async (
   rel: string,
   meta: ParsedMeta,
 ) => {
-  const committed = await commitTime(paths.root, `content/${rel}`);
+  const committed = await commitTime(paths.root, rel);
 
   const fallback = async () => {
     if (committed) return committed;
@@ -99,29 +100,29 @@ export default async function (): Promise<SiteData> {
   const adapters = await listAdapters();
   const groups = new Map<string, SourceRecord[]>();
 
-  for await (const file of walk(paths.content)) {
-    const info = matchFileAdapter(file.path, adapters);
-    if (!info)
-      throw new Error(`no adapter for content file: ${file.path}`);
+  for (const rel of await contentFiles()) {
+    const info = matchFileAdapter(rel, adapters);
+    if (!info) throw new Error(`no adapter for content file: ${rel}`);
 
-    const source = await readFile(file.full, "utf8");
-    const meta = await parseFile(info, file.path, source);
-    const stem = stripExt(file.path, info.ext);
+    const full = path.join(paths.root, rel);
+    const source = await readFile(full, "utf8");
+    const meta = await parseFile(info, rel, source);
+    const stem = stripExt(rel, info.ext);
     const routable = meta.routable === true;
     const title = (meta.title ?? "").trim();
 
     if (routable && !title)
-      throw new Error(`routable file has no title: ${file.path}`);
+      throw new Error(`routable file has no title: ${rel}`);
 
     const times = routable
-      ? await resolveTimes(file.full, file.path, meta)
+      ? await resolveTimes(full, rel, meta)
       : { date: "", updated: "" };
 
     const record: SourceRecord = {
       info,
       stem,
       route: encodePath(`/${stem}`),
-      file: encodePath(`/content/${file.path}`),
+      file: encodePath(`/${rel}`),
       title,
       date: times.date,
       updated: times.updated,

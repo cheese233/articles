@@ -9,11 +9,11 @@
   ├─ GET /hello
   ├─ GET /meta/index.json        # 路由、adapter 表、条目清单
   ├─ GET /meta/hello.json        # 变体、标题、prev/next
-  ├─ GET /content/hello.md       # 源文件
+  ├─ GET /hello.md               # 源文件
   └─ md.ext.pages.js → md-loader 渲染
 
 CI（不渲染任何页面）
-  ├─ 扫描 content/
+  ├─ 扫描根目录内容
   ├─ 用 adapter.parse() 提取元数据
   └─ 写 meta/、sitemap.xml、atom.xml、feed.json、robots.txt
 ```
@@ -61,7 +61,13 @@ articles/
 │  ├─ html.ext.pages.js      # .html 工厂
 │  ├─ json.ext.html          # .json 的真实 HTML adapter
 │  └─ [...].ext.pages.js     # 目录工厂
-├─ content/                  # 发布的内容；URL 严格对应这里的路径
+├─ 404.md                    # 404 中间件
+├─ about.pages.js            # 内容源文件
+├─ hello.md                  # 内容源文件
+├─ lab.html                  # 内容源文件
+├─ playground.js             # 内容源文件
+├─ sample.json               # 内容源文件
+├─ posts/                    # 内容源文件；URL 严格对应这里的路径
 ├─ meta/                     # 构建产物：每篇 sidecar + index.json
 ├─ render/
 │  ├─ boot.js                # 注册 Service Worker，再 import app.ts
@@ -210,7 +216,7 @@ factory.meta = meta;
 内容路径仍通过 `path` 属性传入：
 
 ```html
-<md-loader path="/content/hello.md"></md-loader>
+<md-loader path="/hello.md"></md-loader>
 ```
 
 loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 define。
@@ -226,14 +232,14 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 | `[...].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
 ## 路由与 404
 
-URL 严格对应 `content/` 下的路径：
+URL 严格对应根目录下的内容路径：
 
 | URL | 源文件 |
 |---|---|
-| `/hello` | `content/hello.md` |
-| `/about` | `content/about.pages.js` |
-| `/sample` | `content/sample.json` |
-| `/hello.md` | `content/hello.md`（带后缀的直链） |
+| `/hello` | `hello.md` |
+| `/about` | `about.pages.js` |
+| `/sample` | `sample.json` |
+| `/hello.md` | `hello.md`（带后缀的直链） |
 | `/posts/` | 目录，由 `[...].ext.pages.js` 渲染 |
 
 客户端解析顺序：
@@ -241,7 +247,7 @@ URL 严格对应 `content/` 下的路径：
 1. 路径是已知目录 → 目录 adapter；
 2. 路径带已知扩展名 → 查 `meta/<stem>.json`，确认变体存在；
 3. 否则视为干净 URL → 查 `meta/<stem>.json`；
-4. 都失败 → 取 `content/404.md` 渲染 404。
+4. 都失败 → 取 `404.md` 渲染 404。
 
 **Cloudflare Pages 对不存在的路径返回 200 + `text/html`（SPA 外壳）**，所以不能只看 `response.ok`。客户端检查 `content-type`：
 
@@ -262,7 +268,7 @@ URL 严格对应 `content/` 下的路径：
     { "ext": "md", "lang": "pages.js", "file": "/adapters/md.ext.pages.js", "directory": false, "prefix": "" }
   ],
   "entries": [
-    { "stem": "hello", "route": "/hello", "ext": "md", "file": "/content/hello.md", "title": "...", "date": "...", "updated": "...", "author": "...", "tags": [] }
+    { "stem": "hello", "route": "/hello", "ext": "md", "file": "/hello.md", "title": "...", "date": "...", "updated": "...", "author": "...", "tags": [] }
   ],
   "dirs": ["/", "/posts/"]
 }
@@ -276,7 +282,7 @@ URL 严格对应 `content/` 下的路径：
   "stem": "posts/hello",
   "route": "/posts/hello",
   "ext": "md",
-  "file": "/content/posts/hello.md",
+  "file": "/posts/hello.md",
   "title": "...",
   "date": "2026-10-20T00:00:00.000Z",
   "updated": "2026-10-20T00:00:00.000Z",
@@ -284,7 +290,7 @@ URL 严格对应 `content/` 下的路径：
   "tags": ["..."],
   "summary": "...",
   "variants": [
-    { "ext": "md", "file": "/content/posts/hello.md", "routable": true }
+    { "ext": "md", "file": "/posts/hello.md", "routable": true }
   ],
   "prev": { "route": "/older", "title": "...", "date": "..." },
   "next": null
@@ -309,7 +315,7 @@ URL 严格对应 `content/` 下的路径：
 
 - Node 侧直接从 `node_modules` 解析。
 - 浏览器侧**只加载从源码 import 自动发现的 `node_modules` 依赖**，不存在手写包列表。
-- 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `sw.js.hbs` 的 `@vendor` 指令，不需要额外的 build。
+- 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、根目录内容文件和 `sw.js.hbs` 的 `@vendor` 指令，不需要额外的 build。
 - `scripts/lib/vendor_bundle.ts` 只做一次 Rollup 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()`（`@rollup/plugin-node-resolve`）解析到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
 - Rollup 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：浏览器测试通过 server command 用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
 - `fluentui-webcomponents` 由 `scripts/lib/fluent.ts` 整包复制到 `vendor/fluentui/`；`render/fluent.ts` 注册 `fluent-button`、`fluent-link`、`fluent-card`、`fluent-badge`、`fluent-divider`。它不经过 Rollup，因为组件 CSS 通过 `import.meta.url` 相对引用。
@@ -342,7 +348,7 @@ URL 严格对应 `content/` 下的路径：
 /*    /index.html    200
 ```
 
-`_headers` 给 `meta/`、`content/` 设置 60 秒缓存 + `stale-while-revalidate`，带哈希的 `vendor/` 使用长缓存，`sw.js` 不缓存。
+`_headers` 给 `meta/`、`posts/` 和根目录内容文件设置 60 秒缓存 + `stale-while-revalidate`，带哈希的 `vendor/` 使用长缓存，`sw.js` 不缓存。
 
 本地用 [act](https://github.com/nektos/act) 跑同一份 workflow：
 
@@ -356,7 +362,7 @@ act push -W .forgejo/workflows/deploy.yml \
 
 ## 添加内容
 
-1. 在 `content/` 下新建文件；
+1. 在根目录或 `posts/` 下新建文件；
 2. 用对应扩展名（`.md` / `.html` / `.js` / `.pages.js`）；
 3. 写上标题与日期（Markdown frontmatter、HTML meta、JS JSDoc）；
 4. `npm run build`。
@@ -398,7 +404,7 @@ export default function (shadow) {
 3. `export default function (file) { return function (shadow) {...}; }`；
 4. 给工厂挂上 `factory.meta = meta`，让 loader class 拿到最终扩展名。
 
-运行时通过 `meta/index.json` 里的 adapter 表发现它；从内容 adapter 的 `compile` 一路执行到最终 JS adapter，`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/content/hello.md">`。
+运行时通过 `meta/index.json` 里的 adapter 表发现它；从内容 adapter 的 `compile` 一路执行到最终 JS adapter，`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
 
 ## 代码风格
 
@@ -418,4 +424,4 @@ export default function (shadow) {
 ## 许可
 
 - 代码（`scripts/`、`render/`、`adapters/`、`shared/`）：MIT，见 [LICENSE](LICENSE)。
-- 文章（`content/`）：CC BY-SA 4.0。
+- 文章（根目录与 `posts/`）：CC BY-SA 4.0。

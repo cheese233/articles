@@ -3,9 +3,10 @@ import { builtinModules } from "node:module";
 import * as path from "node:path";
 import { init, parse } from "es-module-lexer";
 import tsBlankSpace from "ts-blank-space";
+import { contentFiles } from "./content.ts";
 import { paths } from "./paths.ts";
 
-const roots = ["render", "shared", "adapters", "content"];
+const roots = ["render", "shared", "adapters"];
 const extraFiles = ["sw.js.hbs"];
 const extensions = new Set([".ts", ".js", ".mjs", ".html"]);
 const builtins = new Set(builtinModules);
@@ -80,6 +81,11 @@ const sourceFiles = async () => {
 
       files.push(file);
     }
+  }
+
+  for (const rel of await contentFiles()) {
+    const file = path.join(paths.root, rel);
+    if (extensions.has(path.extname(file))) files.push(file);
   }
 
   for (const file of extraFiles) files.push(path.join(paths.root, file));

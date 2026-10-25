@@ -222,7 +222,7 @@ const renderDirectory = async (current: Manifest, route: string) => {
 };
 
 const renderNotFound = async (current: Manifest) => {
-  const file = "/content/404.md";
+  const file = "/404.md";
   const source = await fetchSource(file, "md").catch(() => null);
 
   if (source == null) {

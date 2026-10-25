@@ -43,13 +43,13 @@ describe("adapter names", () => {
   });
 
   it("prefers the longest matching extension", () => {
-    const info = matchFileAdapter("/content/about.pages.js", adapters);
+    const info = matchFileAdapter("/about.pages.js", adapters);
     expect(info?.ext).to.equal("pages.js");
 
-    const markdown = matchFileAdapter("/content/hello.md", adapters);
+    const markdown = matchFileAdapter("/hello.md", adapters);
     expect(markdown?.ext).to.equal("md");
 
-    expect(matchFileAdapter("/content/hello.ts", adapters)).to.equal(null);
+    expect(matchFileAdapter("/hello.ts", adapters)).to.equal(null);
   });
 
   it("stripExt removes the whole compound extension", () => {

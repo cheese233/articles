@@ -15,7 +15,7 @@ export default function (shadow) {
       构建期只负责产出元数据。
     </p>
     <p>
-      这个页面本身是 <code>content/about.pages.js</code>，扩展名是
+      这个页面本身是 <code>about.pages.js</code>，扩展名是
       <code>pages.js</code>，因此由 <code>pages.js.ext.js</code> 调用它的
       <code>default(shadowDom)</code>；<code>js.ext.js</code> 只负责 .js 语言。
     </p>

@@ -23,7 +23,7 @@ describe("adapters", () => {
 
   it("reads YAML frontmatter", async () => {
     const file = new VFile({
-      path: "content/hello.md",
+      path: "hello.md",
       value: [
         "---",
         "title: Hello",
@@ -48,7 +48,7 @@ describe("adapters", () => {
 
   it("can make a markdown file a middleware", async () => {
     const file = new VFile({
-      path: "content/404.md",
+      path: "404.md",
       value: "---\nroutable: false\n---\n\n# 404\n",
     });
 
@@ -67,7 +67,7 @@ describe("adapters", () => {
       "export default function () {}",
     ].join("\n");
 
-    const file = new VFile({ path: "content/demo.js", value: source });
+    const file = new VFile({ path: "demo.js", value: source });
     const meta = await JavaScript.parse(file);
 
     expect(meta.title).to.equal("Demo");
@@ -76,7 +76,7 @@ describe("adapters", () => {
     expect(meta.routable).to.equal(true);
 
     const page = new VFile({
-      path: "content/plain.js",
+      path: "plain.js",
       value: "export default function () {}",
     });
     const plain = await JavaScript.parse(page);
@@ -85,7 +85,7 @@ describe("adapters", () => {
 
   it("defaults pages.js to routable", async () => {
     const file = new VFile({
-      path: "content/about.pages.js",
+      path: "about.pages.js",
       value: "/**\n * # About\n */\nexport default function () {}",
     });
 
@@ -96,7 +96,7 @@ describe("adapters", () => {
 
   it("reads HTML meta tags", async () => {
     const file = new VFile({
-      path: "content/lab.html",
+      path: "lab.html",
       value: [
         '<meta name="title" content="Lab" />',
         '<meta name="description" content="A lab." />',

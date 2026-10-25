@@ -7,7 +7,7 @@ export const root = path.resolve(
 
 export const paths = {
   root,
-  content: path.join(root, "content"),
+  content: root,
   adapters: path.join(root, "adapters"),
   meta: path.join(root, "meta"),
   render: path.join(root, "render"),

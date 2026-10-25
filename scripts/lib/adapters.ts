@@ -56,7 +56,7 @@ export const parseFile = async (
   rel: string,
   source: string,
 ): Promise<ParsedMeta> => {
-  const file = new VFile({ path: rel, value: source, cwd: paths.content });
+  const file = new VFile({ path: rel, value: source, cwd: paths.root });
 
   try {
     if (info.file.endsWith(".html")) {
