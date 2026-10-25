@@ -1,20 +1,10 @@
 import { mkdir, rm } from "node:fs/promises";
 import * as path from "node:path";
-import * as commonjs from "@rollup/plugin-commonjs";
-import * as json from "@rollup/plugin-json";
-import { nodeResolve } from "@rollup/plugin-node-resolve";
-import * as terser from "@rollup/plugin-terser";
-import { rollup } from "rollup";
-import type { Plugin, RollupOutput } from "rollup";
+import { rolldown } from "rolldown";
+import type { Plugin, RolldownOutput } from "rolldown";
 import { discoverSpecifiers } from "./imports.ts";
 import { paths } from "./paths.ts";
 import { builtinStubs, onlyNodeModules } from "./vendor_plugin.ts";
-
-const commonjsPlugin = commonjs.default as unknown as (
-  options?: { transformMixedEsModules?: boolean },
-) => Plugin;
-const jsonPlugin = json.default as unknown as () => Plugin;
-const terserPlugin = terser.default as unknown as () => Plugin;
 
 const safeName = (specifier: string) =>
   specifier.replace(/^@/, "").replace(/[\\/]/g, "-");
@@ -26,7 +16,7 @@ export interface VendorBuildOptions {
 
 export interface VendorBuild {
   urls: Map<string, string>;
-  output: RollupOutput["output"];
+  output: RolldownOutput["output"];
 }
 
 export const buildVendor = async (
@@ -50,28 +40,15 @@ export const buildVendor = async (
     await mkdir(paths.vendor, { recursive: true });
   }
 
-  const plugins: Plugin[] = [
-    onlyNodeModules(),
-    builtinStubs(),
-    nodeResolve({
-      browser: true,
-      exportConditions: ["browser", "import", "default"],
-      mainFields: ["browser", "module", "main"],
-      preferBuiltins: false,
-    }),
-    commonjsPlugin({ transformMixedEsModules: true }),
-    jsonPlugin(),
-  ];
-
-  if (minify) plugins.push(terserPlugin());
-
-  const bundle = await rollup({
+  const plugins: Plugin[] = [onlyNodeModules(), builtinStubs()];
+  const bundle = await rolldown({
     input: Object.fromEntries(
       specifiers.map((specifier) => [
         names.get(specifier) ?? specifier,
         `vendor:${specifier}`,
       ]),
     ),
+    platform: "browser",
     plugins,
   });
 
@@ -80,6 +57,7 @@ export const buildVendor = async (
     entryFileNames: "[name]-[hash].js",
     chunkFileNames: "chunks/[name]-[hash].js",
     sourcemap: false,
+    minify,
   };
 
   const render = async () => {
@@ -102,7 +80,7 @@ export const buildVendor = async (
 
   for (const specifier of specifiers) {
     const file = files.get(names.get(specifier) ?? "");
-    if (!file) throw new Error(`missing Rollup entry for ${specifier}`);
+    if (!file) throw new Error(`missing Rolldown entry for ${specifier}`);
     urls.set(specifier, `/vendor/${file}`);
   }
 

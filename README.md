@@ -96,7 +96,7 @@ articles/
 
 ## 客户端 TypeScript 执行
 
-项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 Rollup 打包到 `vendor/`。`fluentui-webcomponents` 是例外：它需要保持组件文件与 CSS 的相对路径，因此整包复制到 `vendor/fluentui/`，由 import map 前缀映射。
+项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 Rolldown 打包到 `vendor/`。`fluentui-webcomponents` 是例外：它需要保持组件文件与 CSS 的相对路径，因此整包复制到 `vendor/fluentui/`，由 import map 前缀映射。
 
 ```text
 render/index.html
@@ -316,9 +316,9 @@ URL 严格对应根目录下的内容路径：
 - Node 侧直接从 `node_modules` 解析。
 - 浏览器侧**只加载从源码 import 自动发现的 `node_modules` 依赖**，不存在手写包列表。
 - 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、根目录内容文件和 `sw.js.hbs` 的 `@vendor` 指令，不需要额外的 build。
-- `scripts/lib/vendor_bundle.ts` 只做一次 Rollup 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()`（`@rollup/plugin-node-resolve`）解析到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
-- Rollup 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：浏览器测试通过 server command 用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
-- `fluentui-webcomponents` 由 `scripts/lib/fluent.ts` 整包复制到 `vendor/fluentui/`；`render/fluent.ts` 注册 `fluent-button`、`fluent-link`、`fluent-card`、`fluent-badge`、`fluent-divider`。它不经过 Rollup，因为组件 CSS 通过 `import.meta.url` 相对引用。
+- `scripts/lib/vendor_bundle.ts` 只做一次 Rolldown 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()` 调用 Rolldown 内置解析器定位到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
+- Rolldown 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：浏览器测试通过 server command 用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
+- `fluentui-webcomponents` 由 `scripts/lib/fluent.ts` 整包复制到 `vendor/fluentui/`；`render/fluent.ts` 注册 `fluent-button`、`fluent-link`、`fluent-card`、`fluent-badge`、`fluent-divider`。它不经过 Rolldown，因为组件 CSS 通过 `import.meta.url` 相对引用。
 - `render/index.html` 的 import map 由构建生成，entry 文件名带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
 - `sw.js` 由 `sw.js.hbs` 生成：模板用 Handlebars 变量注入带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。
@@ -419,7 +419,7 @@ export default function (shadow) {
 - CSS 设计令牌定义在 `body`，深色模式用 `prefers-color-scheme` 覆盖同名变量。
 - 不使用前端框架；页面是原生 DOM。
 
-与旧仓库的必要差异：新栈要求 `package.json` / `tsconfig.json` / import map；Rollup 只用于把 `node_modules` 依赖打成 `vendor/`，不打包项目代码；adapter 按本项目的契约使用 **default export class**（旧 loader 是具名 `Loader`）。
+与旧仓库的必要差异：新栈要求 `package.json` / `tsconfig.json` / import map；Rolldown 只用于把 `node_modules` 依赖打成 `vendor/`，不打包项目代码；adapter 按本项目的契约使用 **default export class**（旧 loader 是具名 `Loader`）。
 
 ## 许可
 

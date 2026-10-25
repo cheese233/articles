@@ -1,13 +1,13 @@
 import { builtinModules } from "node:module";
 import * as path from "node:path";
-import type { Plugin } from "rollup";
+import type { Plugin } from "rolldown";
 import { paths } from "./paths.ts";
 
 const nodeModules = path.join(paths.root, "node_modules") + path.sep;
 const builtins = new Set(builtinModules);
 
 /**
- * Resolve virtual `vendor:<specifier>` entries with Rollup's resolver, and
+ * Resolve virtual `vendor:<specifier>` entries with Rolldown's resolver, and
  * reject any module that does not live under node_modules.
  */
 export const onlyNodeModules = (): Plugin => ({
@@ -35,7 +35,7 @@ export const onlyNodeModules = (): Plugin => ({
 });
 
 /**
- * TypeScript's Node entry probes fs/os/crypto behind a runtime check. Rollup
+ * TypeScript's Node entry probes fs/os/crypto behind a runtime check. Rolldown
  * cannot leave those imports in a browser bundle, so give them empty stubs.
  */
 export const builtinStubs = (): Plugin => ({

@@ -34,10 +34,6 @@
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
-    "@rollup/plugin-commonjs": "^29.0.3",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^1.0.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.6.5",
     "@web/dev-server-esbuild": "^2.0.0",
@@ -47,7 +43,7 @@
     "es-module-lexer": "^3.0.4",
     "handlebars": "^4.7.10",
     "mime": "^4.1.1",
-    "rollup": "^4.65.0",
+    "rolldown": "^1.2.15",
     "typescript": "^5.9.3",
     "wrangler": "^4.152.0"
   }
