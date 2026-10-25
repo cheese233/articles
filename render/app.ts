@@ -1,4 +1,5 @@
 import { VFile } from "vfile";
+import { findMainEntry } from "../shared/directory.ts";
 import { findDirectoryAdapter, matchFileAdapter, stripExt } from "../shared/ext.ts";
 import type {
   AdapterContext,
@@ -285,6 +286,20 @@ type Target =
 
 const resolve = async (current: Manifest, path: string): Promise<Target> => {
   const directory = path.endsWith("/") ? path : `${path}/`;
+  const main = findMainEntry(directory, current.entries);
+
+  if (main) {
+    const meta = await fetchEntry(main.stem);
+    if (!meta) throw new NotFoundError(path);
+    return {
+      kind: "file",
+      ext: main.ext,
+      file: main.file,
+      route: directory,
+      meta,
+    };
+  }
+
   if (current.dirs.includes(directory)) {
     return { kind: "directory", route: directory };
   }

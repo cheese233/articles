@@ -1,3 +1,5 @@
+import { isMainEntry } from "../shared/directory.ts";
+
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ManifestEntry} ManifestEntry */
@@ -50,9 +52,10 @@ const factory = (_file) => (/** @type {ShadowRoot} */ shadow) => {
    * }} */ (shadow.host);
 
   const route = host.route ?? "/";
-  const entries = route == "/"
+  const entries = (route == "/"
     ? host.entries
-    : host.entries.filter((entry) => entry.route.startsWith(route));
+    : host.entries.filter((entry) => entry.route.startsWith(route)))
+    .filter((entry) => !isMainEntry(entry.file));
 
   const site = host.site;
   const title = route == "/" ? site?.title ?? "Blog" : label(route);
