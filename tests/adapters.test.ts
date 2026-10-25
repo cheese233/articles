@@ -5,6 +5,7 @@ import { test } from "node:test";
 import { VFile } from "vfile";
 import HtmlFactory, * as Html from "../adapters/html.ext.pages.js";
 import JavaScriptLoader, * as JavaScript from "../adapters/js.ext.js";
+import JsonFactory, * as Json from "../adapters/json.ext.html.js";
 import MarkdownFactory, * as Markdown from "../adapters/md.ext.pages.js";
 import PagesFactory, * as Pages from "../adapters/pages.js.ext.js";
 
@@ -115,4 +116,19 @@ test("html adapter reads meta tags", async () => {
   assert.equal(meta.date, "2026-10-21");
   assert.deepEqual(meta.tags, ["demo", "html"]);
   assert.equal(meta.routable, true);
+});
+
+test("json factory composes the html adapter", async () => {
+  const file = new VFile({
+    path: "content/sample.json",
+    value: JSON.stringify({ title: "JSON 示例", routable: true }),
+  });
+
+  const meta = await Json.parse(file);
+  const mount = JsonFactory(file);
+
+  assert.equal(meta.title, "JSON 示例");
+  assert.equal(meta.routable, true);
+  assert.equal(typeof mount, "function");
+  assert.equal(JsonFactory.meta.ext, "json");
 });

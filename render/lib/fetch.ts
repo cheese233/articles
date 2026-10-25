@@ -40,6 +40,8 @@ const accepted = (ext: string, type: string) => {
       return type == "text/javascript" || type == "application/javascript";
     case "md":
       return type == "text/markdown" || type == "text/plain";
+    case "json":
+      return type == "application/json" || type == "text/plain";
     case "html":
       return type == "text/html";
     default:

@@ -20,6 +20,7 @@ tags:
 |---|---|---|
 | `md.ext.pages.js` | `md` | `function(file)` → `function(shadow)` |
 | `html.ext.pages.js` | `html` | 同上 |
+| `json.ext.html.js` | `json` | 工厂；内部调用 html 工厂 |
 | `[...].ext.pages.js` | 目录 | 同上 |
 | `pages.js.ext.js` | `pages.js` | `function(factory)` → `JSLoader` class |
 | `js.ext.js` | `js` | `function(Adapter)` → `customElements.define` |
@@ -90,6 +91,7 @@ factory.meta = meta;
 
 - `md.ext.pages.js` → `<md-loader>`
 - `html.ext.pages.js` → `<html-loader>`
+- `json.ext.html.js` → `<json-loader>`；内部再调用 html 工厂，形成 `json → html → pages → js`
 - `[...].ext.pages.js` → `<directory-loader>`
 - `pages.js.ext.js` → `<pages-js-loader>`
 

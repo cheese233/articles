@@ -59,6 +59,7 @@ articles/
 │  ├─ pages.js.ext.js        # JSLoader 工厂
 │  ├─ md.ext.pages.js        # .md 工厂：file -> function(shadow)
 │  ├─ html.ext.pages.js      # .html 工厂
+│  ├─ json.ext.html.js       # .json 工厂：调用 html factory
 │  └─ [...].ext.pages.js     # 目录工厂
 ├─ content/                  # 发布的内容；URL 严格对应这里的路径
 ├─ meta/                     # 构建产物：每篇 sidecar + index.json
@@ -124,6 +125,7 @@ render/index.html
 | `pages.js.ext.js` | `.pages.js` | `function(factory)`：返回 `JSLoader` class |
 | `md.ext.pages.js` | `.md` | `function(file)`：返回 `function(shadow)` |
 | `html.ext.pages.js` | `.html` | 同上 |
+| `json.ext.html.js` | `.json` | 工厂；调用 `html.ext.pages.js` 的工厂 |
 | `[...].ext.pages.js` | 目录 | 同上 |
 
 ### 链式调用
@@ -202,6 +204,7 @@ factory.meta = meta;
 
 - `md.ext.pages.js` → `<md-loader>`
 - `html.ext.pages.js` → `<html-loader>`
+- `json.ext.html.js` → `<json-loader>`；内部再调用 html factory，形成 `json → html → pages → js`
 - `[...].ext.pages.js` → `<directory-loader>`
 - `pages.js.ext.js` → `<pages-js-loader>`
 
@@ -213,6 +216,7 @@ factory.meta = meta;
 | `pages.js.ext.js` | 同上，但默认 routable | `JSLoader` 调 factory |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
+| `json.ext.html.js` | JSON 的 `title/date/summary/routable` | 调用 html 工厂渲染 |
 | `[...].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
 ## 路由与 404
 
@@ -222,6 +226,7 @@ URL 严格对应 `content/` 下的路径：
 |---|---|
 | `/hello` | `content/hello.md` |
 | `/about` | `content/about.pages.js` |
+| `/sample` | `content/sample.json` |
 | `/hello.md` | `content/hello.md`（带后缀的直链） |
 | `/posts/` | 目录，由 `[...].ext.pages.js` 渲染 |
 
