@@ -1,40 +1,37 @@
-import assert from "node:assert/strict";
-import { test } from "node:test";
-import { discoverSpecifiers } from "../scripts/lib/imports.ts";
-import { buildVendor } from "../scripts/lib/vendor_bundle.ts";
+import { expect } from "@esm-bundle/chai";
+import { executeServerCommand } from "@web/test-runner-commands";
 
-test("discovers browser dependencies from source imports", async () => {
-  const specifiers = await discoverSpecifiers();
+interface VendorResult {
+  specifiers: string[];
+  modules: number;
+  duplicates: string[];
+}
 
-  assert.ok(specifiers.includes("vfile"));
-  assert.ok(specifiers.includes("yaml"));
-  assert.ok(specifiers.includes("unified"));
-  assert.ok(specifiers.includes("ts-blank-space"));
+const check = async () =>
+  await executeServerCommand("vendor-check") as VendorResult;
 
-  assert.ok(!specifiers.includes("typescript"));
-  assert.ok(!specifiers.includes("fast-xml-builder"));
-  assert.ok(!specifiers.includes("fs"));
-  assert.ok(!specifiers.includes("node:fs"));
-  assert.ok(!specifiers.includes("../render/markdown_deps.ts"));
-});
+describe("vendor", () => {
+  it("discovers browser dependencies from source imports", async function () {
+    this.timeout(60000);
 
-test("vendor bundle keeps every module in one chunk", async () => {
-  const { output } = await buildVendor({ write: false, minify: false });
-  const owners = new Map<string, string>();
-  const duplicates: string[] = [];
+    const { specifiers } = await check();
+    expect(specifiers).to.include("vfile");
+    expect(specifiers).to.include("yaml");
+    expect(specifiers).to.include("unified");
+    expect(specifiers).to.include("ts-blank-space");
 
-  for (const chunk of output) {
-    if (chunk.type != "chunk") continue;
+    expect(specifiers).to.not.include("typescript");
+    expect(specifiers).to.not.include("fast-xml-builder");
+    expect(specifiers).to.not.include("fs");
+    expect(specifiers).to.not.include("node:fs");
+    expect(specifiers).to.not.include("../render/markdown_deps.ts");
+  });
 
-    for (const [id, module] of Object.entries(chunk.modules)) {
-      if (module.renderedLength == 0) continue;
+  it("keeps every module in one chunk", async function () {
+    this.timeout(60000);
 
-      const owner = owners.get(id);
-      if (owner) duplicates.push(`${id} (${owner}, ${chunk.fileName})`);
-      else owners.set(id, chunk.fileName);
-    }
-  }
-
-  assert.ok(owners.size > 0);
-  assert.deepEqual(duplicates, []);
+    const result = await check();
+    expect(result.modules).to.be.greaterThan(0);
+    expect(result.duplicates).to.deep.equal([]);
+  });
 });

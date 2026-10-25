@@ -1,44 +1,34 @@
-import assert from "node:assert/strict";
-import { readdir, readFile } from "node:fs/promises";
-import * as path from "node:path";
-import { test } from "node:test";
-import tsBlankSpace from "ts-blank-space";
+import { expect } from "@esm-bundle/chai";
+import { executeServerCommand } from "@web/test-runner-commands";
 
-const clientDirs = ["render", "shared"];
+interface TypeScriptResult {
+  count: number;
+  errors: Array<{ file: string; nodes: number[] }>;
+  app: {
+    importsExt: boolean;
+    topLevelAwait: boolean;
+    noPromiseAnnotation: boolean;
+  };
+}
 
-const clientTypescript = async () => {
-  const files = [];
+const check = async () =>
+  await executeServerCommand("typescript-check") as TypeScriptResult;
 
-  for (const dir of clientDirs) {
-    for (const entry of await readdir(dir, {
-      recursive: true,
-      withFileTypes: true,
-    })) {
-      if (!entry.isFile() || !entry.name.endsWith(".ts")) continue;
-      files.push(path.join(entry.parentPath, entry.name));
-    }
-  }
+describe("client TypeScript", () => {
+  it("is erasable by ts-blank-space", async function () {
+    this.timeout(60000);
 
-  return files.sort();
-};
+    const result = await check();
+    expect(result.count).to.be.greaterThan(0);
+    expect(result.errors).to.deep.equal([]);
+  });
 
-test("all client TypeScript is erasable by ts-blank-space", async () => {
-  const files = await clientTypescript();
-  assert.ok(files.length > 0);
+  it("keeps render/app.ts imports and top-level await", async function () {
+    this.timeout(60000);
 
-  for (const file of files) {
-    const source = await readFile(file, "utf8");
-    const errors: number[] = [];
-    tsBlankSpace(source, (node) => errors.push(node.kind));
-    assert.deepEqual(errors, [], `${file} contains non-erasable syntax`);
-  }
-});
-
-test("render/app.ts keeps its imports and top-level await", async () => {
-  const source = await readFile("render/app.ts", "utf8");
-  const code = tsBlankSpace(source);
-
-  assert.ok(code.includes('from "../shared/ext.ts"'));
-  assert.ok(code.includes("await boot()"));
-  assert.ok(!code.includes(": Promise<"));
+    const result = await check();
+    expect(result.app.importsExt).to.equal(true);
+    expect(result.app.topLevelAwait).to.equal(true);
+    expect(result.app.noPromiseAnnotation).to.equal(true);
+  });
 });

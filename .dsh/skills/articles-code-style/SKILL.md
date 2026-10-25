@@ -74,7 +74,8 @@ equality for objects.
 
 ## Tests
 
-- Use `node:test` and `node:assert/strict`; do not add a test framework.
+- Use `@web/test-runner` with Mocha `describe` / `it` and `@esm-bundle/chai`; do not add another browser test framework.
+- Browser tests must not import Node built-ins. Put Node-only checks behind `executeServerCommand`.
 - Test names are lowercase sentences describing behavior.
 - Prefer focused assertions over snapshots.
 - Tests must not depend on wall-clock time, randomness, or network access.
@@ -89,7 +90,7 @@ equality for objects.
 - [ ] Names follow the conventions above; no unrelated reformatting.
 - [ ] Comments are English, concise, and explain intent.
 - [ ] CSS/HTML use 4 spaces and semantic markup.
-- [ ] Tests use `node:test` / `node:assert/strict` and are deterministic.
+- [ ] Tests use `@web/test-runner` + `@esm-bundle/chai` and are deterministic.
 
 ## Examples
 

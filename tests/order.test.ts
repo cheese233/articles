@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "node:test";
+import { expect } from "@esm-bundle/chai";
 import { linkTimeline, sortEntries } from "../shared/order.ts";
 
 const entries = [
@@ -8,26 +7,29 @@ const entries = [
   { route: "/c", title: "C", date: "2026-10-20T00:00:00.000Z" },
 ];
 
-test("sorts newest first and breaks ties by route", () => {
-  assert.deepEqual(
-    sortEntries(entries).map((entry) => entry.route),
-    ["/a", "/b", "/c"],
-  );
-});
+describe("timeline", () => {
+  it("sorts newest first and breaks ties by route", () => {
+    expect(sortEntries(entries).map((entry) => entry.route)).to.deep.equal([
+      "/a",
+      "/b",
+      "/c",
+    ]);
+  });
 
-test("links prev (older) and next (newer)", () => {
-  const sorted = sortEntries(entries);
-  const timeline = linkTimeline(sorted);
+  it("links prev (older) and next (newer)", () => {
+    const sorted = sortEntries(entries);
+    const timeline = linkTimeline(sorted);
 
-  const a = timeline.get("/a");
-  assert.equal(a?.next, null);
-  assert.equal(a?.prev?.route, "/b");
+    const a = timeline.get("/a");
+    expect(a?.next).to.equal(null);
+    expect(a?.prev?.route).to.equal("/b");
 
-  const b = timeline.get("/b");
-  assert.equal(b?.next?.route, "/a");
-  assert.equal(b?.prev?.route, "/c");
+    const b = timeline.get("/b");
+    expect(b?.next?.route).to.equal("/a");
+    expect(b?.prev?.route).to.equal("/c");
 
-  const c = timeline.get("/c");
-  assert.equal(c?.prev, null);
-  assert.equal(c?.next?.route, "/b");
+    const c = timeline.get("/c");
+    expect(c?.prev).to.equal(null);
+    expect(c?.next?.route).to.equal("/b");
+  });
 });

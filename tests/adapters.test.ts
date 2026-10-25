@@ -1,8 +1,4 @@
-// Must stay first: the pages.js wrapper extends HTMLElement.
-import "../scripts/lib/dom.ts";
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { test } from "node:test";
+import { expect } from "@esm-bundle/chai";
 import { VFile } from "vfile";
 import HtmlFactory, * as Html from "../adapters/html.ext.pages.js";
 import * as JavaScript from "../adapters/js.ext.js";
@@ -12,121 +8,124 @@ import PagesFactory, * as Pages from "../adapters/pages.js.ext.js";
 const MarkdownLoader = PagesFactory(MarkdownFactory);
 const HtmlLoader = PagesFactory(HtmlFactory);
 
-test("factories wrap into WebElements loader classes", () => {
-  assert.ok(MarkdownLoader.prototype instanceof HTMLElement);
-  assert.ok(HtmlLoader.prototype instanceof HTMLElement);
-  assert.equal(MarkdownLoader.meta.ext, "md");
-  assert.equal(HtmlLoader.meta.ext, "html");
-  assert.equal(Pages.meta.ext, "pages.js");
-  assert.equal(MarkdownFactory.meta.ext, "md");
-  assert.equal(HtmlFactory.meta.ext, "html");
-  assert.equal(typeof JavaScript.parse, "function");
-  assert.equal(JavaScript.meta.ext, "js");
-});
-
-test("markdown adapter reads YAML frontmatter", async () => {
-  const file = new VFile({
-    path: "content/hello.md",
-    value: [
-      "---",
-      "title: Hello",
-      "date: 2026-10-20",
-      "tags: [meta, test]",
-      "---",
-      "",
-      "# Hello",
-      "",
-      "First paragraph.",
-    ].join("\n"),
+describe("adapters", () => {
+  it("wraps factories into loader classes", () => {
+    expect(MarkdownLoader.prototype).to.be.instanceOf(HTMLElement);
+    expect(HtmlLoader.prototype).to.be.instanceOf(HTMLElement);
+    expect(MarkdownLoader.meta.ext).to.equal("md");
+    expect(HtmlLoader.meta.ext).to.equal("html");
+    expect(Pages.meta.ext).to.equal("pages.js");
+    expect(MarkdownFactory.meta.ext).to.equal("md");
+    expect(HtmlFactory.meta.ext).to.equal("html");
+    expect(JavaScript.parse).to.be.a("function");
+    expect(JavaScript.meta.ext).to.equal("js");
   });
 
-  const meta = await Markdown.parse(file);
+  it("reads YAML frontmatter", async () => {
+    const file = new VFile({
+      path: "content/hello.md",
+      value: [
+        "---",
+        "title: Hello",
+        "date: 2026-10-20",
+        "tags: [meta, test]",
+        "---",
+        "",
+        "# Hello",
+        "",
+        "First paragraph.",
+      ].join("\n"),
+    });
 
-  assert.equal(meta.title, "Hello");
-  assert.equal(meta.date, "2026-10-20");
-  assert.deepEqual(meta.tags, ["meta", "test"]);
-  assert.equal(meta.routable, true);
-  assert.match(meta.summary ?? "", /First paragraph/);
-});
+    const meta = await Markdown.parse(file);
 
-test("markdown frontmatter can make a file a middleware", async () => {
-  const file = new VFile({
-    path: "content/404.md",
-    value: "---\nroutable: false\n---\n\n# 404\n",
+    expect(meta.title).to.equal("Hello");
+    expect(meta.date).to.equal("2026-10-20");
+    expect(meta.tags).to.deep.equal(["meta", "test"]);
+    expect(meta.routable).to.equal(true);
+    expect(meta.summary ?? "").to.match(/First paragraph/);
   });
 
-  const meta = await Markdown.parse(file);
-  assert.equal(meta.routable, false);
-});
+  it("can make a markdown file a middleware", async () => {
+    const file = new VFile({
+      path: "content/404.md",
+      value: "---\nroutable: false\n---\n\n# 404\n",
+    });
 
-test("js adapter reads JSDoc and requires explicit @routable", async () => {
-  const source = [
-    "/**",
-    " * # Demo",
-    " * @routable",
-    " * @date 2026-10-19",
-    ' * @tags ["demo", "js"]',
-    " */",
-    "export default function () {}",
-  ].join("\n");
-
-  const file = new VFile({ path: "content/demo.js", value: source });
-  const meta = await JavaScript.parse(file);
-
-  assert.equal(meta.title, "Demo");
-  assert.equal(meta.date, "2026-10-19");
-  assert.deepEqual(meta.tags, ["demo", "js"]);
-  assert.equal(meta.routable, true);
-
-  const page = new VFile({
-    path: "content/plain.js",
-    value: "export default function () {}",
-  });
-  const plain = await JavaScript.parse(page);
-  assert.equal(plain.routable, undefined);
-});
-
-test("pages.js defaults to routable", async () => {
-  const file = new VFile({
-    path: "content/about.pages.js",
-    value: "/**\n * # About\n */\nexport default function () {}",
+    const meta = await Markdown.parse(file);
+    expect(meta.routable).to.equal(false);
   });
 
-  const meta = await Pages.parse(file);
-  assert.equal(meta.title, "About");
-  assert.equal(meta.routable, true);
-});
+  it("reads JSDoc and requires explicit @routable", async () => {
+    const source = [
+      "/**",
+      " * # Demo",
+      " * @routable",
+      " * @date 2026-10-19",
+      ' * @tags ["demo", "js"]',
+      " */",
+      "export default function () {}",
+    ].join("\n");
 
-test("html adapter reads meta tags", async () => {
-  const file = new VFile({
-    path: "content/lab.html",
-    value: [
-      '<meta name="title" content="Lab" />',
-      '<meta name="description" content="A lab." />',
-      '<meta name="date" content="2026-10-21" />',
-      '<meta name="tags" content="demo, html" />',
-      "<h1>Lab</h1>",
-    ].join("\n"),
+    const file = new VFile({ path: "content/demo.js", value: source });
+    const meta = await JavaScript.parse(file);
+
+    expect(meta.title).to.equal("Demo");
+    expect(meta.date).to.equal("2026-10-19");
+    expect(meta.tags).to.deep.equal(["demo", "js"]);
+    expect(meta.routable).to.equal(true);
+
+    const page = new VFile({
+      path: "content/plain.js",
+      value: "export default function () {}",
+    });
+    const plain = await JavaScript.parse(page);
+    expect(plain.routable).to.equal(undefined);
   });
 
-  const meta = await Html.parse(file);
+  it("defaults pages.js to routable", async () => {
+    const file = new VFile({
+      path: "content/about.pages.js",
+      value: "/**\n * # About\n */\nexport default function () {}",
+    });
 
-  assert.equal(meta.title, "Lab");
-  assert.equal(meta.summary, "A lab.");
-  assert.equal(meta.date, "2026-10-21");
-  assert.deepEqual(meta.tags, ["demo", "html"]);
-  assert.equal(meta.routable, true);
-});
+    const meta = await Pages.parse(file);
+    expect(meta.title).to.equal("About");
+    expect(meta.routable).to.equal(true);
+  });
 
-test("json adapter is real HTML", async () => {
-  const source = await readFile(
-    new URL("../adapters/json.ext.html", import.meta.url),
-    "utf8",
-  );
-  const file = new VFile({ path: "adapters/json.ext.html", value: source });
-  const meta = await Html.parse(file);
+  it("reads HTML meta tags", async () => {
+    const file = new VFile({
+      path: "content/lab.html",
+      value: [
+        '<meta name="title" content="Lab" />',
+        '<meta name="description" content="A lab." />',
+        '<meta name="date" content="2026-10-21" />',
+        '<meta name="tags" content="demo, html" />',
+        "<h1>Lab</h1>",
+      ].join("\n"),
+    });
 
-  assert.equal(meta.title, "JSON 示例");
-  assert.equal(meta.routable, true);
-  assert.match(source, /<script type="module">/);
+    const meta = await Html.parse(file);
+
+    expect(meta.title).to.equal("Lab");
+    expect(meta.summary).to.equal("A lab.");
+    expect(meta.date).to.equal("2026-10-21");
+    expect(meta.tags).to.deep.equal(["demo", "html"]);
+    expect(meta.routable).to.equal(true);
+  });
+
+  it("loads the json adapter as real HTML", async () => {
+    const response = await fetch("/adapters/json.ext.html");
+    expect(response.ok).to.equal(true);
+
+    const file = new VFile({
+      path: "adapters/json.ext.html",
+      value: await response.text(),
+    });
+    const meta = await Html.parse(file);
+
+    expect(meta.title).to.equal("JSON 示例");
+    expect(meta.routable).to.equal(true);
+  });
 });

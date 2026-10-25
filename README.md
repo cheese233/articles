@@ -42,7 +42,7 @@ npm run metadata   # 只生成元数据（CI 的核心职责）
 npm run bundle     # 只生成 vendor/、sw.js、render/index.html
 npm run stage      # 把站点树复制到 dist/
 npm run typecheck  # tsc --noEmit
-npm test           # node:test
+npm test           # web-test-runner (Chrome)
 npm run deploy     # build + wrangler pages deploy dist
 ```
 
@@ -300,7 +300,7 @@ URL 严格对应 `content/` 下的路径：
 - 浏览器侧**只加载从源码 import 自动发现的 `node_modules` 依赖**，不存在手写包列表。
 - 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `sw.template.js`，不需要额外的 build。
 - `scripts/lib/vendor_bundle.ts` 只做一次 Rollup 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()`（`@rollup/plugin-node-resolve`）解析到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
-- Rollup 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：测试用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
+- Rollup 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：浏览器测试通过 server command 用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
 - `render/index.html` 的 import map 由构建生成，entry 文件名带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
 - `sw.js` 由 `sw.template.js` 生成：模板里写普通的 `from "ts-blank-space"`，构建时按同一份依赖表改写成带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。
