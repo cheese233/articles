@@ -49,6 +49,7 @@ export const buildVendor = async (
       ]),
     ),
     platform: "browser",
+    moduleTypes: { ".css": "text" },
     plugins,
   });
 
