@@ -5,7 +5,6 @@ import { paths } from "./paths.ts";
 const skipDirs = new Set([
   ".git",
   ".dsh",
-  ".forgejo",
   ".wrangler",
   "adapters",
   "dist",
@@ -19,10 +18,8 @@ const skipDirs = new Set([
 ]);
 
 const skipRootFiles = new Set([
-  ".actrc",
   ".gitignore",
   "LICENSE",
-  "README.md",
   "atom.xml",
   "feed.json",
   "index.html",

@@ -6,9 +6,16 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
 jobs:
   deploy:
-    runs-on: codeberg-small
+    runs-on: ubuntu-latest
     steps:
       - name: Check out the full history
         uses: actions/checkout@v4

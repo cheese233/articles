@@ -7,11 +7,11 @@ description: 一个在浏览器里从源代码渲染的博客。
 
 一个**在浏览器里从源代码渲染**的博客。没有 SSG 的预渲染页面，也没有 SSR 的请求时渲染：构建期只生成元数据，页面在读者打开 URL 时由 SPA 取回 `.md` / `.js` / `.html` 源文件并现场生成。
 
-技术栈：**Node.js + TypeScript + Cloudflare Pages**，CI 由 Codeberg 的 act 风格 workflow 执行。
+技术栈：**Node.js + TypeScript + Cloudflare Pages**，CI 由 GitHub Actions 执行。
 
 ```text
 浏览器
-  ├─ GET /                       # 空目录页
+  ├─ GET /                       # 根目录页
   ├─ GET /meta/index.json        # 路由、adapter 表、条目清单
   └─ GET /404.md                 # 404 中间件
 
@@ -65,7 +65,7 @@ articles/
 │  ├─ json.ext.html          # .json 的真实 HTML adapter
 │  └─ [...].ext.pages.js     # 目录工厂
 ├─ 404.md                    # 404 中间件
-├─ README.md                 # 仓库说明（带 frontmatter，不参与构建）
+├─ README.md                 # 仓库说明（带 frontmatter，路由 /README）
 ├─ posts/                    # 文章目录；当前为空
 ├─ meta/                     # 构建产物：每篇 sidecar + index.json
 ├─ render/
@@ -90,7 +90,7 @@ articles/
 ├─ site.json                 # 站点标题、URL、作者、语言
 ├─ _redirects                # /* → /index.html 200
 ├─ _headers                  # Cloudflare Pages 缓存头
-└─ .forgejo/workflows/       # Codeberg CI（act 兼容）
+└─ .github/workflows/        # GitHub Actions 部署
 ```
 
 ## 客户端 TypeScript 执行
@@ -231,12 +231,13 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 | `[...].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
 ## 路由与 404
 
-URL 严格对应根目录下的内容路径。当前仓库没有文章，首页显示空目录。
+URL 严格对应根目录下的内容路径。当前没有文章，首页只列出 README。
 
 添加文章后，例如：
 
 | URL | 源文件 |
 |---|---|
+| `/README` | `README.md` |
 | `/hello` | `hello.md` |
 | `/hello.md` | `hello.md`（带后缀的直链） |
 | `/posts/` | `posts/` 目录，由 `[...].ext.pages.js` 渲染 |
@@ -326,11 +327,11 @@ URL 严格对应根目录下的内容路径。当前仓库没有文章，首页�
 
 ## CI 与 Cloudflare Pages
 
-`.forgejo/workflows/deploy.yml`：
+`.github/workflows/deploy.yml`：
 
 1. `actions/checkout@v4`，`fetch-depth: 0`（git 时间是元数据来源之一）；
 2. `actions/setup-node@v4` + `npm ci`；
-3. `npm run typecheck`、`npm test`；
+3. `npm run typecheck`、安装 Chrome、`npm test`；
 4. `npm run bundle`（node_modules vendor + shell + sw）、`npm run metadata`（只生成元数据）、`npm run stage`；**不渲染任何页面**；
 5. `node scripts/deploy.ts`：`wrangler pages deploy dist`。
 
@@ -350,16 +351,6 @@ URL 严格对应根目录下的内容路径。当前仓库没有文章，首页�
 ```
 
 `_headers` 给 `meta/`、`posts/` 和根目录内容文件设置 60 秒缓存 + `stale-while-revalidate`，带哈希的 `vendor/` 使用长缓存，`sw.js` 不缓存。
-
-本地用 [act](https://github.com/nektos/act) 跑同一份 workflow：
-
-```bash
-act push -W .forgejo/workflows/deploy.yml \
-  -s CLOUDFLARE_API_TOKEN=... \
-  -s CLOUDFLARE_ACCOUNT_ID=...
-```
-
-`.actrc` 把 `codeberg-small` 映射到 act 的 Ubuntu 镜像。
 
 ## 添加内容
 
