@@ -1,6 +1,7 @@
-import { isMainEntry } from "../shared/directory.ts";
+import { VFile } from "vfile";
+import { loadLoader } from "../render/lib/adapters.ts";
+import { findMainEntry, isMainEntry } from "../shared/directory.ts";
 
-/** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ManifestEntry} ManifestEntry */
 
@@ -44,7 +45,7 @@ const card = (/** @type {ManifestEntry} */ entry) => `
 /**
  * @param {VFile} _file
  */
-const factory = (_file) => (/** @type {ShadowRoot} */ shadow) => {
+const factory = (_file) => async (/** @type {ShadowRoot} */ shadow) => {
   const host = /** @type {HTMLElement & {
    *   route?: string;
    *   entries: ManifestEntry[];
@@ -52,6 +53,25 @@ const factory = (_file) => (/** @type {ShadowRoot} */ shadow) => {
    * }} */ (shadow.host);
 
   const route = host.route ?? "/";
+  const main = findMainEntry(route, host.entries);
+
+  if (main) {
+    const response = await fetch("/meta/index.json");
+    if (!response.ok) throw new Error("metadata not found");
+    const index = await response.json();
+    const Loader = await loadLoader(main.ext, index);
+    const mount = /** @type {{ mount?: (file: VFile) => (shadow: ShadowRoot) => unknown }} */ (
+      Loader
+    ).mount;
+    if (!mount) throw new Error(`no mount for .${main.ext}`);
+
+    const source = await fetch(main.file);
+    if (!source.ok) throw new Error(`cannot load ${main.file}`);
+    const file = new VFile({ path: main.file, value: await source.text() });
+    await mount(file)(shadow);
+    return;
+  }
+
   const entries = (route == "/"
     ? host.entries
     : host.entries.filter((entry) => entry.route.startsWith(route)))

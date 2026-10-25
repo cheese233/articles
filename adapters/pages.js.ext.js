@@ -19,7 +19,7 @@ export const parse = async (file) => ({
 });
 
 const wrap = (/** @type {((file: VFile) => (shadow: ShadowRoot) => unknown) & { meta?: AdapterStatics }} */ factory) => {
-  return class JSLoader extends HTMLElement {
+  const Adapter = class JSLoader extends HTMLElement {
     static meta = factory.meta ?? meta;
 
     /** @type {VFile | undefined} */
@@ -63,6 +63,9 @@ const wrap = (/** @type {((file: VFile) => (shadow: ShadowRoot) => unknown) & { 
       }
     }
   };
+
+  Adapter.mount = factory;
+  return Adapter;
 };
 
 export default wrap;

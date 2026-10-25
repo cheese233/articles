@@ -125,7 +125,17 @@ export default factory;
  * @param {{ meta: import("../shared/types.ts").AdapterStatics, body: string }} child
  */
 export const compile = (child) => {
-  class HtmlAdapter extends HTMLElement {
+  const mount = async (/** @type {ShadowRoot} */ shadow) => {
+    const article = document.createElement("article");
+    article.className = "html-page markdown";
+    article.innerHTML = child.body;
+    article.querySelectorAll("meta").forEach((tag) => tag.remove());
+
+    shadow.append(article);
+    await execute(shadow, article);
+  };
+
+  const Adapter = class HtmlAdapter extends HTMLElement {
     static meta = child.meta;
 
     constructor() {
@@ -135,23 +145,17 @@ export const compile = (child) => {
 
     async connectedCallback() {
       try {
-        const article = document.createElement("article");
-        article.className = "html-page markdown";
-        article.innerHTML = child.body;
-        article.querySelectorAll("meta").forEach((tag) => tag.remove());
-
         const shadow = this.shadowRoot;
         if (!shadow) throw new Error("html loader has no shadow root");
-
-        shadow.append(article);
-        await execute(shadow, article);
+        await mount(shadow);
         this.dispatchEvent(new Event("rendered"));
       } catch (error) {
         console.error(error);
         this.dispatchEvent(new Event("error"));
       }
     }
-  }
+  };
 
-  return { meta: child.meta, Adapter: HtmlAdapter };
+  Adapter.mount = () => mount;
+  return { meta: child.meta, Adapter };
 };
