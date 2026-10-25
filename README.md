@@ -114,9 +114,10 @@ render/index.html
 - UI 使用 [`fluentui-webcomponents`](https://github.com/cheese233/fluentui-webcomponents)，由 `render/fluent.ts` 注册 `fluent-button`、`fluent-link`、`fluent-card`、`fluent-badge`、`fluent-divider`。
 - 组件整包复制到 `vendor/fluentui/`，import map 的 `fluentui-webcomponents/` 前缀指向它；组件内部的相对 CSS/JS 路径因此保持不变。
 - 页面骨架、目录列表、timeline、tag、交互按钮均使用 Fluent 组件；Markdown/HTML 正文仍由 adapter 渲染。
-- 颜色板沿用重写前 `9436e39` 的暖色主题：
-  - light：`#f4f2ec` 背景、`#fffdf8` 表面、`#1f1d1a` 前景、`#6f6a60` muted、`#0f766e` accent、`#d9efe9` accent-soft、`#e4dfd4` line
-  - dark：`#171614` 背景、`#201f1c` 表面、`#efebe2` 前景、`#a39d91` muted、`#5eead4` accent、`#123b37` accent-soft、`#34312b` line
+- 颜色板沿用重写前 `9436e39^`（`86eaed0`）的金棕色主题：
+  - light：`#fff8f4` 背景/表面、`#211b13` 前景、`#705b40` muted、`#805611` accent、`#d3c4b4` line
+  - dark：`#18120b` 背景、`#3f3830` 表面、`#ede0d4` 前景、`#dec2a1` muted、`#f5bc6f` accent、`#4f4539` line
+  - seed 色 `#ffb33f` 保留在组件强调色里
 - Fluent tokens 通过 `--accent-base-override` / `--neutral-base-override` 接收这套色板，组件内部自动派生品牌色和中性色。
 
 ## adapter 契约
