@@ -5,7 +5,7 @@ import { paths } from "../lib/paths.ts";
 
 export default async function (vendors: Map<string, string>) {
   const template = await readFile(
-    `${paths.root}/templates/sw.hbs`,
+    `${paths.root}/sw.js.hbs`,
     "utf8",
   );
   const tsBlankSpaceUrl = vendors.get("ts-blank-space");

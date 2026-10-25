@@ -23,6 +23,9 @@ export default async function () {
   await rm(path.join(paths.dist, "render/index.html"), {
     force: true,
   });
+  await rm(path.join(paths.dist, "render/index.hbs"), {
+    force: true,
+  });
 
   await cp(
     `${paths.render}/index.html`,

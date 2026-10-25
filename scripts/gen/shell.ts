@@ -5,7 +5,7 @@ import { paths } from "../lib/paths.ts";
 
 export default async function (vendors: Map<string, string>) {
   const template = await readFile(
-    `${paths.root}/templates/index.hbs`,
+    `${paths.render}/index.hbs`,
     "utf8",
   );
   const importmap = JSON.stringify(

@@ -6,7 +6,7 @@ import tsBlankSpace from "ts-blank-space";
 import { paths } from "./paths.ts";
 
 const roots = ["render", "shared", "adapters", "content"];
-const extraFiles = ["templates/sw.hbs"];
+const extraFiles = ["sw.js.hbs"];
 const extensions = new Set([".ts", ".js", ".mjs", ".html"]);
 const builtins = new Set(builtinModules);
 const ready = init();
