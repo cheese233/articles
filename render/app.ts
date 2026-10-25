@@ -50,21 +50,22 @@ const setDescription = (text?: string | null) => {
   tag.setAttribute("content", content);
 };
 
+const appendStyles = (target: HTMLElement | ShadowRoot) => {
+  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = href;
+    target.append(stylesheet);
+  }
+};
+
 const createHost = (route: string) => {
   const host = document.createElement("div");
   host.className = "page";
   host.dataset.route = route;
 
-  const shadow = host.attachShadow({ mode: "open" });
-  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
-    const stylesheet = document.createElement("link");
-    stylesheet.rel = "stylesheet";
-    stylesheet.href = href;
-    shadow.append(stylesheet);
-  }
-
   main.replaceChildren(host);
-  return shadow;
+  return host;
 };
 
 /**
@@ -85,7 +86,7 @@ const mount = async (
   route: string,
   context: AdapterContext,
 ) => {
-  const shadow = createHost(route);
+  const host = createHost(route);
   const ext = Loader.meta?.ext ?? route;
   const tag = `${ext
     .replaceAll("[...]", "directory")
@@ -95,22 +96,17 @@ const mount = async (
   if (!customElements.get(tag)) customElements.define(tag, Loader);
 
   const element = document.createElement(tag) as AdapterElement;
+  const path = file.path ?? route;
   element.file = file;
-  element.setAttribute("path", file.path ?? route);
+  element.setAttribute("path", path);
   element.site = context.site;
   element.entries = context.entries;
   element.route = context.route;
   element.entry = context.entry;
 
-  const contentShadow = element.shadowRoot;
-  if (!contentShadow) throw new Error("missing loader shadow root");
-
-  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
-    const stylesheet = document.createElement("link");
-    stylesheet.rel = "stylesheet";
-    stylesheet.href = href;
-    contentShadow.append(stylesheet);
-  }
+  const shadow = element.shadowRoot;
+  if (!shadow) throw new Error("missing loader shadow root");
+  appendStyles(shadow);
 
   let timeout = 0;
 
@@ -131,7 +127,7 @@ const mount = async (
   document.body.classList.add("is-loading");
 
   try {
-    shadow.append(element);
+    host.append(element);
     await rendered;
   } finally {
     window.clearTimeout(timeout);
@@ -229,12 +225,13 @@ const renderNotFound = async (current: Manifest) => {
   const source = await fetchSource(file, "md").catch(() => null);
 
   if (source == null) {
-    const shadow = createHost("/404");
+    const host = createHost("/404");
+    appendStyles(host);
     const article = document.createElement("article");
     article.className = "error";
     article.innerHTML =
       '<h1>404</h1><p>找不到这个页面。</p><p><a href="/">返回首页</a></p>';
-    shadow.append(article);
+    host.append(article);
   } else {
     const Loader = await loadLoader("md", current);
     const sourceFile = new VFile({ path: file, value: source });
@@ -253,7 +250,8 @@ const renderNotFound = async (current: Manifest) => {
 const renderError = async (_current: Manifest, error: unknown) => {
   console.error(error);
 
-  const shadow = createHost("/error");
+  const host = createHost("/error");
+  appendStyles(host);
   const article = document.createElement("article");
   article.className = "error";
 
@@ -269,7 +267,7 @@ const renderError = async (_current: Manifest, error: unknown) => {
   hint.innerHTML = '请查看浏览器控制台，或 <a href="/">返回首页</a>。';
 
   article.append(title, message, hint);
-  shadow.append(article);
+  host.append(article);
 
   setTitle("出错了");
 };
