@@ -3,7 +3,6 @@ import * as path from "node:path";
 import { rolldown } from "rolldown";
 import type { Plugin, RolldownOutput } from "rolldown";
 import { discoverSpecifiers } from "./imports.ts";
-import { inlineFluentStyles } from "./fluent_styles.ts";
 import { paths } from "./paths.ts";
 import { builtinStubs, onlyNodeModules } from "./vendor_plugin.ts";
 
@@ -41,11 +40,7 @@ export const buildVendor = async (
     await mkdir(paths.vendor, { recursive: true });
   }
 
-  const plugins: Plugin[] = [
-    onlyNodeModules(),
-    inlineFluentStyles(),
-    builtinStubs(),
-  ];
+  const plugins: Plugin[] = [onlyNodeModules(), builtinStubs()];
   const bundle = await rolldown({
     input: Object.fromEntries(
       specifiers.map((specifier) => [
