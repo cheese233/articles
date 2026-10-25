@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "fast-xml-builder": "^1.3.1",
-    "fluentui-webcomponents": "git+https://github.com/cheese233/fluentui-webcomponents.git#d961f80",
+    "fluentui-webcomponents": "git+https://github.com/cheese233/fluentui-webcomponents.git#c094ae7",
     "rehype-stringify": "^10.0.1",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",

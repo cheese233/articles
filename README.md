@@ -318,7 +318,7 @@ URL 严格对应根目录下的内容路径：
 - 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、根目录内容文件和 `sw.js.hbs` 的 `@vendor` 指令，不需要额外的 build。
 - `scripts/lib/vendor_bundle.ts` 只做一次 Rolldown 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()` 调用 Rolldown 内置解析器定位到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
 - Rolldown 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：浏览器测试通过 server command 用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
-- `fluentui-webcomponents` 使用 `git+https://github.com/cheese233/fluentui-webcomponents.git#d961f80`。组件使用 `import styles from "./x.css"`，`core/fluent-element.js` 导入 `tokens.css`；Rolldown 的 `.css: text` 模块类型把它们变成字符串，再注入 shadow root 的 `<style>`。
+- `fluentui-webcomponents` 使用 `git+https://github.com/cheese233/fluentui-webcomponents.git#c094ae7`。组件使用 `import styles from "./x.css"`，`core/fluent-element.js` 导入 `tokens.css`；Rolldown 的 `.css: text` 模块类型把它们变成字符串，再注入 shadow root 的 `<style>`。
 - `render/index.html` 的 import map 由构建生成，entry 文件名带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
 - `sw.js` 由 `sw.js.hbs` 生成：模板用 Handlebars 变量注入带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。
