@@ -1,5 +1,6 @@
-// The build rewrites this bare import to its hashed /vendor URL.
-import tsBlankSpace from "ts-blank-space";
+// The build injects the hashed /vendor URL for ts-blank-space.
+{{! @vendor ts-blank-space }}
+import tsBlankSpace from "{{{ tsBlankSpaceUrl }}}";
 
 const javascript = (body) =>
   new Response(body, {

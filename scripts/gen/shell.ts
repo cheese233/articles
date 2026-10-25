@@ -1,19 +1,14 @@
 import { readFile } from "node:fs/promises";
+import Handlebars from "handlebars";
 import { writeText } from "../lib/fs.ts";
 import { paths } from "../lib/paths.ts";
 
-const placeholder = "<!-- @importmap -->";
-
 export default async function (vendors: Map<string, string>) {
   const template = await readFile(
-    `${paths.render}/index.template.html`,
+    `${paths.root}/templates/index.hbs`,
     "utf8",
   );
-
-  if (!template.includes(placeholder))
-    throw new Error("index.template.html has no import map placeholder");
-
-  const map = JSON.stringify(
+  const importmap = JSON.stringify(
     { imports: Object.fromEntries(vendors) },
     null,
     2,
@@ -22,8 +17,6 @@ export default async function (vendors: Map<string, string>) {
     .map((line, index) => (index ? `            ${line}` : line))
     .join("\n");
 
-  await writeText(
-    `${paths.render}/index.html`,
-    template.replace(placeholder, map),
-  );
+  const render = Handlebars.compile(template);
+  await writeText(`${paths.render}/index.html`, render({ importmap }));
 }

@@ -1,13 +1,19 @@
 import { readFile } from "node:fs/promises";
+import Handlebars from "handlebars";
 import { writeText } from "../lib/fs.ts";
 import { paths } from "../lib/paths.ts";
 
 export default async function (vendors: Map<string, string>) {
-  let code = await readFile(`${paths.root}/sw.template.js`, "utf8");
+  const template = await readFile(
+    `${paths.root}/templates/sw.hbs`,
+    "utf8",
+  );
+  const tsBlankSpaceUrl = vendors.get("ts-blank-space");
+  if (!tsBlankSpaceUrl)
+    throw new Error("service worker needs the ts-blank-space vendor URL");
 
-  for (const [specifier, url] of vendors) {
-    code = code.replaceAll(JSON.stringify(specifier), JSON.stringify(url));
-  }
+  const render = Handlebars.compile(template, { noEscape: true });
+  const code = render({ tsBlankSpaceUrl });
 
   const unresolved = [...code.matchAll(/\bfrom\s+["']([^"']+)["']/g)]
     .map((match) => match[1] ?? "")

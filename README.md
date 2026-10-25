@@ -68,7 +68,6 @@ articles/
 │  ├─ app.ts                 # SPA：路由、取数、adapter 分发（TS 源文件）
 │  ├─ lib/*.ts               # 客户端运行时（TS 源文件）
 │  ├─ markdown_deps.ts       # 浏览器 markdown 管线（TS，动态 import）
-│  ├─ index.template.html    # 外壳模板（构建时注入 import map）
 │  ├─ style.css              # 外壳样式（4 空格缩进）
 │  ├─ shadow.css             # Shadow DOM 基础样式
 │  └─ markdown.css           # Markdown 排版
@@ -79,7 +78,7 @@ articles/
 │  ├─ dev.ts                 # 本地静态服务器（模拟 Pages 回退）
 │  └─ gen/                   # metadata / sitemap / atom / feed / stage ...
 ├─ shared/                   # Node 与浏览器共享的纯逻辑（浏览器直接加载 TS）
-├─ sw.template.js            # Service Worker 模板（构建生成 sw.js）
+├─ templates/                # Handlebars 模板：index.hbs / sw.hbs
 ├─ vendor/                   # 构建产物：node_modules 依赖的 ESM bundle
 ├─ site.json                 # 站点标题、URL、作者、语言
 ├─ _redirects                # /* → /index.html 200
@@ -105,7 +104,7 @@ render/index.html
 - 只有 `request.mode != "navigate"` 的 `.ts` 请求会被编译；直接访问 `.ts` 文件仍然看到源码。
 - 相对 import（如 `../shared/ext.ts`）保持原 URL，浏览器会继续触发 Service Worker。
 - 裸 import（`vfile`、`yaml`、`unified` 等）由构建生成的 import map 指向 `vendor/*.js`。
-- `sw.template.js` 构建时注入 `ts-blank-space` 的哈希 URL，生成 `sw.js`。
+- `templates/sw.hbs` 构建时注入 `ts-blank-space` 的哈希 URL，生成 `sw.js`。
 - `ts-blank-space` 只擦除类型，不做降级；本项目遵守 `erasableSyntaxOnly`。
 
 
@@ -298,12 +297,12 @@ URL 严格对应 `content/` 下的路径：
 
 - Node 侧直接从 `node_modules` 解析。
 - 浏览器侧**只加载从源码 import 自动发现的 `node_modules` 依赖**，不存在手写包列表。
-- 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `sw.template.js`，不需要额外的 build。
+- 采集用 `ts-blank-space` + `es-module-lexer`：`scripts/lib/imports.ts` 先沿用客户端的同一套类型擦除，再用一个纯 ESM lexer 只读 import；扫描 `render/`、`shared/`、`adapters/`、`content/` 和 `templates/sw.hbs` 的 `@vendor` 指令，不需要额外的 build。
 - `scripts/lib/vendor_bundle.ts` 只做一次 Rollup 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()`（`@rollup/plugin-node-resolve`）解析到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
 - Rollup 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：浏览器测试通过 server command 用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
 - `render/index.html` 的 import map 由构建生成，entry 文件名带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
-- `sw.js` 由 `sw.template.js` 生成：模板里写普通的 `from "ts-blank-space"`，构建时按同一份依赖表改写成带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。
+- `sw.js` 由 `templates/sw.hbs` 生成：模板用 Handlebars 变量注入带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。
 
 ## CI 与 Cloudflare Pages
 

@@ -6,7 +6,7 @@ import tsBlankSpace from "ts-blank-space";
 import { paths } from "./paths.ts";
 
 const roots = ["render", "shared", "adapters", "content"];
-const extraFiles = ["sw.template.js"];
+const extraFiles = ["templates/sw.hbs"];
 const extensions = new Set([".ts", ".js", ".mjs", ".html"]);
 const builtins = new Set(builtinModules);
 const ready = init();
@@ -96,7 +96,11 @@ export const discoverSpecifiers = async () => {
   for (const file of await sourceFiles()) {
     const source = await readFile(file, "utf8");
 
-    if (file.endsWith(".html")) {
+    if (file.endsWith(".hbs")) {
+      for (const match of source.matchAll(/@vendor\s+([^\s}]+)/g)) {
+        found.add(match[1] ?? "");
+      }
+    } else if (file.endsWith(".html")) {
       for (const script of moduleScripts(source)) {
         scan(script, file, found);
       }

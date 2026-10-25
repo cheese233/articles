@@ -20,9 +20,6 @@ export default async function () {
   await cp(paths.render, path.join(paths.dist, "render"), {
     recursive: true,
   });
-  await rm(path.join(paths.dist, "render/index.template.html"), {
-    force: true,
-  });
   await rm(path.join(paths.dist, "render/index.html"), {
     force: true,
   });
