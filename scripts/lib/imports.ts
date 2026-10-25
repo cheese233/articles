@@ -57,10 +57,7 @@ const scan = (source: string, file: string, found: Set<string>) => {
     if (!("specifier" in item)) continue;
 
     const specifier = item.specifier;
-    if (specifier && isBare(specifier)) {
-      if (specifier.startsWith("fluentui-webcomponents/")) continue;
-      found.add(specifier);
-    }
+    if (specifier && isBare(specifier)) found.add(specifier);
   }
 };
 
