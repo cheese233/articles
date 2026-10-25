@@ -93,6 +93,18 @@ articles/
 └─ .github/workflows/        # GitHub Actions 部署
 ```
 
+## 忽略清单
+
+`scripts/lib/ignore.ts` 是唯一来源，同时定义内容扫描要跳过的目录/文件，以及构建产物和编辑器噪声。
+
+仓库不再提交 `.gitignore`：
+
+- `npm install` 的 `prepare` 脚本生成 `.git/info/exclude`；
+- `lefthook` 的 `pre-commit` 会再次生成，并把已经暂存的构建产物从索引中剔除；
+- 新克隆后执行一次 `npm run hooks` 安装 Git 钩子。
+
+这样 `contentFiles()` 和 Git 排除使用同一份名单，不需要维护两份 ignore。
+
 ## 客户端 TypeScript 执行
 
 项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 Rolldown 打包到 `vendor/`，包括 `fluentui-webcomponents`。
