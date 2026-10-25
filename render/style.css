@@ -21,11 +21,11 @@ body {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    background-color: var(--background);
+    background-color: #ffffff;
     background-image:
         radial-gradient(
-            oklch(from var(--accent) 0.84 0.05 h) 25%,
-            var(--background) 100%
+            oklch(from var(--accent) 0.94 0.015 h) 0%,
+            #ffffff 60%
         );
     background-repeat: no-repeat;
     background-attachment: fixed;
