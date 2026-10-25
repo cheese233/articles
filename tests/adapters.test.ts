@@ -1,11 +1,11 @@
 // Must stay first: the pages.js wrapper extends HTMLElement.
 import "../scripts/lib/dom.ts";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { VFile } from "vfile";
 import HtmlFactory, * as Html from "../adapters/html.ext.pages.js";
 import JavaScriptLoader, * as JavaScript from "../adapters/js.ext.js";
-import JsonFactory, * as Json from "../adapters/json.ext.html.js";
 import MarkdownFactory, * as Markdown from "../adapters/md.ext.pages.js";
 import PagesFactory, * as Pages from "../adapters/pages.js.ext.js";
 
@@ -118,17 +118,15 @@ test("html adapter reads meta tags", async () => {
   assert.equal(meta.routable, true);
 });
 
-test("json factory composes the html adapter", async () => {
-  const file = new VFile({
-    path: "content/sample.json",
-    value: JSON.stringify({ title: "JSON 示例", routable: true }),
-  });
-
-  const meta = await Json.parse(file);
-  const mount = JsonFactory(file);
+test("json adapter is real HTML", async () => {
+  const source = await readFile(
+    new URL("../adapters/json.ext.html", import.meta.url),
+    "utf8",
+  );
+  const file = new VFile({ path: "adapters/json.ext.html", value: source });
+  const meta = await Html.parse(file);
 
   assert.equal(meta.title, "JSON 示例");
   assert.equal(meta.routable, true);
-  assert.equal(typeof mount, "function");
-  assert.equal(JsonFactory.meta.ext, "json");
+  assert.match(source, /<script type="module">/);
 });

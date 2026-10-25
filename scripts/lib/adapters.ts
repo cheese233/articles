@@ -1,6 +1,6 @@
 // Must precede adapter imports: classes extend HTMLElement.
 import "./dom.ts";
-import { readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { VFile } from "vfile";
@@ -56,10 +56,26 @@ export const parseFile = async (
   rel: string,
   source: string,
 ): Promise<ParsedMeta> => {
-  const adapter = await loadAdapter(info);
   const file = new VFile({ path: rel, value: source, cwd: paths.content });
 
   try {
+    if (info.file.endsWith(".html")) {
+      const htmlInfo = (await listAdapters()).find((item) => item.ext == "html");
+      if (!htmlInfo) throw new Error("missing html adapter");
+
+      const html = await loadAdapter(htmlInfo);
+      const htmlSource = await readFile(
+        path.join(paths.adapters, path.basename(info.file)),
+        "utf8",
+      );
+      const adapterFile = new VFile({ path: info.file, value: htmlSource });
+      if (typeof html.parse != "function")
+        throw new Error("html adapter has no parse");
+
+      return await html.parse(adapterFile);
+    }
+
+    const adapter = await loadAdapter(info);
     let meta: ParsedMeta;
 
     if (typeof adapter.parse == "function") {

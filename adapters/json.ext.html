@@ -1,0 +1,18 @@
+<meta name="title" content="JSON 示例" />
+<meta name="description" content="用 json.ext.html 演示多级 factory 调用。" />
+<meta name="date" content="2026-10-25" />
+<meta name="routable" content="true" />
+
+<h1>JSON 示例</h1>
+<p>这个页面由 <code>json.ext.html</code> 这个 HTML adapter 渲染。</p>
+<pre id="json"></pre>
+
+<script type="module">
+    export default async function (shadow) {
+        const path = shadow.host.getAttribute("path");
+        const response = await fetch(path, { cache: "no-store" });
+        const data = await response.json();
+
+        shadow.querySelector("#json").textContent = JSON.stringify(data, null, 2);
+    }
+</script>

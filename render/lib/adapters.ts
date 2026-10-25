@@ -1,4 +1,4 @@
-import type { VFile } from "vfile";
+import { VFile } from "vfile";
 import type { AdapterIndex, AdapterStatics } from "../../shared/types.ts";
 
 type AdapterFactory = ((
@@ -43,6 +43,22 @@ export const loadLoader = async (
       await mod.default(shadow);
     }) as AdapterFactory;
     factory.meta = pages.meta;
+  } else if (info.file.endsWith(".html")) {
+    const [html, response] = await Promise.all([
+      import("../../adapters/html.ext.pages.js"),
+      fetch(info.file, { cache: "no-store" }),
+    ]);
+    if (!response.ok) throw new Error(`cannot load adapter ${info.file}`);
+
+    const adapterFile = new VFile({
+      path: info.file,
+      value: await response.text(),
+    });
+    const mount = html.default(adapterFile);
+
+    factory = Object.assign((_file: VFile) => mount, {
+      meta: { ext: info.ext, lang: info.lang },
+    }) as AdapterFactory;
   } else {
     const mod = await import(info.file);
     factory = mod.default as AdapterFactory;
