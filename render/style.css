@@ -46,7 +46,10 @@ body {
         --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
         background-color: #202020;
         background-image:
-            radial-gradient(#1a1f35 25%, #202020 100%);
+            radial-gradient(
+                oklch(from var(--accent) 0.248 0.04 h) 25%,
+                #202020 100%
+            );
         background-repeat: no-repeat;
         background-attachment: fixed;
     }
