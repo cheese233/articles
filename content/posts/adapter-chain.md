@@ -22,33 +22,30 @@ tags:
 | `html.ext.pages.js` | `html` | 同上 |
 | `json.ext.html` | `json` | 真实 HTML；由 html factory 执行 |
 | `[...].ext.pages.js` | 目录 | 同上 |
-| `pages.js.ext.js` | `pages.js` | `function(factory)` → `JSLoader` class |
-| `js.ext.js` | `js` | `function(Adapter)` → `customElements.define` |
+| `pages.js.ext.js` | `pages.js` | `compile(child)` → `JSLoader` class |
+| `js.ext.js` | `js` | 只解析 JSDoc，不执行 |
 
-## 链式调用
+## 编译链
 
-runtime 不判断具体扩展名，只从内容扩展名沿 `meta.lang` 往上走：
+runtime 不判断具体扩展名，只执行 adapter 提供的 `compile`：
 
 ```text
-js.ext(
-  pages.js.ext(
-    md.ext.pages.js
-  )
-)
+md.ext.pages.js
+  --pages.js.ext.js compile--> JSLoader class
+  --render define--> md-loader
 ```
 
 - `md.ext.pages.js(file)` 返回 `function(shadow)`。
-- `pages.js.ext.js(factory)` 返回 `JSLoader` class。
-- `js.ext.js(JSLoader)` 负责 define。
+- `pages.js.ext.js` 的 `compile(child)` 返回 `JSLoader` class。
+- `js.ext.js` 只解析 JSDoc，不负责 define。
+- 最终 loader 由 render 按 `meta.ext` 定义。
 
-HTML adapter 则把文件本身交给 html factory：
+HTML adapter 则由 html 的 `compile` 直接产出 JS class：
 
 ```text
-js.ext(
-  pages.js.ext(
-    html.ext.pages.js(json.ext.html)
-  )
-)
+json.ext.html
+  --html.ext.pages.js compile--> HtmlAdapter class
+  --render define--> json-loader
 ```
 
 内容路径通过属性传给实例：

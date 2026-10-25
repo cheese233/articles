@@ -9,6 +9,7 @@ export const meta = Object.freeze({
   ext: "pages.js",
   lang: "js",
   priority: 10,
+  kind: "content",
 });
 
 /** @param {VFile} file @returns {Promise<ParsedMeta>} */
@@ -17,16 +18,7 @@ export const parse = async (file) => ({
   routable: true,
 });
 
-/**
- * Wrap an adapter factory into a custom element class. The element receives
- * its content path through the `path` attribute, for example
- * `<md-loader path="a.md">`.
- *
- * @param {((file: VFile) => (shadow: ShadowRoot) => unknown) & {
- *   meta?: AdapterStatics;
- * }} factory
- */
-export default function (factory) {
+const wrap = (/** @type {((file: VFile) => (shadow: ShadowRoot) => unknown) & { meta?: AdapterStatics }} */ factory) => {
   return class JSLoader extends HTMLElement {
     static meta = factory.meta ?? meta;
 
@@ -71,4 +63,16 @@ export default function (factory) {
       }
     }
   };
-}
+};
+
+export default wrap;
+
+/**
+ * Compile a child adapter into a JS loader class.
+ *
+ * @param {{ meta: AdapterStatics, handler: ((file: VFile) => (shadow: ShadowRoot) => unknown) & { meta?: AdapterStatics } }} child
+ */
+export const compile = (child) => ({
+  meta: child.meta,
+  Adapter: wrap(child.handler),
+});

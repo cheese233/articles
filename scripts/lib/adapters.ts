@@ -39,8 +39,8 @@ export const loadAdapter = async (info: AdapterInfo) => {
 
   const file = path.join(paths.adapters, path.basename(info.file));
   const mod = await import(pathToFileURL(file).href) as AdapterModule;
-  if (typeof mod.default != "function")
-    throw new Error(`adapter ${info.file} has no default function`);
+  if (typeof mod.default != "function" && typeof mod.parse != "function")
+    throw new Error(`adapter ${info.file} has neither default nor parse`);
 
   cache.set(info.file, mod);
   return mod;

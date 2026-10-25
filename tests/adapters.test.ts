@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { VFile } from "vfile";
 import HtmlFactory, * as Html from "../adapters/html.ext.pages.js";
-import JavaScriptLoader, * as JavaScript from "../adapters/js.ext.js";
+import * as JavaScript from "../adapters/js.ext.js";
 import MarkdownFactory, * as Markdown from "../adapters/md.ext.pages.js";
 import PagesFactory, * as Pages from "../adapters/pages.js.ext.js";
 
@@ -20,7 +20,7 @@ test("factories wrap into WebElements loader classes", () => {
   assert.equal(Pages.meta.ext, "pages.js");
   assert.equal(MarkdownFactory.meta.ext, "md");
   assert.equal(HtmlFactory.meta.ext, "html");
-  assert.equal(typeof JavaScriptLoader, "function");
+  assert.equal(typeof JavaScript.parse, "function");
   assert.equal(JavaScript.meta.ext, "js");
 });
 

@@ -86,7 +86,15 @@ const mount = async (
   context: AdapterContext,
 ) => {
   const shadow = createHost(route);
-  const element = new Loader() as AdapterElement;
+  const ext = Loader.meta?.ext ?? route;
+  const tag = `${ext
+    .replaceAll("[...]", "directory")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")}-loader`;
+
+  if (!customElements.get(tag)) customElements.define(tag, Loader);
+
+  const element = document.createElement(tag) as AdapterElement;
   element.file = file;
   element.setAttribute("path", file.path ?? route);
   element.site = context.site;

@@ -9,6 +9,7 @@ export const meta = Object.freeze({
   ext: "md",
   lang: "pages.js",
   priority: 20,
+  kind: "handler",
 });
 
 const asText = (/** @type {unknown} */ value) => {

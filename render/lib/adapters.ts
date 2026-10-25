@@ -5,34 +5,74 @@ import type {
   AdapterStatics,
 } from "../../shared/types.ts";
 
-type AdapterFactory = ((
-  file: VFile,
-) => (shadow: ShadowRoot) => void | Promise<void>) & {
-  meta: AdapterStatics;
+type Handler = ((file: VFile) => (shadow: ShadowRoot) => unknown) & {
+  meta?: AdapterStatics;
 };
 
-export type LoaderConstructor = new () => HTMLElement;
+type AdapterDef = {
+  meta: AdapterInfo;
+  body: string;
+  handler?: Handler;
+  compile?: (child: AdapterDef) => Promise<{ meta: AdapterStatics; Adapter: LoaderConstructor }>;
+};
+
+export type LoaderConstructor = (new () => HTMLElement) & {
+  meta?: AdapterStatics;
+};
 
 const cache = new Map<string, LoaderConstructor>();
 
-const contentFactory = (meta: AdapterStatics) => {
-  const factory = ((file: VFile) => async (shadow: ShadowRoot) => {
+const contentHandler = (meta: AdapterStatics): Handler => {
+  const handler = ((file: VFile) => async (shadow: ShadowRoot) => {
     const path = file.path;
     if (!path) throw new Error("vfile has no path");
     const mod = await import(path);
     if (typeof mod.default != "function")
       throw new Error(`${path}: default export must be a function`);
     await mod.default(shadow);
-  }) as AdapterFactory;
+  }) as Handler;
 
-  factory.meta = meta;
-  return factory;
+  handler.meta = meta;
+  return handler;
+};
+
+const loadModule = async (info: AdapterInfo) => {
+  if (info.file.endsWith(".html")) return null;
+  return await import(info.file);
+};
+
+const loadDef = async (
+  info: AdapterInfo,
+  index: AdapterIndex,
+): Promise<AdapterDef> => {
+  const mod = await loadModule(info);
+  const kind = mod?.meta?.kind;
+  const body = info.file.endsWith(".html")
+    ? await fetch(info.file, { cache: "no-store" }).then((res) => {
+      if (!res.ok) throw new Error(`cannot load adapter ${info.file}`);
+      return res.text();
+    })
+    : "";
+
+  const handler = kind == "handler"
+    ? mod.default as Handler
+    : kind == "content"
+    ? contentHandler(mod.meta as AdapterStatics)
+    : undefined;
+
+  const parent = index.adapters.find(
+    (adapter) => adapter.ext == (mod?.meta?.lang ?? info.lang),
+  );
+  const parentMod = parent ? await loadModule(parent) : null;
+  const compile = parentMod?.compile ?? mod?.compile;
+
+  return { meta: info, body, handler, compile };
 };
 
 /**
- * Walk the adapter chain from the content extension to the js root. Nothing
- * here knows about md, json, or pages specifically; each step only follows the
- * `lang` edge.
+ * Compile the content adapter until it reaches a def without a compile step.
+ * The loop never asks what the extension or language is; it only checks for
+ * the next compiler.
  */
 export const loadLoader = async (
   ext: string,
@@ -41,62 +81,16 @@ export const loadLoader = async (
   const cached = cache.get(ext);
   if (cached) return cached;
 
-  const find = (name: string) =>
-    index.adapters.find((adapter) => adapter.ext == name);
-
-  const info = find(ext);
+  const info = index.adapters.find((adapter) => adapter.ext == ext);
   if (!info) throw new Error(`no adapter for .${ext}`);
 
-  let factory: AdapterFactory;
-  let start: AdapterInfo | undefined;
+  let def = await loadDef(info, index);
 
-  if (info.lang == "js") {
-    const mod = await import(info.file);
-    factory = contentFactory(mod.meta ?? { ext: info.ext, lang: info.lang });
-    start = info;
-  } else if (info.file.endsWith(".html")) {
-    const lang = find(info.lang);
-    if (!lang) throw new Error(`no ${info.lang} adapter for .${ext}`);
-
-    const [html, response] = await Promise.all([
-      import(lang.file),
-      fetch(info.file, { cache: "no-store" }),
-    ]);
-    if (!response.ok) throw new Error(`cannot load adapter ${info.file}`);
-
-    const adapterFile = new VFile({
-      path: info.file,
-      value: await response.text(),
-    });
-    const mount = html.default(adapterFile);
-
-    factory = Object.assign((_file: VFile) => mount, {
-      meta: { ext: info.ext, lang: info.lang },
-    }) as AdapterFactory;
-    start = find(lang.lang);
-  } else {
-    const mod = await import(info.file);
-    factory = mod.default as AdapterFactory;
-    if (typeof factory != "function")
-      throw new Error(`adapter .${ext} has no default factory`);
-    start = find(info.lang);
+  while (def.compile) {
+    const next = await def.compile(def);
+    cache.set(ext, next.Adapter);
+    return next.Adapter;
   }
 
-  const chain: AdapterInfo[] = [];
-  let node = start;
-  while (node) {
-    chain.push(node);
-    if (node.ext == "js") break;
-    node = find(node.lang);
-  }
-
-  let value: unknown = factory;
-  for (const adapter of chain) {
-    const mod = await import(adapter.file);
-    value = mod.default(value);
-  }
-
-  const Adapter = value as LoaderConstructor;
-  cache.set(ext, Adapter);
-  return Adapter;
+  throw new Error(`adapter .${ext} produced no loader`);
 };
