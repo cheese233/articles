@@ -44,6 +44,11 @@ body {
         --accent-soft: color-mix(in srgb, var(--seed-color) 22%, var(--background));
         --line: #4f4539;
         --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        background-color: #202020;
+        background-image:
+            radial-gradient(var(--accent) 25%, #202020 100%);
+        background-repeat: no-repeat;
+        background-attachment: fixed;
     }
 }
 
