@@ -1,7 +1,0 @@
-{
-  "title": "JSON 示例",
-  "date": "2026-10-25",
-  "summary": "用 json.ext.html 这个真实 HTML adapter 演示多级 factory 调用。",
-  "routable": true,
-  "chain": ["json.ext.html", "html.ext.pages.js", "pages.js.ext.js", "js.ext.js"]
-}

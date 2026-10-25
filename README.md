@@ -1,3 +1,8 @@
+---
+title: articles
+description: 一个在浏览器里从源代码渲染的博客。
+---
+
 # articles
 
 一个**在浏览器里从源代码渲染**的博客。没有 SSG 的预渲染页面，也没有 SSR 的请求时渲染：构建期只生成元数据，页面在读者打开 URL 时由 SPA 取回 `.md` / `.js` / `.html` 源文件并现场生成。
@@ -6,11 +11,9 @@
 
 ```text
 浏览器
-  ├─ GET /hello
+  ├─ GET /                       # 空目录页
   ├─ GET /meta/index.json        # 路由、adapter 表、条目清单
-  ├─ GET /meta/hello.json        # 变体、标题、prev/next
-  ├─ GET /hello.md               # 源文件
-  └─ md.ext.pages.js → md-loader 渲染
+  └─ GET /404.md                 # 404 中间件
 
 CI（不渲染任何页面）
   ├─ 扫描根目录内容
@@ -62,12 +65,8 @@ articles/
 │  ├─ json.ext.html          # .json 的真实 HTML adapter
 │  └─ [...].ext.pages.js     # 目录工厂
 ├─ 404.md                    # 404 中间件
-├─ about.pages.js            # 内容源文件
-├─ hello.md                  # 内容源文件
-├─ lab.html                  # 内容源文件
-├─ playground.js             # 内容源文件
-├─ sample.json               # 内容源文件
-├─ posts/                    # 内容源文件；URL 严格对应这里的路径
+├─ README.md                 # 仓库说明（带 frontmatter，不参与构建）
+├─ posts/                    # 文章目录；当前为空
 ├─ meta/                     # 构建产物：每篇 sidecar + index.json
 ├─ render/
 │  ├─ boot.js                # 注册 Service Worker，再 import app.ts
@@ -232,15 +231,15 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 | `[...].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
 ## 路由与 404
 
-URL 严格对应根目录下的内容路径：
+URL 严格对应根目录下的内容路径。当前仓库没有文章，首页显示空目录。
+
+添加文章后，例如：
 
 | URL | 源文件 |
 |---|---|
 | `/hello` | `hello.md` |
-| `/about` | `about.pages.js` |
-| `/sample` | `sample.json` |
 | `/hello.md` | `hello.md`（带后缀的直链） |
-| `/posts/` | 目录，由 `[...].ext.pages.js` 渲染 |
+| `/posts/` | `posts/` 目录，由 `[...].ext.pages.js` 渲染 |
 
 客户端解析顺序：
 
