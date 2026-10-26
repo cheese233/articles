@@ -1,6 +1,0 @@
-no_tty: true
-
-pre-commit:
-  commands:
-    strip-generated:
-      run: node scripts/sync_git_exclude.ts --staged

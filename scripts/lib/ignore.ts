@@ -11,7 +11,6 @@ const projectDirs = [
 const projectRootFiles = [
   "LICENSE",
   "index.html",
-  "lefthook.yml",
   "package-lock.json",
   "package.json",
   "site.json",
