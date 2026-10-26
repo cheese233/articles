@@ -101,7 +101,7 @@ articles/
 
 - `npm install` 的 `prepare` 脚本生成 `.git/info/exclude`；
 - `lefthook` 的 `pre-commit` 会再次生成，并把已经暂存的构建产物从索引中剔除；
-- 新克隆后执行一次 `npm run hooks` 安装 Git 钩子。
+- 新克隆后执行一次 `npm run hooks`，安装 hook launcher；POSIX 调用 lefthook，Windows 直接调用 Node 脚本，避免 Git 的 `sh` 再嵌套 `bash`。
 
 这样 `contentFiles()` 和 Git 排除使用同一份名单，不需要维护两份 ignore。
 

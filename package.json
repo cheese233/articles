@@ -19,7 +19,7 @@
     "test:watch": "web-test-runner --watch",
     "deploy": "node scripts/build.ts && node scripts/deploy.ts",
     "prepare": "node scripts/sync_git_exclude.ts",
-    "hooks": "lefthook install"
+    "hooks": "node scripts/install_hooks.ts"
   },
   "dependencies": {
     "fast-xml-builder": "^1.3.1",
