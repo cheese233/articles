@@ -10,7 +10,6 @@ const projectDirs = [
 
 const projectRootFiles = [
   "LICENSE",
-  "index.html",
   "package-lock.json",
   "package.json",
   "site.json",
@@ -24,7 +23,6 @@ const projectRootFiles = [
 
 const generatedDirs = [
   ".wrangler",
-  "dist",
   "meta",
   "node_modules",
   "vendor",
@@ -33,7 +31,7 @@ const generatedDirs = [
 const generatedFiles = [
   "atom.xml",
   "feed.json",
-  "render/index.html",
+  "index.html",
   "robots.txt",
   "sitemap.xml",
   "sw.js",

@@ -20,5 +20,5 @@ export default async function (vendors: Map<string, string>) {
     .join("\n");
 
   const render = Handlebars.compile(template);
-  await writeText(`${paths.render}/index.html`, render({ importmap }));
+  await writeText(`${paths.root}/index.html`, render({ importmap }));
 }

@@ -8,7 +8,7 @@ import mime from "mime";
 import { paths } from "./lib/paths.ts";
 
 const port = Number(process.env.PORT ?? 8788);
-const root = paths.dist;
+const root = paths.root;
 
 const contentType = (file: string) =>
   mime.getType(file) ?? "application/octet-stream";
@@ -60,7 +60,7 @@ const serve = async (request: IncomingMessage, response: ServerResponse) => {
 
   if (!file) {
     response.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
-    response.end("dist/ is missing; run `npm run build` first");
+    response.end("index.html is missing; run `npm run build` first");
     return;
   }
 
@@ -86,7 +86,7 @@ const server = createServer((request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`dev: http://127.0.0.1:${port}/ (serving dist/)`);
+  console.log(`dev: http://127.0.0.1:${port}/ (serving repository root)`);
   console.log(`dev: missing files fall back to index.html, like Pages`);
 });
 

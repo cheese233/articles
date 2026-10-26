@@ -7,7 +7,7 @@ const command = [
   "wrangler",
   "pages",
   "deploy",
-  "dist",
+  ".",
   "--project-name",
   project,
 ];

@@ -34,22 +34,21 @@ CI（不渲染任何页面）
 
 ```bash
 npm install
-npm run dev        # 构建到 dist/，然后在 http://127.0.0.1:8788 提供服务
+npm run dev        # 构建到仓库根目录，然后在 http://127.0.0.1:8788 提供服务
 ```
 
 其他命令：
 
 ```bash
-npm run build      # vendor + shell + metadata + stage
+npm run build      # vendor + shell + metadata，直接写回仓库根目录
 npm run metadata   # 只生成元数据（CI 的核心职责）
-npm run bundle     # 只生成 vendor/、sw.js、render/index.html
-npm run stage      # 把站点树复制到 dist/
+npm run bundle     # 只生成 vendor/、sw.js、index.html
 npm run typecheck  # tsc --noEmit
 npm test           # web-test-runner (Chrome)
-npm run deploy     # build + wrangler pages deploy dist
+npm run deploy     # build + wrangler pages deploy .
 ```
 
-`npm run dev` 会先完整构建一次；修改源文件后重新运行即可。`dist/` 通过 `_redirects` 模拟 Cloudflare Pages 的 SPA 回退行为。
+`npm run dev` 会先完整构建一次；修改源文件后重新运行即可。仓库根目录通过 `_redirects` 模拟 Cloudflare Pages 的 SPA 回退行为。
 
 页面第一次加载时会注册 Service Worker；随后 `render/app.ts` 及 `shared/*.ts` 通过 `sw.js` + `ts-blank-space` 在浏览器里现场去类型后执行。需要 localhost 或 HTTPS。
 
@@ -83,7 +82,7 @@ articles/
 │  ├─ metadata.ts            # 只生成元数据
 │  ├─ bundle.ts              # 只生成 node_modules vendor + shell + sw
 │  ├─ dev.ts                 # 本地静态服务器（模拟 Pages 回退）
-│  └─ gen/                   # metadata / sitemap / atom / feed / stage ...
+│  └─ gen/                   # metadata / sitemap / atom / feed ...
 ├─ shared/                   # Node 与浏览器共享的纯逻辑（浏览器直接加载 TS）
 ├─ sw.js.hbs                 # Service Worker Handlebars 模板
 ├─ vendor/                   # 构建产物：node_modules 依赖的 ESM bundle
@@ -346,8 +345,8 @@ URL 严格对应根目录下的内容路径。当前没有文章，首页只列�
 1. `actions/checkout@v5`，`fetch-depth: 0`（git 时间是元数据来源之一）；
 2. `actions/setup-node@v5` + `npm ci`；
 3. `npm run typecheck`、安装 Chrome、`npm test`；
-4. `npm run bundle`（node_modules vendor + shell + sw）、`npm run metadata`（只生成元数据）、`npm run stage`；**不渲染任何页面**；
-5. 检查 Cloudflare 凭据；缺失时跳过部署并给出 warning，存在时 `node scripts/deploy.ts`：`wrangler pages deploy dist`。
+4. `npm run bundle`（node_modules vendor + shell + sw）、`npm run metadata`（只生成元数据）；**不渲染任何页面**，产物直接写入仓库根目录；
+5. 检查 Cloudflare 凭据；缺失时跳过部署并给出 warning，存在时 `node scripts/deploy.ts`：`wrangler pages deploy .`。
 
 需要配置：
 

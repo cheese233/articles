@@ -13,7 +13,6 @@
     "bundle": "node scripts/bundle.ts",
     "build": "node scripts/build.ts",
     "dev": "node scripts/build.ts && node scripts/dev.ts",
-    "stage": "node scripts/stage.ts",
     "typecheck": "tsc --noEmit",
     "test": "web-test-runner",
     "test:watch": "web-test-runner --watch",

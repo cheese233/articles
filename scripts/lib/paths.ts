@@ -12,7 +12,6 @@ export const paths = {
   meta: path.join(root, "meta"),
   render: path.join(root, "render"),
   vendor: path.join(root, "vendor"),
-  dist: path.join(root, "dist"),
 };
 
 export const toPosix = (p: string) => p.split(path.sep).join("/");
