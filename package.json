@@ -18,7 +18,7 @@
     "test": "web-test-runner",
     "test:watch": "web-test-runner --watch",
     "deploy": "node scripts/build.ts && node scripts/deploy.ts",
-    "prepare": "node scripts/sync_git_exclude.ts && simple-git-hooks",
+    "prepare": "node scripts/sync_git_exclude.ts",
     "hooks": "simple-git-hooks"
   },
   "simple-git-hooks": {
@@ -52,5 +52,8 @@
     "simple-git-hooks": "^2.14.0",
     "typescript": "^5.9.3",
     "wrangler": "^4.152.0"
+  },
+  "allowScripts": {
+    "simple-git-hooks": true
   }
 }

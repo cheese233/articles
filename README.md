@@ -99,10 +99,11 @@ articles/
 
 仓库不再提交 `.gitignore`：
 
-- `npm install` 的 `prepare` 脚本生成 `.git/info/exclude`；
+- `npm install` / `npm i -D` 的 `prepare` 脚本生成 `.git/info/exclude`；
+- `simple-git-hooks` 的 `postinstall` 会自动安装 Git hook；`package.json` 的 `allowScripts` 已放行它的安装脚本；
 - `simple-git-hooks` 的 `pre-commit` 会再次生成，并把已经暂存的构建产物从索引中剔除；
 - 它是纯 JS 实现，hook 直接执行 `node scripts/sync_git_exclude.ts --staged`，Windows 下不会在 Git 的 `sh` 里再嵌套 `bash`；
-- 新克隆后执行一次 `npm run hooks` 安装 Git hook。
+- 只有 hook 丢失时才需要手动执行 `npm run hooks` 修复。
 
 这样 `contentFiles()` 和 Git 排除使用同一份名单，不需要维护两份 ignore。
 
