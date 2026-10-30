@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: actions_linux_slim
+    runs-on: ubuntu-slim
     timeout-minutes: 15
     steps:
       - name: Check out
