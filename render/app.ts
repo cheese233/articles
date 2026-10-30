@@ -90,7 +90,8 @@ const mount = async (
   const host = createHost(route);
   const ext = Loader.meta?.ext ?? route;
   const tag = `${ext
-    .replaceAll("[...]", "directory")
+    .replace(/\[\[?\.\.\.[^\]]+\]\]?/g, "directory")
+    .replace(/\[[^\]]+\]/g, "segment")
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-+|-+$/g, "")}-loader`;
 

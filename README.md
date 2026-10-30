@@ -61,7 +61,7 @@ articles/
 │  ├─ pages.js.ext.js        # JSLoader 工厂
 │  ├─ md.ext.pages.js        # .md 工厂：file -> function(shadow)
 │  ├─ html.ext.pages.js      # .html 工厂
-│  └─ [...].ext.pages.js     # 目录工厂
+│  └─ [...path].ext.pages.js # 目录工厂
 ├─ 404.md                    # 404 中间件
 ├─ README.md                 # 仓库说明（带 frontmatter，路由 /README）
 ├─ posts/                    # 文章目录；当前为空
@@ -163,7 +163,7 @@ render/index.html
 | `pages.js.ext.js` | `.pages.js` | `compile(child)`：包成 `JSLoader` class |
 | `md.ext.pages.js` | `.md` | handler：`function(file)` → `function(shadow)` |
 | `html.ext.pages.js` | `.html` | handler + `compile(child)`：HTML → JS class |
-| `[...].ext.pages.js` | 目录 | handler |
+| `[...path].ext.pages.js` | 目录 | handler |
 
 ### 编译链
 
@@ -248,7 +248,7 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 | `pages.js.ext.js` | 同上，但默认 routable | `pages-js-loader` import 内容 `default(shadow)` |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
-| `[...].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
+| `[...path].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
 
 ### HTML 内的脚本
 
@@ -278,7 +278,19 @@ URL 严格对应根目录下的内容路径。当前没有文章，首页只列�
 | `/README` | `README.md` |
 | `/hello` | `hello.md` |
 | `/hello.md` | `hello.md`（带后缀的直链） |
-| `/posts/` | `posts/` 目录，由 `[...].ext.pages.js` 渲染 |
+| `/posts/` | `posts/` 目录，由 `[...path].ext.pages.js` 渲染 |
+
+目录 adapter 使用 Astro 风格的 bracket glob：
+
+```text
+[...path]       匹配任意深度
+[slug]          只匹配一层
+[[...path]]     可选 catch-all
+posts.[...path] 只匹配 /posts/ 及以下
+posts.[slug]    只匹配 /posts/<one>/
+```
+
+文件名里的点会变成路径分隔符，再按 `*` / `**` 段匹配。
 
 目录默认先找该目录下的 `main.<ext>`：存在就直接渲染它，不存在才列出目录。`main.*` 不会出现在目录列表里。
 
@@ -305,7 +317,7 @@ URL 严格对应根目录下的内容路径。当前没有文章，首页只列�
   "v": 1,
   "site": { "url": "...", "title": "...", "author": "...", "description": "...", "language": "zh-CN" },
   "adapters": [
-    { "ext": "md", "lang": "pages.js", "file": "/adapters/md.ext.pages.js", "directory": false, "prefix": "" }
+    { "ext": "md", "lang": "pages.js", "file": "/adapters/md.ext.pages.js", "directory": false, "prefix": "", "pattern": "" }
   ],
   "entries": [
     { "stem": "hello", "route": "/hello", "ext": "md", "file": "/hello.md", "title": "...", "date": "...", "updated": "...", "author": "...", "tags": [] }

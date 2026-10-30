@@ -14,6 +14,7 @@ export interface AdapterInfo {
   file: string;
   directory: boolean;
   prefix: string;
+  pattern: string;
 }
 
 export interface AdapterIndex {

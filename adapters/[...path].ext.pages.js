@@ -7,7 +7,7 @@ import { findMainEntry, isMainEntry } from "../shared/directory.ts";
 
 /** @type {AdapterStatics} */
 export const meta = Object.freeze({
-  ext: "[...]",
+  ext: "[...path]",
   lang: "pages.js",
   priority: 0,
   directory: true,
