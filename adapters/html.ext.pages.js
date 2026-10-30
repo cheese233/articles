@@ -46,41 +46,39 @@ const titleOf = (/** @type {string} */ source) => {
 };
 
 const execute = async (
-  /** @type {ShadowRoot | HTMLElement} */ target,
+  /** @type {ShadowRoot} */ target,
   /** @type {HTMLElement} */ content,
 ) => {
-  const scripts = [...content.querySelectorAll("script")];
+  const scripts = [...content.querySelectorAll("script[async], script[defer]")];
 
   for (const script of scripts) {
-    const type = (script.getAttribute("type") ?? "").trim().toLowerCase();
     const src = script.getAttribute("src");
     const code = script.textContent ?? "";
+    script.remove();
+    if (!src && !code) continue;
 
-    if (type && type != "module" && type != "text/javascript" &&
-      type != "application/javascript") {
-      script.remove();
-      continue;
-    }
+    const key = `$${crypto.randomUUID()}_shadow`;
+    const holder = /** @type {Record<string, ShadowRoot>} */ (
+      /** @type {unknown} */ (window)
+    );
+    holder[key] = target;
 
-    if (type != "module") {
-      const element = document.createElement("script");
-      if (src) element.src = src;
-      else element.textContent = code;
-      content.append(element);
-      continue;
-    }
-
-    const url = src
-      ? src
-      : URL.createObjectURL(
+    let blobUrl;
+    if (!src) {
+      blobUrl = URL.createObjectURL(
         new Blob([code], { type: "text/javascript" }),
       );
+    }
+
     try {
-      const mod = await import(url);
-      if (typeof mod.default == "function") await mod.default(target);
+      const url = new URL(src ?? blobUrl ?? "", window.location.href);
+      url.hash = key;
+      await import(url.toString());
+    } catch (error) {
+      console.error(error);
     } finally {
-      if (!src) URL.revokeObjectURL(url);
-      script.remove();
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      delete holder[key];
     }
   }
 };

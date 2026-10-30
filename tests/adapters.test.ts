@@ -114,18 +114,4 @@ describe("adapters", () => {
     expect(meta.tags).to.deep.equal(["demo", "html"]);
     expect(meta.routable).to.equal(true);
   });
-
-  it("loads the json adapter as real HTML", async () => {
-    const response = await fetch("/adapters/json.ext.html");
-    expect(response.ok).to.equal(true);
-
-    const file = new VFile({
-      path: "adapters/json.ext.html",
-      value: await response.text(),
-    });
-    const meta = await Html.parse(file);
-
-    expect(meta.title).to.equal("JSON 示例");
-    expect(meta.routable).to.equal(true);
-  });
 });

@@ -31,17 +31,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Install Chrome
-        run: |
-          npx -y @puppeteer/browsers install chrome@stable --path "$RUNNER_TEMP/chrome"
-          echo "CHROME_PATH=$(find "$RUNNER_TEMP/chrome" -type f -name chrome | head -n 1)" >> "$GITHUB_ENV"
-
-      - name: Test
-        run: npm test
-
       - name: Bundle the SPA shell
         # Vendor bundles + index.html + render/app.js. No content page is
         # rendered; this is the same client code every reader gets.

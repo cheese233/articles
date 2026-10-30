@@ -1,0 +1,43 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Install Chrome
+        run: |
+          npx -y @puppeteer/browsers install chrome@stable --path "$RUNNER_TEMP/chrome"
+          echo "CHROME_PATH=$(find "$RUNNER_TEMP/chrome" -type f -name chrome | head -n 1)" >> "$GITHUB_ENV"
+
+      - name: Test
+        run: npm test

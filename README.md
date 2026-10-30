@@ -61,7 +61,6 @@ articles/
 │  ├─ pages.js.ext.js        # JSLoader 工厂
 │  ├─ md.ext.pages.js        # .md 工厂：file -> function(shadow)
 │  ├─ html.ext.pages.js      # .html 工厂
-│  ├─ json.ext.html          # .json 的真实 HTML adapter
 │  └─ [...].ext.pages.js     # 目录工厂
 ├─ 404.md                    # 404 中间件
 ├─ README.md                 # 仓库说明（带 frontmatter，路由 /README）
@@ -94,9 +93,19 @@ articles/
 
 ## 忽略清单
 
-`scripts/lib/ignore.ts` 是唯一来源，同时定义内容扫描要跳过的目录/文件，以及构建产物和编辑器噪声。
+`scripts/lib/ignore.ts` 是内容扫描和构建产物忽略的唯一来源。
 
-仓库不再提交 `.gitignore`：
+`.gitignore` 只放平台垃圾：
+
+```text
+node_modules/
+.wrangler/
+.dev.vars
+.DS_Store
+Thumbs.db
+```
+
+构建产物不写进 `.gitignore`，而是动态处理：
 
 - `npm install` / `npm i -D` 的 `prepare` 脚本生成 `.git/info/exclude`；
 - `simple-git-hooks` 的 `postinstall` 会自动安装 Git hook；`package.json` 的 `allowScripts` 已放行它的安装脚本；
@@ -154,7 +163,6 @@ render/index.html
 | `pages.js.ext.js` | `.pages.js` | `compile(child)`：包成 `JSLoader` class |
 | `md.ext.pages.js` | `.md` | handler：`function(file)` → `function(shadow)` |
 | `html.ext.pages.js` | `.html` | handler + `compile(child)`：HTML → JS class |
-| `json.ext.html` | `.json` | 真实 HTML schema |
 | `[...].ext.pages.js` | 目录 | handler |
 
 ### 编译链
@@ -240,7 +248,6 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 | `pages.js.ext.js` | 同上，但默认 routable | `pages-js-loader` import 内容 `default(shadow)` |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
-| `json.ext.html` | HTML 的 meta 标签 | 由 html 工厂渲染真实 HTML |
 | `[...].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
 ## 路由与 404
 
@@ -334,19 +341,25 @@ URL 严格对应根目录下的内容路径。当前没有文章，首页只列�
 - `scripts/lib/vendor_bundle.ts` 只做一次 Rolldown 多入口 build：虚拟入口 `vendor:<specifier>` 由插件用 `this.resolve()` 调用 Rolldown 内置解析器定位到 node_modules；`load` 会拒绝任何 node_modules 之外的文件。因此项目源码不可能被误打进 vendor。
 - Rolldown 自动做多入口 code splitting，共享依赖进入 `vendor/chunks/`。重复打包检查放在 `npm test`：浏览器测试通过 server command 用同一套配置执行 `bundle.generate({ write: false })`，断言每个非空 module 只属于一个 chunk；构建本身只负责产出。
 - `fluentui-webcomponents` 使用 `git+https://github.com/cheese233/fluentui-webcomponents.git#c094ae7`。组件使用 `import styles from "./x.css"`，`core/fluent-element.js` 导入 `tokens.css`；Rolldown 的 `.css: text` 模块类型把它们变成字符串，再注入 shadow root 的 `<style>`。
-- `render/index.html` 的 import map 由构建生成，entry 文件名带内容哈希；`package-lock.json` 是唯一的依赖真相。
+- `index.html` 的 import map 由构建生成，entry 文件名带内容哈希；`package-lock.json` 是唯一的依赖真相。
 - 应用代码（`render/*.ts`、`shared/*.ts`、`adapters/*.js`）**不打包**：`.ts` 由 Service Worker 用 `ts-blank-space` 现场去类型，`.js` 直接作为源文件执行。读者看到的执行代码就是源码。
 - `sw.js` 由 `sw.js.hbs` 生成：模板用 Handlebars 变量注入带哈希的 `/vendor/...` URL；它自身使用 `Cache-Control: no-cache`。
 
 ## CI 与 Cloudflare Pages
 
+`.github/workflows/test.yml` 独立运行：
+
+1. `actions/checkout@v5`；
+2. `actions/setup-node@v5` + `npm ci`；
+3. `npm run typecheck`；
+4. 安装 Chrome，运行 `npm test`。
+
 `.github/workflows/deploy.yml`：
 
 1. `actions/checkout@v5`，`fetch-depth: 0`（git 时间是元数据来源之一）；
 2. `actions/setup-node@v5` + `npm ci`；
-3. `npm run typecheck`、安装 Chrome、`npm test`；
-4. `npm run bundle`（node_modules vendor + shell + sw）、`npm run metadata`（只生成元数据）；**不渲染任何页面**，产物直接写入仓库根目录；
-5. 检查 Cloudflare 凭据；缺失时跳过部署并给出 warning，存在时 `node scripts/deploy.ts`：`wrangler pages deploy .`。
+3. `npm run bundle`（node_modules vendor + shell + sw）、`npm run metadata`（只生成元数据）；**不渲染任何页面**，产物直接写入仓库根目录；
+4. 检查 Cloudflare 凭据；缺失时跳过部署并给出 warning，存在时 `node scripts/deploy.ts`：`wrangler pages deploy .`。
 
 需要配置：
 
