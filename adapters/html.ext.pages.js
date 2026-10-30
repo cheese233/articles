@@ -58,10 +58,13 @@ const execute = async (
     if (!src && !code) continue;
 
     const key = `$${crypto.randomUUID()}_shadow`;
-    const holder = /** @type {Record<string, ShadowRoot>} */ (
+    const holder = /** @type {Record<string, ShadowRoot> & {
+     *   getShadow?: () => ShadowRoot;
+     * }} */ (
       /** @type {unknown} */ (window)
     );
     holder[key] = target;
+    holder.getShadow = () => target;
 
     let blobUrl;
     if (!src) {
@@ -79,6 +82,7 @@ const execute = async (
     } finally {
       if (blobUrl) URL.revokeObjectURL(blobUrl);
       delete holder[key];
+      delete holder.getShadow;
     }
   }
 };

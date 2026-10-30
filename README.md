@@ -249,6 +249,19 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
 | `[...].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
+
+### HTML 内的脚本
+
+只执行带 `async` 或 `defer` 的 `<script>`。脚本里直接调用 `getShadow()` 取得当前 shadow root：
+
+```html
+<script async type="module">
+    const shadow = getShadow();
+</script>
+```
+
+`getShadow()` 只在脚本 import 期间存在；旧的 `new URL(import.meta.url).hash` 方式仍然可用。
+
 ## 路由与 404
 
 URL 严格对应根目录下的内容路径。当前没有文章，首页只列出 README。
