@@ -265,6 +265,8 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 
 ### HTML 内的脚本
 
+HTML 的 meta / title / body 提取使用 `parse5` 的 `parseFragment`，不再用正则匹配标签。
+
 只执行带 `async` 或 `defer` 的 `<script>`。内联脚本会被注入一个局部的 `getShadow()`，直接取得当前 shadow root：
 
 ```html

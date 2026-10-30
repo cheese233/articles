@@ -1,6 +1,17 @@
+import { parseFragment, serializeOuter } from "parse5";
+
 /** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
+/**
+ * @typedef {{
+ *   nodeName: string;
+ *   tagName?: string;
+ *   value?: string;
+ *   attrs?: { name: string; value: string }[];
+ *   childNodes?: HtmlNode[];
+ * }} HtmlNode
+ */
 
 /** @type {AdapterStatics} */
 export const meta = Object.freeze({
@@ -9,40 +20,62 @@ export const meta = Object.freeze({
   priority: 30,
 });
 
-const entities = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  "#39": "'",
-  nbsp: " ",
+/**
+ * @param {HtmlNode} node
+ * @param {(node: HtmlNode) => void} visit
+ */
+const walk = (node, visit) => {
+  visit(node);
+  for (const child of node.childNodes ?? []) walk(child, visit);
 };
 
-const decode = (/** @type {string} */ value) =>
-  value.replace(/&(#?\w+);/g, (entity, name) => {
-    const key = /** @type {keyof typeof entities} */ (name);
-    return entities[key] ?? entity;
-  });
+const attribute = (/** @type {HtmlNode} */ node, /** @type {string} */ name) =>
+  node.attrs?.find((item) => item.name == name)?.value;
 
-const metaTags = (/** @type {string} */ source) => {
+/** @param {HtmlNode} node @returns {string} */
+const textOf = (/** @type {HtmlNode} */ node) => {
+  if (node.nodeName == "#text") return node.value ?? "";
+  return (node.childNodes ?? []).map(textOf).join("");
+};
+
+const findElement = (/** @type {HtmlNode} */ root, /** @type {string} */ tag) => {
+  /** @type {HtmlNode | undefined} */
+  let found;
+  walk(root, (node) => {
+    if (!found && node.tagName?.toLowerCase() == tag) found = node;
+  });
+  return found;
+};
+
+const metaTags = (/** @type {HtmlNode} */ root) => {
   /** @type {Map<string, string>} */
   const tags = new Map();
 
-  for (const match of source.matchAll(/<meta\b[^>]*>/gi)) {
-    const tag = match[0];
-    const name = /\bname=["']([^"']+)["']/i.exec(tag)?.[1] ??
-      /\bproperty=["']([^"']+)["']/i.exec(tag)?.[1];
-    const content = /\bcontent=["']([^"']*)["']/i.exec(tag)?.[1];
-    if (name && content != null) tags.set(name.toLowerCase(), decode(content));
-  }
+  walk(root, (node) => {
+    if (node.tagName?.toLowerCase() != "meta") return;
+    const name = attribute(node, "name") ?? attribute(node, "property");
+    const content = attribute(node, "content");
+    if (name && content != null) tags.set(name.toLowerCase(), content);
+  });
 
   return tags;
 };
 
-const titleOf = (/** @type {string} */ source) => {
-  const title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(source)?.[1];
-  return title ? decode(title.trim()) : undefined;
+const bodyOf = (/** @type {HtmlNode} */ root) => {
+  const body = findElement(root, "body");
+  const nodes = body?.childNodes ?? root.childNodes ?? [];
+
+  return nodes.map((node) => {
+    const serializable =
+      /** @type {import("parse5").DefaultTreeAdapterTypes.ParentNode} */ (
+        /** @type {unknown} */ (node)
+      );
+    return serializeOuter(serializable);
+  }).join("");
 };
+
+const documentOf = (/** @type {string} */ source) =>
+  /** @type {HtmlNode} */ (parseFragment(source));
 
 const execute = async (
   /** @type {ShadowRoot} */ target,
@@ -87,10 +120,13 @@ const execute = async (
 /** @param {VFile} file @returns {Promise<ParsedMeta>} */
 export const parse = async (file) => {
   const source = String(file);
-  const tags = metaTags(source);
+  const document = documentOf(source);
+  const tags = metaTags(document);
+  const title = findElement(document, "title");
 
   return {
-    title: tags.get("title") ?? tags.get("og:title") ?? titleOf(source),
+    title: tags.get("title") ?? tags.get("og:title") ??
+      (title ? textOf(title).trim() : undefined),
     author: tags.get("author") ?? tags.get("article:author"),
     date: tags.get("date"),
     tags: tags.get("tags")?.split(",").map((tag) => tag.trim()),
@@ -101,7 +137,7 @@ export const parse = async (file) => {
 
 const mount = (/** @type {string} */ source) =>
   async (/** @type {ShadowRoot} */ shadow) => {
-    const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
+    const body = bodyOf(documentOf(source));
     const article = document.createElement("article");
     article.className = "html-page markdown";
     article.innerHTML = body;
