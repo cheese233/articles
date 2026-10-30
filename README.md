@@ -252,7 +252,7 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 
 ### HTML 内的脚本
 
-只执行带 `async` 或 `defer` 的 `<script>`。脚本里直接调用 `getShadow()` 取得当前 shadow root：
+只执行带 `async` 或 `defer` 的 `<script>`。内联脚本会被注入一个局部的 `getShadow()`，直接取得当前 shadow root：
 
 ```html
 <script async type="module">
@@ -260,7 +260,12 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 </script>
 ```
 
-`getShadow()` 只在脚本 import 期间存在；旧的 `new URL(import.meta.url).hash` 方式仍然可用。
+`getShadow` 是每个脚本模块自己的局部函数，不是全局变量，所以两个 `<html-loader>` 并发渲染也不会串。外部 `src` 脚本无法注入局部函数，仍用：
+
+```js
+const key = new URL(import.meta.url).hash.slice(1);
+const shadow = window[key];
+```
 
 ## 路由与 404
 

@@ -58,18 +58,17 @@ const execute = async (
     if (!src && !code) continue;
 
     const key = `$${crypto.randomUUID()}_shadow`;
-    const holder = /** @type {Record<string, ShadowRoot> & {
-     *   getShadow?: () => ShadowRoot;
-     * }} */ (
+    const holder = /** @type {Record<string, ShadowRoot>} */ (
       /** @type {unknown} */ (window)
     );
     holder[key] = target;
-    holder.getShadow = () => target;
 
     let blobUrl;
     if (!src) {
+      const wrapped =
+        `const getShadow = () => window[${JSON.stringify(key)}];\n${code}`;
       blobUrl = URL.createObjectURL(
-        new Blob([code], { type: "text/javascript" }),
+        new Blob([wrapped], { type: "text/javascript" }),
       );
     }
 
@@ -82,7 +81,6 @@ const execute = async (
     } finally {
       if (blobUrl) URL.revokeObjectURL(blobUrl);
       delete holder[key];
-      delete holder.getShadow;
     }
   }
 };

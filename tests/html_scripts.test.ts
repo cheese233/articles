@@ -34,4 +34,30 @@ describe("html scripts", () => {
     delete globals.__asyncScript;
     delete globals.__deferScript;
   });
+
+  it("keeps two html loaders isolated", async () => {
+    const globals = window as unknown as Record<string, unknown>;
+    const first = document.createElement("div").attachShadow({ mode: "open" });
+    const second = document.createElement("div").attachShadow({ mode: "open" });
+    const page = (name: string) =>
+      new VFile({
+        path: `${name}.html`,
+        value: [
+          '<script async type="module">',
+          `  window.__${name}Shadow = getShadow();`,
+          "</script>",
+        ].join("\n"),
+      });
+
+    await Promise.all([
+      HtmlFactory(page("first"))(first),
+      HtmlFactory(page("second"))(second),
+    ]);
+
+    expect(globals.__firstShadow).to.equal(first);
+    expect(globals.__secondShadow).to.equal(second);
+
+    delete globals.__firstShadow;
+    delete globals.__secondShadow;
+  });
 });
