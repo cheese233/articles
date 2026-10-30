@@ -1,20 +1,38 @@
 import { expect } from "@esm-bundle/chai";
 import { VFile } from "vfile";
 import HtmlFactory, * as Html from "../adapters/html.ext.pages.js";
-import * as JavaScript from "../adapters/js.ext.js";
+import JavaScript from "../adapters/js.ext.js";
 import MarkdownFactory, * as Markdown from "../adapters/md.ext.pages.js";
-import PagesFactory, * as Pages from "../adapters/pages.js.ext.js";
+import PagesLoader, {
+  compile as compilePages,
+} from "../adapters/pages.js.ext.js";
 
-const MarkdownLoader = PagesFactory(MarkdownFactory);
-const HtmlLoader = PagesFactory(HtmlFactory);
+const adapterInfo = (ext: string, lang: string) => ({
+  ext,
+  lang,
+  file: `/adapters/${ext}.ext.${lang}`,
+  directory: false,
+  prefix: "",
+  pattern: "",
+});
+
+const MarkdownLoader = compilePages({
+  meta: adapterInfo("md", "pages.js"),
+  handler: MarkdownFactory,
+}).Adapter;
+
+const HtmlLoader = compilePages({
+  meta: adapterInfo("html", "pages.js"),
+  handler: HtmlFactory,
+}).Adapter;
 
 describe("adapters", () => {
   it("wraps factories into loader classes", () => {
     expect(MarkdownLoader.prototype).to.be.instanceOf(HTMLElement);
     expect(HtmlLoader.prototype).to.be.instanceOf(HTMLElement);
-    expect(MarkdownLoader.meta.ext).to.equal("md");
-    expect(HtmlLoader.meta.ext).to.equal("html");
-    expect(Pages.meta.ext).to.equal("pages.js");
+    expect(MarkdownLoader.meta?.ext).to.equal("md");
+    expect(HtmlLoader.meta?.ext).to.equal("html");
+    expect(PagesLoader.meta.ext).to.equal("pages.js");
     expect(MarkdownFactory.meta.ext).to.equal("md");
     expect(HtmlFactory.meta.ext).to.equal("html");
     expect(JavaScript.parse).to.be.a("function");
@@ -89,7 +107,7 @@ describe("adapters", () => {
       value: "/**\n * # About\n */\nexport default function () {}",
     });
 
-    const meta = await Pages.parse(file);
+    const meta = await PagesLoader.parse(file);
     expect(meta.title).to.equal("About");
     expect(meta.routable).to.equal(true);
   });

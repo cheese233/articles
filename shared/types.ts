@@ -82,7 +82,6 @@ export interface AdapterStatics {
   lang: string;
   directory?: boolean;
   priority?: number;
-  kind?: "handler" | "content";
 }
 
 export interface AdapterContext {

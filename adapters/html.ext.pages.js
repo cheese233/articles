@@ -7,7 +7,6 @@ export const meta = Object.freeze({
   ext: "html",
   lang: "pages.js",
   priority: 30,
-  kind: "handler",
 });
 
 const entities = {
@@ -100,62 +99,32 @@ export const parse = async (file) => {
   };
 };
 
-/**
- * @param {VFile} file
- */
-const factory = (file) => async (/** @type {ShadowRoot} */ shadow) => {
-  const source = String(file);
-  const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
-  const article = document.createElement("article");
-  article.className = "html-page markdown";
-  article.innerHTML = body;
-  article.querySelectorAll("meta").forEach((tag) => tag.remove());
-
-  shadow.append(article);
-  await execute(shadow, article);
-};
-
-factory.meta = meta;
-
-export default factory;
-
-/**
- * Compile an HTML schema into a JS loader class.
- *
- * @param {{ meta: import("../shared/types.ts").AdapterStatics, body: string }} child
- */
-export const compile = (child) => {
-  const mount = async (/** @type {ShadowRoot} */ shadow) => {
+const mount = (/** @type {string} */ source) =>
+  async (/** @type {ShadowRoot} */ shadow) => {
+    const body = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(source)?.[1] ?? source;
     const article = document.createElement("article");
     article.className = "html-page markdown";
-    article.innerHTML = child.body;
+    article.innerHTML = body;
     article.querySelectorAll("meta").forEach((tag) => tag.remove());
 
     shadow.append(article);
     await execute(shadow, article);
   };
 
-  const Adapter = class HtmlAdapter extends HTMLElement {
-    static meta = child.meta;
+/**
+ * @param {VFile} file
+ */
+const factory = (file) => mount(String(file));
 
-    constructor() {
-      super();
-      this.attachShadow({ mode: "open" });
-    }
+factory.meta = meta;
 
-    async connectedCallback() {
-      try {
-        const shadow = this.shadowRoot;
-        if (!shadow) throw new Error("html loader has no shadow root");
-        await mount(shadow);
-        this.dispatchEvent(new Event("rendered"));
-      } catch (error) {
-        console.error(error);
-        this.dispatchEvent(new Event("error"));
-      }
-    }
-  };
+export default factory;
 
-  Adapter.mount = () => mount;
-  return { meta: child.meta, Adapter };
-};
+/**
+ * HTML schema adapter: the body is already fetched by the runtime.
+ * @param {{ meta: import("../shared/types.ts").AdapterInfo, body: string }} child
+ */
+export const compile = (child) => ({
+  meta: child.meta,
+  handler: () => mount(child.body),
+});

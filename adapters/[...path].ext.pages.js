@@ -11,7 +11,6 @@ export const meta = Object.freeze({
   lang: "pages.js",
   priority: 0,
   directory: true,
-  kind: "handler",
 });
 
 const escape = (/** @type {string} */ value) =>

@@ -14,10 +14,15 @@ import { paths } from "./paths.ts";
 
 interface AdapterClass {
   new (file: VFile): { parse?: () => Promise<ParsedMeta> | ParsedMeta };
+  meta?: AdapterStatics;
+  parse?: (file: VFile) => Promise<ParsedMeta> | ParsedMeta;
 }
 
 interface AdapterModule {
-  default: Function;
+  default: Function & {
+    meta?: AdapterStatics;
+    parse?: (file: VFile) => Promise<ParsedMeta> | ParsedMeta;
+  };
   meta?: AdapterStatics;
   parse?: (file: VFile) => Promise<ParsedMeta> | ParsedMeta;
 }
@@ -76,12 +81,13 @@ export const parseFile = async (
     }
 
     const adapter = await loadAdapter(info);
+    const Adapter = adapter.default as AdapterClass;
+    const parse = adapter.parse ?? Adapter.parse;
     let meta: ParsedMeta;
 
-    if (typeof adapter.parse == "function") {
-      meta = await adapter.parse(file);
+    if (typeof parse == "function") {
+      meta = await parse(file);
     } else {
-      const Adapter = adapter.default as AdapterClass;
       const instance = new Adapter(file);
       if (typeof instance.parse != "function")
         throw new Error(`adapter .${info.ext} cannot extract metadata (${rel})`);

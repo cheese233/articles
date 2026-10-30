@@ -57,8 +57,8 @@ npm run deploy     # build + wrangler pages deploy .
 ```text
 articles/
 ├─ adapters/                 # 每个 adapter 都是可被浏览器执行/加载的源文件
-│  ├─ js.ext.js              # 只解析 JSDoc，不执行
-│  ├─ pages.js.ext.js        # JSLoader 工厂
+│  ├─ js.ext.js              # JS 语言 class：只解析 JSDoc
+│  ├─ pages.js.ext.js        # PagesLoader class + compile
 │  ├─ md.ext.pages.js        # .md 工厂：file -> function(shadow)
 │  ├─ html.ext.pages.js      # .html 工厂
 │  └─ [...path].ext.pages.js # 目录工厂
@@ -159,60 +159,73 @@ render/index.html
 
 | 文件 | 负责 | 形态 |
 |---|---|---|
-| `js.ext.js` | `.js` | 只导出 `meta` / `parse`，解析 JSDoc，不执行 |
-| `pages.js.ext.js` | `.pages.js` | `compile(child)`：包成 `JSLoader` class |
+| `js.ext.js` | `.js` | 语言 class：`parse`，不生成 loader |
+| `pages.js.ext.js` | `.pages.js` | `PagesLoader` class + `compile(child)` |
 | `md.ext.pages.js` | `.md` | handler：`function(file)` → `function(shadow)` |
-| `html.ext.pages.js` | `.html` | handler + `compile(child)`：HTML → JS class |
+| `html.ext.pages.js` | `.html` | handler + `compile(child)`：HTML body → handler |
 | `[...path].ext.pages.js` | 目录 | handler |
 
 ### 编译链
 
-runtime 不判断 `ext` / `lang`，只执行 `def.compile`：
+`loadLoader` 只找 adapter，然后把 child 交给递归 `compile`：
 
 ```ts
-let def = await loadDef(ext);
-while (def.compile) def = await def.compile(def);
-await def.host(shadow);
+const child = {
+  meta: info,
+  handler: mod.default,
+};
+
+return compile(info, child, index);
 ```
 
-- `def.compile` 存在：继续编译。
-- 不存在：已经是最终 JS adapter。
-- `js.ext.js` 不在这条执行链里；它只负责 JSDoc。
+递归规则：
 
-`js.ext.js`：
+```ts
+const compiled = mod.compile ? await mod.compile(child) : child;
+const parent = index.adapters.find((a) => a.ext == meta.lang);
+return parent ? compile(parent, compiled, index) : compiled.Adapter;
+```
+
+- `pages.js.compile`：handler → `HTMLElement` class
+- `html.compile`：HTML body → handler
+- `md` / 目录：没有 `compile`，直接交给 `pages.js`
+- `js`：没有 `compile`，terminal identity
+
+`js.ext.js` 导出 class，但不是 `HTMLElement`：
 
 ```js
-export const meta = Object.freeze({
-  ext: "js",
-  lang: "pages.js",
-  kind: "content",
-});
+export default class JavaScript {
+  static meta = {
+    ext: "js",
+    lang: "",
+  };
 
-export const parse = async (file) => parseJsDoc(String(file));
+  static parse = (file) => parseJsDoc(String(file));
+}
 ```
 
-没有 default、没有 `host`、没有 `customElements.define`。
+`pages.js.ext.js` 是唯一生成 loader class 的薄层：
 
-`pages.js.ext.js`：
+```js
+export default class PagesLoader extends HTMLElement {
+  static meta = { ext: "pages.js", lang: "js" };
+  static parse = ...;
+  static handler = ...;
+  static mount = ...;
+  static compile = (child) => ({
+    meta: child.meta,
+    Adapter: wrap(child.handler),
+  });
+}
+```
+
+`html.ext.pages.js` 的子代 `compile` 只返回 handler：
 
 ```js
 export const compile = (child) => ({
   meta: child.meta,
-  Adapter: wrap(child.handler),
+  handler: () => mount(child.body),
 });
-```
-
-`html.ext.pages.js`：
-
-```js
-export const compile = (child) => {
-  class HtmlAdapter extends HTMLElement {
-    static meta = child.meta;
-    // connectedCallback 把 child.body 写进 shadow
-  }
-
-  return { meta: child.meta, Adapter: HtmlAdapter };
-};
 ```
 
 ### Adapter 工厂
@@ -244,8 +257,8 @@ loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 defin
 
 | 文件 | 元数据来源 | 渲染方式 |
 |---|---|---|
-| `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | `js-loader` import 内容 `default(shadow)` |
-| `pages.js.ext.js` | 同上，但默认 routable | `pages-js-loader` import 内容 `default(shadow)` |
+| `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | 语言 class，只做 parse |
+| `pages.js.ext.js` | 同上，但默认 routable | `PagesLoader`，负责生成 loader class |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
 | `[...path].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
@@ -452,7 +465,7 @@ export default function (shadow) {
 3. `export default function (file) { return function (shadow) {...}; }`；
 4. 给工厂挂上 `factory.meta = meta`，让 loader class 拿到最终扩展名。
 
-运行时通过 `meta/index.json` 里的 adapter 表发现它；从内容 adapter 的 `compile` 一路执行到最终 JS adapter，`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
+运行时通过 `meta/index.json` 里的 adapter 表发现它；`loadLoader` 递归执行 `compile`，由 `pages.js` 生成最终 loader class，`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
 
 ## 代码风格
 
