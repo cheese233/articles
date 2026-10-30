@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: actions_linux_slim
     timeout-minutes: 15
     steps:
       - name: Check out
@@ -34,10 +34,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Install Chrome
+      - name: Install Chrome Headless Shell
         run: |
-          npx -y @puppeteer/browsers install chrome@stable --path "$RUNNER_TEMP/chrome"
-          echo "CHROME_PATH=$(find "$RUNNER_TEMP/chrome" -type f -name chrome | head -n 1)" >> "$GITHUB_ENV"
+          npx -y @puppeteer/browsers install chrome-headless-shell@stable --path "$RUNNER_TEMP/chrome"
+          echo "CHROME_PATH=$(find "$RUNNER_TEMP/chrome" -type f -name chrome-headless-shell | head -n 1)" >> "$GITHUB_ENV"
 
       - name: Test
         run: npm test

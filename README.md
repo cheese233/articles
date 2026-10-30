@@ -365,12 +365,12 @@ URL 严格对应根目录下的内容路径。当前没有文章，首页只列�
 
 ## CI 与 Cloudflare Pages
 
-`.github/workflows/test.yml` 独立运行：
+`.github/workflows/test.yml` 在 `actions_linux_slim` 上独立运行：
 
 1. `actions/checkout@v5`；
 2. `actions/setup-node@v5` + `npm ci`；
 3. `npm run typecheck`；
-4. 安装 Chrome，运行 `npm test`。
+4. 安装 `chrome-headless-shell`，运行 `npm test`。
 
 `.github/workflows/deploy.yml`：
 
