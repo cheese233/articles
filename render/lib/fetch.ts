@@ -33,21 +33,20 @@ export const fetchManifest = async () => {
 export const fetchEntry = (stem: string) =>
   json<EntryMeta>(`/meta/${stem}.json`);
 
-const accepted = (ext: string, type: string) => {
-  switch (ext) {
-    case "js":
-    case "pages.js":
-      return type == "text/javascript" || type == "application/javascript";
-    case "md":
-      return type == "text/markdown" || type == "text/plain";
-    case "json":
-      return type == "application/json" || type == "text/plain";
-    case "html":
-      return type == "text/html";
-    default:
-      return false;
-  }
-};
+const javascriptTypes = ["text/javascript", "application/javascript"];
+
+// Content types each extension may arrive with; anything else is the shell.
+const acceptedTypes = new Map<string, string[]>([
+  ["js", javascriptTypes],
+  ["pages.js", javascriptTypes],
+  ["jsx", ["text/jsx", ...javascriptTypes]],
+  ["md", ["text/markdown", "text/plain"]],
+  ["json", ["application/json", "text/plain"]],
+  ["html", ["text/html"]],
+]);
+
+const accepted = (ext: string, type: string) =>
+  acceptedTypes.get(ext)?.includes(type) ?? false;
 
 /**
  * Cloudflare Pages answers a missing file with the SPA shell

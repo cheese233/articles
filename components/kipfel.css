@@ -1,0 +1,11 @@
+/* Shadow styles for components/kipfel.jsx. */
+
+:host {
+    display: block;
+}
+
+.kipfel {
+    display: block;
+    width: 100%;
+    height: 100%;
+}

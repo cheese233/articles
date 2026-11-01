@@ -2,13 +2,15 @@ import { readdir, readFile } from "node:fs/promises";
 import { builtinModules } from "node:module";
 import * as path from "node:path";
 import { init, parse } from "es-module-lexer";
+import { transform } from "sucrase";
 import tsBlankSpace from "ts-blank-space";
+import { compileJsx } from "../../shared/jsx.js";
 import { contentFiles } from "./content.ts";
 import { paths } from "./paths.ts";
 
 const roots = ["render", "shared", "adapters"];
 const extraFiles = ["sw.js.hbs"];
-const extensions = new Set([".ts", ".js", ".mjs", ".html"]);
+const extensions = new Set([".ts", ".js", ".mjs", ".html", ".jsx"]);
 const builtins = new Set(builtinModules);
 const ready = init();
 
@@ -35,7 +37,10 @@ const moduleScripts = (source: string) =>
  */
 const scan = (source: string, file: string, found: Set<string>) => {
   const errors: number[] = [];
-  const code = tsBlankSpace(source, (node) => errors.push(node.kind));
+  // JSX goes through the same compile as the Service Worker.
+  const code = file.endsWith(".jsx")
+    ? compileJsx(transform, source)
+    : tsBlankSpace(source, (node) => errors.push(node.kind));
 
   if (errors.length) {
     throw new Error(

@@ -1,6 +1,9 @@
-// The build injects the hashed /vendor URL for ts-blank-space.
+// The build injects the hashed /vendor URLs for ts-blank-space and sucrase.
 {{! @vendor ts-blank-space }}
+{{! @vendor sucrase }}
 import tsBlankSpace from "{{{ tsBlankSpaceUrl }}}";
+import { transform } from "{{{ sucraseUrl }}}";
+import { compileJsx } from "/shared/jsx.js";
 
 const javascript = (body) =>
   new Response(body, {
@@ -24,30 +27,41 @@ self.addEventListener("message", (event) => {
   if (event.data == "claim") event.waitUntil(self.clients.claim());
 });
 
-const compile = async (request, url) => {
+const blankTypes = (source, url) => {
+  const errors = [];
+  const code = tsBlankSpace(source, (node) => errors.push(node));
+  if (!errors.length) return code;
+
+  throw new Error(
+    `ts-blank-space rejected ${url.pathname} (${errors.length} nodes)`,
+  );
+};
+
+const transformJsx = (source) => compileJsx(transform, source);
+
+// Each compiled extension maps to its source transform.
+const compilers = new Map([
+  [".ts", blankTypes],
+  [".jsx", transformJsx],
+]);
+
+const compilerFor = (pathname) =>
+  [...compilers].find(([ext]) => pathname.endsWith(ext))?.[1] ?? null;
+
+const compile = async (request, url, compiler) => {
   const response = await fetch(request, { cache: "no-store" });
   if (!response.ok) return response;
 
   const type = (response.headers.get("content-type") ?? "").toLowerCase();
   if (type.includes("text/html")) {
-    return failure(
-      JSON.stringify(`TypeScript source not found: ${url.pathname}`),
-    );
+    return failure(JSON.stringify(`source not found: ${url.pathname}`));
   }
 
-  const source = await response.text();
-  const errors = [];
-  const code = tsBlankSpace(source, (node) => errors.push(node));
-
-  if (errors.length) {
-    return failure(
-      JSON.stringify(
-        `ts-blank-space rejected ${url.pathname} (${errors.length} nodes)`,
-      ),
-    );
+  try {
+    return javascript(compiler(await response.text(), url));
+  } catch (error) {
+    return failure(JSON.stringify(`${url.pathname}: ${error.message}`));
   }
-
-  return javascript(code);
 };
 
 self.addEventListener("fetch", (event) => {
@@ -55,8 +69,13 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (url.origin != self.location.origin) return;
-  if (!url.pathname.endsWith(".ts")) return;
   if (request.mode == "navigate") return;
 
-  event.respondWith(compile(request, url));
+  const compiler = compilerFor(url.pathname);
+  if (!compiler) return;
+  // `.jsx` is compiled only for module imports, so fetchSource() and
+  // "view source" links still read the original JSX.
+  if (compiler == transformJsx && request.destination != "script") return;
+
+  event.respondWith(compile(request, url, compiler));
 });

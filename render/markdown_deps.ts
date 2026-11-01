@@ -15,7 +15,9 @@ export const renderMarkdown = (source: string) =>
     .use(remarkParse)
     .use(remarkFrontmatter, ["yaml"])
     .use(remarkGfm)
-    .use(remarkRehype)
-    .use(rehypeStringify)
+    // Raw HTML is kept so articles can embed loader tags such as
+    // `<jsx-loader path="/x.jsx">`; content is authored in this repository.
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeStringify, { allowDangerousHtml: true })
     .processSync(source)
     .toString();

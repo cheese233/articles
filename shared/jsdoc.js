@@ -13,6 +13,7 @@ const unquote = (value) =>
  *   tags?: string[];
  *   summary?: string;
  *   routable?: boolean;
+ *   hidden?: boolean;
  * }} JsDocMeta
  */
 
@@ -55,6 +56,9 @@ export const parseJsDoc = (source) => {
     switch (name) {
       case "routable":
         parsed.routable = true;
+        break;
+      case "hidden":
+        parsed.hidden = true;
         break;
       case "title":
         parsed.title = unquote(value);

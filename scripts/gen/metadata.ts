@@ -101,8 +101,10 @@ export default async function (): Promise<SiteData> {
   const groups = new Map<string, SourceRecord[]>();
 
   for (const rel of await contentFiles()) {
+    // Files no adapter handles (images, stylesheets, models) are static
+    // assets next to the content; they are served but never routed.
     const info = matchFileAdapter(rel, adapters);
-    if (!info) throw new Error(`no adapter for content file: ${rel}`);
+    if (!info) continue;
 
     const full = path.join(paths.root, rel);
     const source = await readFile(full, "utf8");

@@ -1,6 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import * as path from "node:path";
+import { transform } from "sucrase";
 import tsBlankSpace from "ts-blank-space";
+import { compileJsx } from "../shared/jsx.js";
 import { discoverSpecifiers } from "../scripts/lib/imports.ts";
 import { buildVendor } from "../scripts/lib/vendor_bundle.ts";
 
@@ -66,4 +68,13 @@ export const vendorCheck = async () => {
   }
 
   return { specifiers, modules: owners.size, duplicates };
+};
+
+// Sucrase is CommonJS-heavy, so the real compile is checked in Node.
+export const jsxCheck = () => {
+  const code = compileJsx(
+    transform,
+    'export default () => <>\n  <p a="1">{x}</p>\n</>;',
+  );
+  return { code, lines: code.split("\n").length };
 };

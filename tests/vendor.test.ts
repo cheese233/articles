@@ -19,6 +19,14 @@ describe("vendor", () => {
     expect(specifiers).to.include("yaml");
     expect(specifiers).to.include("unified");
     expect(specifiers).to.include("ts-blank-space");
+    expect(specifiers).to.include("sucrase");
+    // components/kipfel.jsx is scanned through the shared JSX compile.
+    expect(specifiers).to.include.members([
+      "three/webgpu",
+      "three/tsl",
+      "three/addons/loaders/GLTFLoader.js",
+      "three/addons/libs/meshopt_decoder.module.js",
+    ]);
 
     expect(specifiers).to.not.include("typescript");
     expect(specifiers).to.not.include("fast-xml-builder");

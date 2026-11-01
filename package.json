@@ -32,6 +32,8 @@
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
+    "sucrase": "3.35.1",
+    "three": "0.187.0",
     "ts-blank-space": "^0.9.0",
     "unified": "^11.0.5",
     "vfile": "^6.0.3",

@@ -147,10 +147,18 @@ const factory = (file) => mount(String(file));
 export default factory;
 
 /**
- * HTML schema adapter: the body is already fetched by the runtime.
- * @param {{ meta: import("../shared/types.ts").AdapterInfo, body: string }} child
+ * HTML schema adapter: the body is already fetched by the runtime. Only an
+ * `.html` adapter file carries a body; content files keep the factory.
+ * @param {{
+ *   meta: import("../shared/types.ts").AdapterInfo;
+ *   body?: string;
+ *   handler?: (file: VFile) => (shadow: ShadowRoot) => unknown;
+ * }} child
  */
-export const compile = (child) => ({
-  meta: child.meta,
-  handler: () => mount(child.body),
-});
+export const compile = (child) => {
+  const body = child.body;
+  return {
+    meta: child.meta,
+    handler: body ? () => mount(body) : child.handler ?? factory,
+  };
+};

@@ -24,7 +24,8 @@ export type LoaderConstructor = (new () => HTMLElement) & {
   mount?: (file: VFile) => (shadow: ShadowRoot) => unknown;
 };
 
-const cache = new Map<string, LoaderConstructor>();
+// Promises are cached so concurrent loaders share one chain import.
+const cache = new Map<string, Promise<LoaderConstructor>>();
 
 const loadAdapter = async (info: AdapterInfo) => {
   if (info.file.endsWith(".html")) {
@@ -36,13 +37,23 @@ const loadAdapter = async (info: AdapterInfo) => {
   return { mod: await import(info.file), body: "" };
 };
 
-export const loadLoader = async (
+export const loadLoader = (
   ext: string,
   index: AdapterIndex,
 ): Promise<LoaderConstructor> => {
   const cached = cache.get(ext);
   if (cached) return cached;
 
+  const pending = compileChain(ext, index);
+  cache.set(ext, pending);
+  pending.catch(() => cache.delete(ext));
+  return pending;
+};
+
+const compileChain = async (
+  ext: string,
+  index: AdapterIndex,
+): Promise<LoaderConstructor> => {
   const graph = buildAdapterGraph(index.adapters);
   const chain = adapterChain(ext, graph);
   const info = chain[0];
@@ -69,6 +80,6 @@ export const loadLoader = async (
     }
   }
 
-  cache.set(ext, child.Adapter as LoaderConstructor);
-  return child.Adapter as LoaderConstructor;
+  if (!child.Adapter) throw new Error(`adapter chain for .${ext} has no loader`);
+  return child.Adapter;
 };

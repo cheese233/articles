@@ -1,0 +1,293 @@
+/* Homepage styles for main.jsx; loaded inside the loader shadow root. */
+
+.hero {
+    --card-radius: 8px;
+    --card-shadow:
+        0 2px 4px rgba(53, 45, 30, 0.06),
+        0 8px 32px rgba(53, 45, 30, 0.12);
+    --acrylic-tint: rgba(255, 248, 244, 0.62);
+    --acrylic-border: rgba(33, 27, 19, 0.12);
+    --code-bg: #f6f8fa;
+    --code-panel: #ffffff;
+    --code-border: color-mix(in srgb, var(--line) 70%, #d1d9e0);
+    --code-muted: color-mix(in srgb, var(--muted) 70%, #59636e);
+    --code-text: var(--accent);
+    --code-switch: color-mix(in srgb, var(--line) 35%, #e6eaef);
+
+    display: grid;
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+    position: relative;
+}
+
+@media (prefers-color-scheme: dark) {
+    .hero {
+        --card-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.25),
+            0 8px 32px rgba(0, 0, 0, 0.45);
+        --acrylic-tint: rgba(40, 34, 27, 0.68);
+        --acrylic-border: rgba(255, 255, 255, 0.16);
+        --code-bg: #211a12;
+        --code-panel: #15100a;
+        --code-border: color-mix(in srgb, var(--line) 75%, #3d444d);
+        --code-muted: color-mix(in srgb, var(--muted) 70%, #9198a1);
+        --code-switch: #2a2219;
+    }
+}
+
+.hero-main {
+    grid-area: 1 / 1;
+    z-index: 1;
+    align-self: start;
+    width: min(24rem, 46%);
+    margin-top: 16rem;
+}
+
+.hero-back {
+    grid-area: 1 / 1;
+    z-index: 0;
+    margin-left: 22%;
+    min-width: 0;
+}
+
+/* Fluent acrylic: blurred backdrop, tint, and a faint noise layer. */
+.acrylic {
+    padding: 1.25rem 1.25rem 1rem;
+    border: 1px solid var(--acrylic-border);
+    border-radius: var(--card-radius);
+    background-color: var(--acrylic-tint);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.avatar {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--acrylic-border);
+}
+
+.profile-text {
+    min-width: 0;
+}
+
+.profile h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.profile p {
+    margin: 0.15rem 0 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.recent h2 {
+    margin: 1rem 0 0.4rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.recent ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.3rem;
+}
+
+.recent li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.recent fluent-link {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    --colorBrandForegroundLink: var(--foreground);
+    --colorBrandForegroundLinkHover: var(--accent);
+}
+
+.recent time {
+    flex: none;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.recent .empty {
+    margin: 0;
+    padding: 0;
+}
+
+.links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1.1rem;
+    font-size: 0.9rem;
+}
+
+.window {
+    border: 1px solid var(--acrylic-border);
+    border-radius: var(--card-radius);
+    background: var(--code-panel);
+    box-shadow: var(--card-shadow);
+    transform-style: preserve-3d;
+    padding: 1rem;
+}
+
+.code-card {
+    margin: 0;
+    font-size: 14px;
+    color: var(--foreground);
+}
+
+.code-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    color: var(--code-muted);
+    font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", monospace;
+    font-size: 12px;
+}
+
+.code-tab {
+    color: var(--foreground);
+    font-weight: 600;
+}
+
+.code-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border: 1px solid var(--code-border);
+    border-radius: 6px 6px 0 0;
+    background: var(--code-bg);
+    line-height: 1.5;
+}
+
+.code-switch {
+    display: inline-flex;
+    border: 1px solid var(--code-border);
+    border-radius: 6px;
+    background: var(--code-switch);
+    color: var(--code-muted);
+}
+
+.code-switch > span {
+    padding: 2px 12px;
+}
+
+.code-switch-on {
+    margin: -1px 0 -1px -1px;
+    border: 1px solid var(--code-border);
+    border-radius: 6px;
+    background: var(--code-panel);
+    color: var(--foreground);
+    font-weight: 600;
+}
+
+.code-dots {
+    padding: 0 4px;
+    color: var(--code-muted);
+}
+
+.code-body {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    margin-top: -1px;
+    border: 1px solid var(--code-border);
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+}
+
+.code-lines,
+.code-text {
+    margin: 0;
+    padding: 0.5rem 0;
+    font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", monospace;
+    font-size: 12px;
+    line-height: 20px;
+}
+
+.code-lines {
+    padding-inline: 0.75rem 0.6rem;
+    color: var(--code-muted);
+    text-align: right;
+    user-select: none;
+    opacity: 0.7;
+}
+
+.code-text {
+    padding-inline: 0.6rem 1rem;
+    overflow-x: auto;
+    color: var(--code-text);
+}
+
+/* Slot below the text for embedded components such as kipfel.jsx. */
+.code-extra {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--code-border);
+}
+
+.code-extra > jsx-loader {
+    height: 18rem;
+}
+
+@media (max-width: 720px) {
+    .hero {
+        padding-top: 0.5rem;
+        gap: 1rem;
+    }
+
+    .hero-main {
+        grid-area: auto;
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .hero-back {
+        grid-area: auto;
+        margin-left: 0;
+    }
+
+    .window {
+        padding: 0.75rem;
+    }
+
+    /* Fit the 58-column banner on narrow screens instead of scrolling. */
+    .code-lines,
+    .code-text {
+        font-size: min(12px, 1.85vw);
+        line-height: 1.6;
+    }
+}

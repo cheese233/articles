@@ -60,6 +60,18 @@ export const matchFileAdapter = (path: string, adapters: AdapterInfo[]) =>
     .sort((a, b) => b.ext.length - a.ext.length)
     .find((adapter) => path.endsWith("." + adapter.ext)) ?? null;
 
+/**
+ * Custom element tag for an adapter extension: `md` -> `md-loader`,
+ * `pages.js` -> `pages-js-loader`, `[...path]` -> `directory-loader`.
+ */
+export const loaderTag = (ext: string) =>
+  `${ext
+    .replace(/\[\[?\.\.\.[^\]]+\]\]?/g, "directory")
+    .replace(/\[[^\]]+\]/g, "segment")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase()}-loader`;
+
 export const stripExt = (path: string, ext: string) =>
   path.slice(0, -(ext.length + 1));
 

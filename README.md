@@ -1,5 +1,5 @@
 ---
-title: articles
+title: 关于这个博客
 description: 一个在浏览器里从源代码渲染的博客。
 ---
 
@@ -61,7 +61,10 @@ articles/
 │  ├─ pages.js.ext.js        # PagesLoader class + compile
 │  ├─ md.ext.pages.js        # .md 工厂：file -> function(shadow)
 │  ├─ html.ext.pages.js      # .html 工厂
+│  ├─ jsx.ext.pages.js       # .jsx 工厂：import 编译后的模块
 │  └─ [...path].ext.pages.js # 目录工厂
+├─ main.jsx                  # 首页
+├─ components/               # 被嵌入的组件与样式（home.css、kipfel.jsx、kipfel/model/）
 ├─ 404.md                    # 404 中间件
 ├─ README.md                 # 仓库说明（带 frontmatter，路由 /README）
 ├─ posts/                    # 文章目录；当前为空
@@ -130,7 +133,7 @@ render/index.html
 ```
 
 - Service Worker 位于站点根目录，scope 是 `/`。
-- 只有 `request.mode != "navigate"` 的 `.ts` 请求会被编译；直接访问 `.ts` 文件仍然看到源码。
+- 只有 `request.mode != "navigate"` 的 `.ts` 请求会被编译；直接访问 `.ts` 文件仍然看到源码。`.jsx` 见下文 JSX 一节。
 - 相对 import（如 `../shared/ext.ts`）保持原 URL，浏览器会继续触发 Service Worker。
 - 裸 import（`vfile`、`yaml`、`unified` 等）由构建生成的 import map 指向 `vendor/*.js`。
 - `sw.js.hbs` 构建时注入 `ts-blank-space` 的哈希 URL，生成 `sw.js`。
@@ -163,6 +166,7 @@ render/index.html
 | `pages.js.ext.js` | `.pages.js` | `PagesLoader` class + `compile(child)` |
 | `md.ext.pages.js` | `.md` | handler：`function(file)` → `function(shadow)` |
 | `html.ext.pages.js` | `.html` | handler + `compile(child)`：HTML body → handler |
+| `jsx.ext.pages.js` | `.jsx` | handler：import 模块，执行 `default(shadow)` |
 | `[...path].ext.pages.js` | 目录 | handler |
 
 ### 编译链
@@ -254,6 +258,24 @@ export default function (file) {
 ```
 
 loader 标签由 render 根据 `AdapterInfo.ext` 定义，adapter 自己不 define。
+
+### 懒加载 loader
+
+启动时 `render/lib/loader_shim.ts` 的 `defineLoaders` 为 `meta/index.json` 里的每个 adapter 定义一个极小的 shim 元素（标签由 `shared/ext.ts` 的 `loaderTag` 统一推导：`md-loader`、`html-loader`、`jsx-loader`、`directory-loader`；`js.ext.js` 这种语言根节点不生成标签）。
+
+- 定义 shim 不 import 任何 adapter；
+- 实例连接到文档时才加载 `shared/adapter_graph.ts` 和 compile 链，结果按扩展名缓存；
+- 没有 `file` 时用 `render/lib/fetch.ts` 按 `path` 取源文件（同样检查 content-type）；
+- shim 负责 shadow root、注入 `shadow.css` / `markdown.css`，渲染完成派发 `rendered`，失败派发 `error`；
+- 宿主可以设置 `file` / `site` / `entries` / `route` / `entry`，默认值来自 manifest。
+
+所以正文（md / html / jsx）可以直接嵌入其他 loader，按需加载：
+
+```html
+<jsx-loader path="/components/kipfel.jsx"></jsx-loader>
+```
+
+Markdown 管线保留原始 HTML（`allowDangerousHtml`），内容由仓库作者编写。
 ### 已实现的 adapter
 
 | 文件 | 元数据来源 | 渲染方式 |
@@ -262,8 +284,37 @@ loader 标签由 render 根据 `AdapterInfo.ext` 定义，adapter 自己不 defi
 | `pages.js.ext.js` | 同上，但默认 routable | `PagesLoader`，负责生成 loader class |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
+| `jsx.ext.pages.js` | JSDoc：同 `js.ext.js`，另有 `@hidden` | 模块默认导出 `function (shadow)`，返回的节点追加到 shadow |
 | `[...path].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
 
+### JSX
+
+`.jsx` 在浏览器里编译，不进构建产物：
+
+```text
+<jsx-loader path="/x.jsx">
+  └─ import("/x.jsx")
+       └─ Service Worker 拦截（只拦 destination == "script" 的模块请求）
+            ├─ sucrase（固定版本，打进 vendor/）把 JSX 转成 __jsx.h(...) 调用
+            └─ 首行注入 import * as __jsx from "/render/lib/jsx.ts"
+```
+
+- 编译选项只在 `shared/jsx.js` 里定义一次，Service Worker、import 扫描（`scripts/lib/imports.ts`）和测试共用。sucrase 保留行号，报错位置和源码一致。
+- `.jsx` 之间可以相互 import，裸 import 照样走 import map。`fetchSource` 和 “view source” 是普通 fetch，拿到的仍是 JSX 源码；`_headers` 用 `Vary: Sec-Fetch-Dest` 让两种请求分开缓存。
+- `render/lib/jsx.ts` 是极小的 DOM 工厂：直接生成真实节点，没有虚拟 DOM。支持 `className`、`style` 对象（含 `--custom` 属性）、`on*` 事件、`ref`、children 数组、`Fragment`、函数组件和 `fluent-*` 等自定义元素；对象/数组值按 property 设置（例如给 loader 传 `entries`），其余按 attribute。
+- 元数据：`# 标题`、`@routable`、`@date`、`@tags`。只有写了 `@routable` 才会路由；`@hidden` 会强制不路由（不进 `index.json`、sitemap、feed），适合只被嵌入的组件。
+
+```jsx
+/**
+ * # 标题
+ * @routable
+ * @date 2026-10-31
+ * @param {ShadowRoot} shadow
+ */
+export default function (shadow) {
+  return <article className="markdown"><h1>标题</h1></article>;
+}
+```
 ### HTML 内的脚本
 
 HTML 的 meta / title / body 提取使用 `parse5` 的 `parseFragment`，不再用正则匹配标签。
@@ -285,7 +336,7 @@ const shadow = window[key];
 
 ## 路由与 404
 
-URL 严格对应根目录下的内容路径。当前没有文章，首页只列出 README。
+URL 严格对应根目录下的内容路径。当前没有文章，首页 `main.jsx` 的最近更新里只有 README。
 
 添加文章后，例如：
 
@@ -310,6 +361,21 @@ posts.[slug]    只匹配 /posts/<one>/
 
 目录默认先找该目录下的 `main.<ext>`：存在就直接渲染它，不存在才列出目录。`main.*` 不会出现在目录列表里。
 
+首页 `/` 就是 `main.jsx`：Fluent 风格的亚克力卡片（背景模糊 + 色调 + 噪点、8px 圆角、多层阴影）显示头像、简介、宿主 `entries` 里的最近更新和链接；后面叠着一张仿 GitHub 文件视图的代码卡片（文件名、Code/Blame 切换、行号、等宽 ASCII art），鼠标悬停时随指针倾斜，`prefers-reduced-motion` 下不倾斜。样式在 `components/home.css`，颜色取自 `render/style.css` 的金棕色板，深浅色和窄屏都有适配。
+
+代码卡片底部嵌着 `<jsx-loader path="/components/kipfel.jsx">`：
+
+- `components/kipfel.jsx` 写了 `@hidden`，不进 `index.json`、sitemap、feed，只被首页嵌入；
+- 模型是 `components/kipfel/model/Kipfel_Mobile_1.1.0_opti.glb`（仅限个人使用，许可见同目录 `readme.txt`），meshopt 压缩，用 `three/addons` 的 `GLTFLoader` + `meshopt_decoder` 加载；模型自带的 morph target 超过 WebGPU 默认的纹理层数限制，加载后丢弃；
+- `three`（固定版本）的 `three/webgpu`、`three/tsl`、`three/addons/...` 子路径由 import 扫描发现，照常打进 `vendor/`；
+- 用 `WebGPURenderer` 渲染（不支持 WebGPU 时自动回退 WebGL2），后处理用 TSL 写成 ASCII 着色器，思路来自 [ASCII characters are not pixels](https://alexharri.com/blog/ascii-rendering)：
+  - 运行时在 canvas 上画出 95 个可打印 ASCII 字符作为字形图集，并计算每个字形在 6 个采样圆里的覆盖率（形状向量，按维度归一化）；
+  - 第一个 pass 每个格子一个片元：在 6 个采样圆里采样场景亮度得到采样向量，做对比度增强（按最大分量归一化后取幂），再和所有字形的形状向量做最近邻匹配；
+  - 第二个 pass 逐像素从图集取字形；颜色在 TSL 里转成 OKLCH，量化并提升 L / C，色相向金色偏移，再转回线性 sRGB，深浅色使用不同的亮度范围；
+- 缓慢自转，`prefers-reduced-motion` 下静止；`ResizeObserver` 跟随尺寸；canvas 离开文档后停止动画并释放资源。
+
+没有 adapter 认领的内容文件（图片、样式、模型，如 `imgs/avatar.png`、`components/home.css`）只作为静态资源提供，不生成元数据、不路由。
+
 客户端解析顺序：
 
 1. 路径是已知目录 → 目录 adapter；
@@ -321,6 +387,7 @@ posts.[slug]    只匹配 /posts/<one>/
 
 - `.md` → `text/markdown`
 - `.js` / `.pages.js` → `text/javascript`
+- `.jsx` → `text/jsx`（`_headers` 显式设置，`scripts/dev.ts` 由 `mime` 包给出）
 - `.json` → `application/json`
 - `.html` 是歧义的（外壳与真实 HTML 同为 `text/html`），所以带 `.html` 后缀的请求先核对 sidecar 变体。
 
@@ -427,7 +494,7 @@ posts.[slug]    只匹配 /posts/<one>/
 ## 添加内容
 
 1. 在根目录或 `posts/` 下新建文件；
-2. 用对应扩展名（`.md` / `.html` / `.js` / `.pages.js`）；
+2. 用对应扩展名（`.md` / `.html` / `.jsx` / `.js` / `.pages.js`）；
 3. 写上标题与日期（Markdown frontmatter、HTML meta、JS JSDoc）；
 4. `npm run build`。
 

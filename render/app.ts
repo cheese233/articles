@@ -1,12 +1,21 @@
 import { VFile } from "vfile";
-import { findDirectoryAdapter, matchFileAdapter, stripExt } from "../shared/ext.ts";
+import {
+  findDirectoryAdapter,
+  loaderTag,
+  matchFileAdapter,
+  stripExt,
+} from "../shared/ext.ts";
 import type {
   AdapterContext,
   EntryMeta,
   Manifest,
 } from "../shared/types.ts";
 import "./fluent.ts";
-import { loadLoader, type LoaderConstructor } from "./lib/adapters.ts";
+import {
+  defineLoaders,
+  shimStyles,
+  type LoaderElement,
+} from "./lib/loader_shim.ts";
 import {
   fetchEntry,
   fetchManifest,
@@ -52,7 +61,7 @@ const setDescription = (text?: string | null) => {
 };
 
 const appendStyles = (target: HTMLElement | ShadowRoot) => {
-  for (const href of ["/render/shadow.css", "/render/markdown.css"]) {
+  for (const href of shimStyles) {
     const stylesheet = document.createElement("link");
     stylesheet.rel = "stylesheet";
     stylesheet.href = href;
@@ -70,34 +79,20 @@ const createHost = (route: string) => {
 };
 
 /**
- * Adapter classes are defined as `<final-ext>-loader` elements. They render
- * into their own light DOM, inside the page host's ShadowRoot.
+ * Every adapter has a lazy `<ext>-loader` element defined at boot by
+ * `defineLoaders`; the adapter chain is imported when the element connects.
  */
-type AdapterElement = HTMLElement & {
-  file?: VFile;
-  site?: import("../shared/types.ts").SiteConfig;
-  entries: import("../shared/types.ts").ManifestEntry[];
-  route?: string;
-  entry: EntryMeta | null;
-};
-
 const mount = async (
-  Loader: LoaderConstructor,
+  ext: string,
   file: VFile,
   route: string,
   context: AdapterContext,
 ) => {
   const host = createHost(route);
-  const ext = Loader.meta?.ext ?? route;
-  const tag = `${ext
-    .replace(/\[\[?\.\.\.[^\]]+\]\]?/g, "directory")
-    .replace(/\[[^\]]+\]/g, "segment")
-    .replace(/[^a-z0-9]+/gi, "-")
-    .replace(/^-+|-+$/g, "")}-loader`;
+  const tag = loaderTag(ext);
+  if (!customElements.get(tag)) throw new Error(`no loader for .${ext}`);
 
-  if (!customElements.get(tag)) customElements.define(tag, Loader);
-
-  const element = document.createElement(tag) as AdapterElement;
+  const element = document.createElement(tag) as LoaderElement;
   const path = file.path ?? route;
   element.file = file;
   element.setAttribute("path", path);
@@ -108,7 +103,6 @@ const mount = async (
 
   const shadow = element.shadowRoot;
   if (!shadow) throw new Error("missing loader shadow root");
-  appendStyles(shadow);
 
   let timeout = 0;
 
@@ -187,7 +181,6 @@ const renderFile = async (
   meta: EntryMeta | null,
 ) => {
   const source = await fetchSource(file, ext);
-  const Loader = await loadLoader(ext, current);
   const sourceFile = new VFile({ path: file, value: source });
   const context: AdapterContext = {
     site: current.site,
@@ -196,7 +189,7 @@ const renderFile = async (
     entry: meta,
   };
 
-  const shadow = await mount(Loader, sourceFile, route, context);
+  const shadow = await mount(ext, sourceFile, route, context);
   appendTimeline(shadow, meta);
 
   setTitle(meta?.title);
@@ -207,7 +200,6 @@ const renderDirectory = async (current: Manifest, route: string) => {
   const info = findDirectoryAdapter(route, current.adapters);
   if (!info) throw new NotFoundError(route);
 
-  const Loader = await loadLoader(info.ext, current);
   const file = new VFile({ path: route });
   const context: AdapterContext = {
     site: current.site,
@@ -216,7 +208,7 @@ const renderDirectory = async (current: Manifest, route: string) => {
     entry: null,
   };
 
-  await mount(Loader, file, route, context);
+  await mount(info.ext, file, route, context);
 
   setTitle(route == "/" ? undefined : labelOf(route));
   setDescription(current.site.description);
@@ -235,9 +227,8 @@ const renderNotFound = async (current: Manifest) => {
       '<h1>404</h1><p>找不到这个页面。</p><p><a href="/">返回首页</a></p>';
     host.append(article);
   } else {
-    const Loader = await loadLoader("md", current);
     const sourceFile = new VFile({ path: file, value: source });
-    await mount(Loader, sourceFile, "/404", {
+    await mount("md", sourceFile, "/404", {
       site: current.site,
       entries: current.entries,
       route: "/404",
@@ -358,6 +349,7 @@ const navigate = async (path: string) => {
 
 const boot = async () => {
   const current = await getManifest();
+  defineLoaders(current);
 
   document.documentElement.lang = current.site.language;
   document.querySelectorAll<HTMLElement>("[data-site-title]").forEach((el) => {
