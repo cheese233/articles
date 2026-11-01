@@ -3,6 +3,7 @@ import {
   CanvasTexture,
   Color,
   DirectionalLight,
+  Group,
   HemisphereLight,
   LinearFilter,
   Matrix3,
@@ -49,6 +50,7 @@ import {
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import { createRig } from "./kipfel_rig.js";
 
 /**
  * ASCII post-processing after https://alexharri.com/blog/ascii-rendering:
@@ -58,7 +60,11 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
  * acting as pixels. Glyph colors are shaped in OKLCH toward the gold palette.
  */
 
-const modelUrl = "/components/kipfel/model/Kipfel_Mobile_1.1.0_opti.glb";
+// Optimized by scripts/optimize_model.ts: skeleton and three morphs kept.
+const modelUrl = "/components/kipfel/model/kipfel.glb";
+
+/** Seconds between automatic actions while idle. */
+const actionInterval = 9;
 const font = '600 {size}px ui-monospace, "Cascadia Code", monospace';
 
 /** Printable ASCII, space first. */
@@ -320,15 +326,10 @@ const loadModel = async (scene) => {
   const gltf = await loader.loadAsync(modelUrl);
   const model = gltf.scene;
 
-  // The model ships hundreds of morph targets; three packs them into one
-  // array texture that exceeds WebGPU's default 256 layer limit. They are
-  // never animated here, so drop them.
+  // Skinned meshes keep their bind-pose bounds; the animated arms would
+  // otherwise get culled when they leave them.
   model.traverse((object) => {
-    const mesh = /** @type {import("three/webgpu").Mesh} */ (object);
-    if (!mesh.isMesh) return;
-    mesh.geometry.morphAttributes = {};
-    mesh.morphTargetInfluences = undefined;
-    mesh.morphTargetDictionary = undefined;
+    object.frustumCulled = false;
   });
 
   // Center the model and scale it to a unit-ish size.
@@ -339,10 +340,10 @@ const loadModel = async (scene) => {
   model.position.sub(center.multiplyScalar(scale));
   model.scale.setScalar(scale);
 
-  const pivot = new Scene();
+  const pivot = new Group();
   pivot.add(model);
   scene.add(pivot);
-  return pivot;
+  return { pivot, rig: createRig(model) };
 };
 
 /**
@@ -378,12 +379,32 @@ export default async function (shadow) {
   camera.lookAt(0, 0, 0);
 
   const ascii = createAscii(renderer, scene, camera);
-  const pivot = await loadModel(scene);
-  pivot.rotation.set(0.25, -0.6, 0);
+  const { pivot, rig } = await loadModel(scene);
+  pivot.rotation.set(0.12, 0, 0);
+  // Apply the first idle frame so reduced motion shows a relaxed pose
+  // instead of the bind T-pose.
+  rig.update(0);
 
   const timer = new Timer();
   let isDirty = true;
   let wasConnected = false;
+  let elapsed = 0;
+  let nextAction = actionInterval / 2;
+  let actionIndex = 0;
+
+  const playNext = () => {
+    const name = rig.names[actionIndex % rig.names.length];
+    if (name && rig.play(name)) {
+      actionIndex++;
+      host.dataset.action = name;
+    }
+  };
+
+  // Clicking the model triggers the next action right away.
+  canvas.addEventListener("click", () => {
+    nextAction = elapsed + actionInterval;
+    playNext();
+  });
 
   const resize = () => {
     const width = Math.max(1, canvas.clientWidth);
@@ -408,6 +429,7 @@ export default async function (shadow) {
     observer.disconnect();
     darkScheme.removeEventListener("change", onScheme);
     ascii.dispose();
+    rig.dispose();
     scene.traverse((object) => {
       const mesh = /** @type {any} */ (object);
       mesh.geometry?.dispose?.();
@@ -427,7 +449,16 @@ export default async function (shadow) {
 
     timer.update(time);
     if (!reducedMotion.matches) {
-      pivot.rotation.y += timer.getDelta() * 0.35;
+      // Clamp so a backgrounded tab does not fast-forward the clips.
+      const delta = Math.min(timer.getDelta(), 0.1);
+      elapsed += delta;
+      // Gentle sway instead of a full spin keeps the actions readable.
+      pivot.rotation.y = Math.sin(elapsed * 0.25) * 0.55;
+      rig.update(delta);
+      if (!rig.isBusy && elapsed >= nextAction) {
+        nextAction = elapsed + actionInterval;
+        playNext();
+      }
       isDirty = true;
     }
     if (!isDirty) return;

@@ -366,13 +366,25 @@ posts.[slug]    只匹配 /posts/<one>/
 代码卡片底部嵌着 `<jsx-loader path="/components/kipfel.jsx">`：
 
 - `components/kipfel.jsx` 写了 `@hidden`，不进 `index.json`、sitemap、feed，只被首页嵌入；
-- 模型是 `components/kipfel/model/Kipfel_Mobile_1.1.0_opti.glb`（仅限个人使用，许可见同目录 `readme.txt`），meshopt 压缩，用 `three/addons` 的 `GLTFLoader` + `meshopt_decoder` 加载；模型自带的 morph target 超过 WebGPU 默认的纹理层数限制，加载后丢弃；
+- 模型是 `components/kipfel/model/kipfel.glb`（仅限个人使用，许可见同目录 `readme.txt`），用 `three/addons` 的 `GLTFLoader` + `meshopt_decoder` 加载；
+- 它由 `scripts/optimize_model.ts` 从原始的 `Kipfel_Mobile_1.1.0_opti.glb`（2.4 MB，不入库）生成，约 290 KB：
+  - 保留两张 skin 共享的 146 根骨骼；
+  - 474 个 morph target 只留下动作用到的 `eye_close`、`eye_joy`、`mouth_ω`，同时绕开 WebGPU 默认的纹理层数限制；
+  - `weld` + meshopt `simplify` 减面，贴图缩到 1024² WebP，最后 meshopt 重新编码；
+  - 更新模型：`node scripts/optimize_model.ts <原始.glb>`（devDependencies：`@gltf-transform/*`、`meshoptimizer`、`sharp`）；
+- 动作在 `components/kipfel_rig.js`：模型没有自带动画，所以按帧采样生成 `AnimationClip`，绑定到模型自带骨骼，由 `AnimationMixer` 播放：
+  - 姿势写成“围绕世界轴旋转静止姿势”，按 `P⁻¹·Δ·P·L` 换到每根骨骼的局部空间，不依赖导出时的骨骼朝向；
+  - 骨骼名经过 `PropertyBinding.sanitizeNodeName`（GLTFLoader 会把 `UpperArm.L` 变成 `UpperArmL`）；
+  - `idle` 循环：呼吸、歪头、手臂放下、尾巴摆动、耳朵抖动、眨眼；
+  - `wave`（挥手 + 笑眼 + ω 嘴）和 `stretch`（伸懒腰 + 闭眼）每 9 秒轮流触发一次，点击模型立即触发，结束后淡回 `idle`；
+  - 蒙皮网格的包围盒停在绑定姿势，所以关闭了视锥剔除；
 - `three`（固定版本）的 `three/webgpu`、`three/tsl`、`three/addons/...` 子路径由 import 扫描发现，照常打进 `vendor/`；
 - 用 `WebGPURenderer` 渲染（不支持 WebGPU 时自动回退 WebGL2），后处理用 TSL 写成 ASCII 着色器，思路来自 [ASCII characters are not pixels](https://alexharri.com/blog/ascii-rendering)：
   - 运行时在 canvas 上画出 95 个可打印 ASCII 字符作为字形图集，并计算每个字形在 6 个采样圆里的覆盖率（形状向量，按维度归一化）；
   - 第一个 pass 每个格子一个片元：在 6 个采样圆里采样场景亮度得到采样向量，做对比度增强（按最大分量归一化后取幂），再和所有字形的形状向量做最近邻匹配；
   - 第二个 pass 逐像素从图集取字形；颜色在 TSL 里转成 OKLCH，量化并提升 L / C，色相向金色偏移，再转回线性 sRGB，深浅色使用不同的亮度范围；
-- 缓慢自转，`prefers-reduced-motion` 下静止；`ResizeObserver` 跟随尺寸；canvas 离开文档后停止动画并释放资源。
+- 左右缓慢摆动，`prefers-reduced-motion` 下静止在 `idle` 第一帧；
+- 首页底部有 Kipfel 的版权声明：模型 © もち山金魚，仅限个人使用，不适用本站的 MIT / CC BY-SA 许可；`ResizeObserver` 跟随尺寸；canvas 离开文档后停止动画并释放资源。
 
 没有 adapter 认领的内容文件（图片、样式、模型，如 `imgs/avatar.png`、`components/home.css`）只作为静态资源提供，不生成元数据、不路由。
 

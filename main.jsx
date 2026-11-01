@@ -65,9 +65,43 @@ export default function (shadow) {
           </TiltWindow>
         </div>
       </div>
+      <Credits />
     </>
   );
 }
+
+/** Third-party asset notice for the Kipfel model on this page. */
+const kipfelCredit = {
+  model: "https://booth.pm/ja/items/5813187",
+  license: "https://mochiyama.com/license_en",
+};
+
+const Credits = () => (
+  <footer className="home-credits">
+    <p>
+      3D 模型「
+      <fluent-link
+        href={kipfelCredit.model}
+        target="_blank"
+        rel="noopener"
+      >
+        キプフェル Kipfel
+      </fluent-link>
+      」© もち山金魚 (Mochiyama Kingyo)。
+    </p>
+    <p>
+      仅限个人使用，依照
+      <fluent-link
+        href={kipfelCredit.license}
+        target="_blank"
+        rel="noopener"
+      >
+        もち山金魚 利用规约
+      </fluent-link>
+      ；不适用本站的 MIT / CC BY-SA 许可。
+    </p>
+  </footer>
+);
 
 const recentCount = 5;
 
