@@ -1,7 +1,6 @@
 import { parseFragment, serializeOuter } from "parse5";
 
 /** @typedef {import("vfile").VFile} VFile */
-/** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 /**
  * @typedef {{
@@ -12,13 +11,6 @@ import { parseFragment, serializeOuter } from "parse5";
  *   childNodes?: HtmlNode[];
  * }} HtmlNode
  */
-
-/** @type {AdapterStatics} */
-export const meta = Object.freeze({
-  ext: "html",
-  lang: "pages.js",
-  priority: 30,
-});
 
 /**
  * @param {HtmlNode} node
@@ -151,8 +143,6 @@ const mount = (/** @type {string} */ source) =>
  * @param {VFile} file
  */
 const factory = (file) => mount(String(file));
-
-factory.meta = meta;
 
 export default factory;
 

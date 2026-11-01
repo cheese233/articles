@@ -1,13 +1,11 @@
 import { VFile } from "vfile";
-import type {
-  AdapterIndex,
-  AdapterInfo,
-  AdapterStatics,
-} from "../../shared/types.ts";
+import {
+  adapterChain,
+  buildAdapterGraph,
+} from "../../shared/adapter_graph.ts";
+import type { AdapterIndex, AdapterInfo } from "../../shared/types.ts";
 
-type Handler = ((file: VFile) => (shadow: ShadowRoot) => unknown) & {
-  meta?: AdapterStatics;
-};
+type Handler = (file: VFile) => (shadow: ShadowRoot) => unknown;
 
 type CompileChild = {
   meta: AdapterInfo;
@@ -21,7 +19,7 @@ type Compile = (
 ) => CompileChild | Promise<CompileChild>;
 
 export type LoaderConstructor = (new () => HTMLElement) & {
-  meta?: AdapterStatics;
+  meta?: AdapterInfo;
   parse?: (file: VFile) => unknown;
   mount?: (file: VFile) => (shadow: ShadowRoot) => unknown;
 };
@@ -38,35 +36,6 @@ const loadAdapter = async (info: AdapterInfo) => {
   return { mod: await import(info.file), body: "" };
 };
 
-const resolve = async (
-  info: AdapterInfo,
-  child: CompileChild,
-  index: AdapterIndex,
-): Promise<LoaderConstructor | undefined> => {
-  const { mod, body } = await loadAdapter(info);
-  const adapter = mod?.default as
-    | (Function & { meta?: AdapterStatics })
-    | undefined;
-  const meta = mod?.meta ?? adapter?.meta;
-  const next = body ? { ...child, body } : child;
-  const compiled = mod?.compile
-    ? await (mod.compile as Compile)(next)
-    : next;
-
-  const parent = index.adapters.find(
-    (item) => item.ext == (meta?.lang ?? info.lang),
-  );
-
-  if (!parent) {
-    const adapterFn = mod?.Adapter as
-      | ((child: CompileChild) => LoaderConstructor)
-      | undefined;
-    return adapterFn ? adapterFn(compiled) : compiled.Adapter;
-  }
-
-  return resolve(parent, compiled, index);
-};
-
 export const loadLoader = async (
   ext: string,
   index: AdapterIndex,
@@ -74,16 +43,32 @@ export const loadLoader = async (
   const cached = cache.get(ext);
   if (cached) return cached;
 
-  const info = index.adapters.find((adapter) => adapter.ext == ext);
-  if (!info) throw new Error(`no adapter for .${ext}`);
-
+  const graph = buildAdapterGraph(index.adapters);
+  const chain = adapterChain(ext, graph);
+  const info = chain[0];
   const { mod, body } = await loadAdapter(info);
-  const Adapter = await resolve(info, {
+
+  let child: CompileChild = {
     meta: info,
     handler: mod?.default as Handler | undefined,
     body,
-  }, index);
+  };
 
-  cache.set(ext, Adapter as LoaderConstructor);
-  return Adapter as LoaderConstructor;
+  for (const node of chain) {
+    const { mod, body } = await loadAdapter(node);
+    if (body) child = { ...child, body };
+
+    if (mod?.compile) {
+      child = await (mod.compile as Compile)(child);
+    }
+
+    if (mod?.Adapter) {
+      child.Adapter = (mod.Adapter as (child: CompileChild) => LoaderConstructor)(
+        child,
+      );
+    }
+  }
+
+  cache.set(ext, child.Adapter as LoaderConstructor);
+  return child.Adapter as LoaderConstructor;
 };

@@ -167,48 +167,55 @@ render/index.html
 
 ### 编译链
 
-`loadLoader` 只找 adapter，然后把 child 交给递归 `compile`：
+adapter 只按文件名解析：
 
-```ts
-const child = {
-  meta: info,
-  handler: mod.default,
-};
-
-return compile(info, child, index);
+```text
+<ext>.ext.<lang>
 ```
 
-递归规则：
+- `ext` 是内容扩展名
+- `lang` 是父 adapter 的扩展名
+- `js.ext.js` 的 `ext == lang == "js"`，作为语言根节点
+
+`shared/adapter_graph.ts` 构建依赖树并校验：
+
+- 重复 `ext`：冲突
+- 缺失 `lang`：missing parent
+- `a -> b -> a`：cycle
+- `ext == lang`：合法根节点，不会递归
 
 ```ts
-const compiled = mod.compile ? await mod.compile(child) : child;
-const parent = index.adapters.find((a) => a.ext == meta.lang);
-return parent ? compile(parent, compiled, index) : compiled.Adapter;
+const graph = buildAdapterGraph(index.adapters);
+const chain = adapterChain(ext, graph);
+```
+
+`loadLoader` 沿 chain 依次 compile：
+
+```ts
+for (const node of chain) {
+  if (mod.compile) child = await mod.compile(child);
+  if (mod.Adapter) child.Adapter = mod.Adapter(child);
+}
 ```
 
 - `pages.js.compile`：handler → `HTMLElement` class
 - `html.compile`：HTML body → handler
-- `md` / 目录：没有 `compile`，直接交给 `pages.js`
-- `js`：没有 `compile`，terminal identity
+- `md` / 目录：没有 `compile`
+- `js`: 没有 `compile`，`Adapter` 原样透传
 
-`js.ext.js` 导出 class，但不是 `HTMLElement`：
+`js.ext.js` 导出 class，但不是 `HTMLElement`，也没有 `meta`：
 
 ```js
 export default class JavaScript {
-  static meta = {
-    ext: "js",
-    lang: "",
-  };
-
   static parse = (file) => parseJsDoc(String(file));
+  static Adapter = (child) => child.Adapter;
 }
 ```
 
-`pages.js.ext.js` 是唯一生成 loader class 的薄层：
+`pages.js.ext.js` 是唯一生成 loader class 的薄层，也没有 `meta`：
 
 ```js
 export default class PagesLoader extends HTMLElement {
-  static meta = { ext: "pages.js", lang: "js" };
   static parse = ...;
   static handler = ...;
   static mount = ...;
@@ -240,19 +247,13 @@ export default function (file) {
 }
 ```
 
-并透传最终扩展名：
-
-```js
-factory.meta = meta;
-```
-
 内容路径仍通过 `path` 属性传入：
 
 ```html
 <md-loader path="/hello.md"></md-loader>
 ```
 
-loader 标签由 render 根据最终 `meta.ext` 定义，adapter 自己不 define。
+loader 标签由 render 根据 `AdapterInfo.ext` 定义，adapter 自己不 define。
 ### 已实现的 adapter
 
 | 文件 | 元数据来源 | 渲染方式 |
@@ -462,12 +463,11 @@ export default function (shadow) {
 
 在 `adapters/` 新建 `<负责的扩展名>.ext.<语言扩展名>`：
 
-1. `export const meta = Object.freeze({...})`；
-2. `export const parse = async (file) => ({...})`，只给构建期提取元数据；
-3. `export default function (file) { return function (shadow) {...}; }`；
-4. 给工厂挂上 `factory.meta = meta`，让 loader class 拿到最终扩展名。
+1. `export const parse = async (file) => ({...})`，只给构建期提取元数据；
+2. `export default function (file) { return function (shadow) {...}; }`；
+3. 不写 `meta`：`ext` / `lang` 全部从文件名解析，依赖树由 `shared/adapter_graph.ts` 校验。
 
-运行时通过 `meta/index.json` 里的 adapter 表发现它；`loadLoader` 递归执行 `compile`，由 `pages.js` 生成最终 loader class，`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
+运行时通过 `meta/index.json` 里的 adapter 表发现它；`loadLoader` 沿文件名依赖链执行 `compile`，由 `pages.js` 生成最终 loader class，`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
 
 ## 代码风格
 

@@ -2,20 +2,10 @@ import { VFile } from "vfile";
 import { parseJsDoc } from "../shared/jsdoc.js";
 
 /** @typedef {import("../shared/types.ts").AdapterInfo} AdapterInfo */
-/** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
 
-/** @type {AdapterStatics} */
-const meta = Object.freeze({
-  ext: "pages.js",
-  lang: "js",
-  priority: 10,
-});
-
 /**
- * @typedef {((file: VFile) => (shadow: ShadowRoot) => unknown) & {
- *   meta?: AdapterStatics;
- * }} Handler
+ * @typedef {(file: VFile) => (shadow: ShadowRoot) => unknown} Handler
  */
 
 /**
@@ -35,8 +25,6 @@ const isLoader = (/** @type {unknown} */ value) =>
 
 const wrap = (/** @type {Handler} */ handler) => {
   const Adapter = class JSLoader extends HTMLElement {
-    static meta = handler.meta ?? meta;
-
     /** @type {VFile | undefined} */
     file;
 
@@ -69,8 +57,6 @@ const wrap = (/** @type {Handler} */ handler) => {
 };
 
 export default class PagesLoader extends HTMLElement {
-  static meta = meta;
-
   /** @param {VFile} file @returns {Promise<ParsedMeta>} */
   static async parse(file) {
     return {
@@ -107,12 +93,14 @@ export default class PagesLoader extends HTMLElement {
    */
   static compile(child) {
     const handler = child.handler ?? identity;
-    const Adapter = child.Adapter ??
-      (isLoader(handler)
-        ? /** @type {import("../render/lib/adapters.ts").LoaderConstructor} */ (
-          /** @type {unknown} */ (handler)
-        )
-        : wrap(/** @type {Handler} */ (handler)));
+    const Adapter = /** @type {import("../render/lib/adapters.ts").LoaderConstructor} */ (
+      child.Adapter ??
+        (isLoader(handler)
+          ? /** @type {import("../render/lib/adapters.ts").LoaderConstructor} */ (
+            /** @type {unknown} */ (handler)
+          )
+          : wrap(/** @type {Handler} */ (handler)))
+    );
 
     Adapter.meta = child.meta;
 

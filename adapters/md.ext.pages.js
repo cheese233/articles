@@ -1,15 +1,7 @@
 import { parse as parseYaml } from "yaml";
 
 /** @typedef {import("vfile").VFile} VFile */
-/** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
-
-/** @type {AdapterStatics} */
-export const meta = Object.freeze({
-  ext: "md",
-  lang: "pages.js",
-  priority: 20,
-});
 
 const asText = (/** @type {unknown} */ value) => {
   if (value instanceof Date) return value.toISOString();
@@ -89,7 +81,5 @@ const factory = (file) => async (/** @type {ShadowRoot} */ shadow) => {
   article.innerHTML = renderMarkdown(String(file));
   shadow.append(article);
 };
-
-factory.meta = meta;
 
 export default factory;

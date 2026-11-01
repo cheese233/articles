@@ -1,5 +1,3 @@
-import type { VFile } from "vfile";
-
 export interface SiteConfig {
   url: string;
   title: string;
@@ -77,31 +75,9 @@ export interface ParsedMeta {
   summary?: string;
 }
 
-export interface AdapterStatics {
-  ext: string;
-  lang: string;
-  directory?: boolean;
-  priority?: number;
-}
-
 export interface AdapterContext {
   site: SiteConfig;
   entries: ManifestEntry[];
   route: string;
   entry: EntryMeta | null;
-}
-
-/**
- * An adapter module: named `meta` / `parse` plus a default render function.
- * The render function receives the source file, the page ShadowRoot, and the
- * current site context. It returns when rendering is complete.
- */
-export interface AdapterModule {
-  meta: AdapterStatics;
-  parse: (file: VFile) => Promise<ParsedMeta> | ParsedMeta;
-  default: (
-    file: VFile,
-    shadow: ShadowRoot,
-    context: AdapterContext,
-  ) => void | Promise<void>;
 }

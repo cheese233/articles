@@ -32,11 +32,7 @@ describe("adapters", () => {
     expect(HtmlLoader.prototype).to.be.instanceOf(HTMLElement);
     expect(MarkdownLoader.meta?.ext).to.equal("md");
     expect(HtmlLoader.meta?.ext).to.equal("html");
-    expect(PagesLoader.meta.ext).to.equal("pages.js");
-    expect(MarkdownFactory.meta.ext).to.equal("md");
-    expect(HtmlFactory.meta.ext).to.equal("html");
     expect(JavaScript.parse).to.be.a("function");
-    expect(JavaScript.meta.ext).to.equal("js");
   });
 
   it("reads YAML frontmatter", async () => {

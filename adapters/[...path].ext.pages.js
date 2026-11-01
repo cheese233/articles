@@ -2,16 +2,7 @@ import { VFile } from "vfile";
 import { loadLoader } from "../render/lib/adapters.ts";
 import { findMainEntry, isMainEntry } from "../shared/directory.ts";
 
-/** @typedef {import("../shared/types.ts").AdapterStatics} AdapterStatics */
 /** @typedef {import("../shared/types.ts").ManifestEntry} ManifestEntry */
-
-/** @type {AdapterStatics} */
-export const meta = Object.freeze({
-  ext: "[...path]",
-  lang: "pages.js",
-  priority: 0,
-  directory: true,
-});
 
 const escape = (/** @type {string} */ value) =>
   String(value)
@@ -103,7 +94,5 @@ const factory = (_file) => async (/** @type {ShadowRoot} */ shadow) => {
 
   shadow.append(article);
 };
-
-factory.meta = meta;
 
 export default factory;

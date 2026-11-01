@@ -4,26 +4,20 @@ import { readdir, readFile } from "node:fs/promises";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { VFile } from "vfile";
+import { buildAdapterGraph } from "../../shared/adapter_graph.ts";
 import { parseAdapterName } from "../../shared/ext.ts";
-import type {
-  AdapterInfo,
-  AdapterStatics,
-  ParsedMeta,
-} from "../../shared/types.ts";
+import type { AdapterInfo, ParsedMeta } from "../../shared/types.ts";
 import { paths } from "./paths.ts";
 
 interface AdapterClass {
   new (file: VFile): { parse?: () => Promise<ParsedMeta> | ParsedMeta };
-  meta?: AdapterStatics;
   parse?: (file: VFile) => Promise<ParsedMeta> | ParsedMeta;
 }
 
 interface AdapterModule {
   default: Function & {
-    meta?: AdapterStatics;
     parse?: (file: VFile) => Promise<ParsedMeta> | ParsedMeta;
   };
-  meta?: AdapterStatics;
   parse?: (file: VFile) => Promise<ParsedMeta> | ParsedMeta;
 }
 
@@ -32,10 +26,13 @@ const cache = new Map<string, AdapterModule>();
 export const listAdapters = async () => {
   const names = await readdir(paths.adapters);
 
-  return names
+  const adapters = names
     .filter((name) => name.includes(".ext."))
     .map((name) => parseAdapterName(name, `/adapters/${name}`))
     .sort((a, b) => (a.ext < b.ext ? -1 : a.ext > b.ext ? 1 : 0));
+
+  buildAdapterGraph(adapters);
+  return adapters;
 };
 
 export const loadAdapter = async (info: AdapterInfo) => {
