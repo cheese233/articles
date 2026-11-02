@@ -7,6 +7,8 @@ import { isMainEntry } from "./shared/directory.ts";
  * # 主页
  * @routable
  * @date 2026-11-01
+ * @footer 3D 模型 [キプフェル Kipfel](https://booth.pm/ja/items/5813187) © もち山金魚
+ * @footer 仅限个人使用，见 [利用规约](https://mochiyama.com/license_en)；不适用本站许可
  * @param {ShadowRoot} shadow
  */
 export default function (shadow) {
@@ -65,44 +67,9 @@ export default function (shadow) {
           </TiltWindow>
         </div>
       </div>
-      <Credits />
     </>
   );
 }
-
-/** Third-party asset notice for the Kipfel model on this page. */
-const kipfelCredit = {
-  model: "https://booth.pm/ja/items/5813187",
-  license: "https://mochiyama.com/license_en",
-};
-
-const Credits = () => (
-  <footer className="home-credits">
-    <p>
-      3D 模型「
-      <fluent-link
-        href={kipfelCredit.model}
-        target="_blank"
-        rel="noopener"
-      >
-        キプフェル Kipfel
-      </fluent-link>
-      」© もち山金魚 (Mochiyama Kingyo)。
-    </p>
-    <p>
-      仅限个人使用，依照
-      <fluent-link
-        href={kipfelCredit.license}
-        target="_blank"
-        rel="noopener"
-      >
-        もち山金魚 利用规约
-      </fluent-link>
-      ；不适用本站的 MIT / CC BY-SA 许可。
-    </p>
-  </footer>
-);
-
 const recentCount = 5;
 
 const links = [

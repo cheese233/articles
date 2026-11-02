@@ -12,6 +12,7 @@ const unquote = (value) =>
  *   updated?: string;
  *   tags?: string[];
  *   summary?: string;
+ *   footer?: string;
  *   routable?: boolean;
  *   hidden?: boolean;
  * }} JsDocMeta
@@ -74,6 +75,12 @@ export const parseJsDoc = (source) => {
         break;
       case "summary":
         parsed.summary = unquote(value);
+        break;
+      case "footer":
+        // Each `@footer` adds one line.
+        parsed.footer = parsed.footer
+          ? `${parsed.footer}\n${unquote(value)}`
+          : unquote(value);
         break;
       case "tags": {
         const tags = value.trim();

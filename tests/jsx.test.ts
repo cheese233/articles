@@ -135,6 +135,29 @@ describe("jsx", () => {
     expect(meta.routable).to.equal(false);
   });
 
+  it("compiles jsx in the page without a service worker", async () => {
+    const { jsxModuleUrl } = await import("../render/lib/jsx_loader.ts");
+    const url = await jsxModuleUrl("/tests/fixtures/page.jsx");
+    const code = await (await fetch(url)).text();
+
+    expect(navigator.serviceWorker?.controller ?? null).to.equal(null);
+    expect(url.startsWith("blob:")).to.equal(true);
+    // The relative `.jsx` import now points at the dependency's blob.
+    expect(code).to.match(/from "blob:[^"]+"/);
+    expect(code).to.include(`${location.origin}/render/lib/jsx.ts`);
+    // Compiled once per source URL.
+    expect(await jsxModuleUrl("/tests/fixtures/page.jsx")).to.equal(url);
+  });
+
+  it("parses repeated @footer tags as lines", async () => {
+    const meta = await Jsx.parse(new VFile({
+      value: "/**\n * # Page\n * @footer a [b](https://x.test)\n" +
+        " * @footer c\n */\nexport default () => null;",
+    }));
+
+    expect(meta.footer).to.equal("a [b](https://x.test)\nc");
+  });
+
   it("renders a jsx module through the lazy loader", async () => {
     defineLoaders(manifest);
 

@@ -60,6 +60,11 @@ export interface SiteData {
 export interface EntryMeta extends ManifestEntry {
   v: number;
   summary: string;
+  /**
+   * Text for the right end of the site footer. Lines split on `\n`;
+   * `[label](https://...)` becomes a link. Empty when the source sets none.
+   */
+  footer: string;
   variants: Variant[];
   prev: TimelineLink | null;
   next: TimelineLink | null;
@@ -73,6 +78,7 @@ export interface ParsedMeta {
   tags?: string[];
   routable?: boolean;
   summary?: string;
+  footer?: string;
 }
 
 export interface AdapterContext {

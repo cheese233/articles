@@ -61,7 +61,7 @@ articles/
 │  ├─ pages.js.ext.js        # PagesLoader class + compile
 │  ├─ md.ext.pages.js        # .md 工厂：file -> function(shadow)
 │  ├─ html.ext.pages.js      # .html 工厂
-│  ├─ jsx.ext.pages.js       # .jsx 工厂：import 编译后的模块
+│  ├─ jsx.ext.pages.js       # .jsx 工厂：页面内编译后 import
 │  └─ [...path].ext.pages.js # 目录工厂
 ├─ main.jsx                  # 首页
 ├─ components/               # 被嵌入的组件与样式（home.css、kipfel.jsx、kipfel/model/）
@@ -133,7 +133,7 @@ render/index.html
 ```
 
 - Service Worker 位于站点根目录，scope 是 `/`。
-- 只有 `request.mode != "navigate"` 的 `.ts` 请求会被编译；直接访问 `.ts` 文件仍然看到源码。`.jsx` 见下文 JSX 一节。
+- 只有 `request.mode != "navigate"` 的 `.ts` 请求会被编译；直接访问 `.ts` 文件仍然看到源码。`.jsx` 不经过 Service Worker，见下文 JSX 一节。
 - 相对 import（如 `../shared/ext.ts`）保持原 URL，浏览器会继续触发 Service Worker。
 - 裸 import（`vfile`、`yaml`、`unified` 等）由构建生成的 import map 指向 `vendor/*.js`。
 - `sw.js.hbs` 构建时注入 `ts-blank-space` 的哈希 URL，生成 `sw.js`。
@@ -293,16 +293,21 @@ Markdown 管线保留原始 HTML（`allowDangerousHtml`），内容由仓库作�
 
 ```text
 <jsx-loader path="/x.jsx">
-  └─ import("/x.jsx")
-       └─ Service Worker 拦截（只拦 destination == "script" 的模块请求）
-            ├─ sucrase（固定版本，打进 vendor/）把 JSX 转成 __jsx.h(...) 调用
-            └─ 首行注入 import * as __jsx from "/render/lib/jsx.ts"
+  └─ render/lib/jsx_loader.ts（页面内，不经过 Service Worker）
+       ├─ 用 loader 已取回的源码文本（每个文件只请求一次）
+       ├─ sucrase（固定版本，打进 vendor/）把 JSX 转成 __jsx.h(...) 调用
+       ├─ 首行注入 import * as __jsx from "/render/lib/jsx.ts"
+       ├─ es-module-lexer 找出 / ./ ../ 开头的 import，改写成绝对 URL；
+       │  其中 .jsx 依赖递归走同一个 loader，换成它的 blob URL
+       └─ import(blob URL)
 ```
 
-- 编译选项只在 `shared/jsx.js` 里定义一次，Service Worker、import 扫描（`scripts/lib/imports.ts`）和测试共用。sucrase 保留行号，报错位置和源码一致。
-- `.jsx` 之间可以相互 import，裸 import 照样走 import map。`fetchSource` 和 “view source” 是普通 fetch，拿到的仍是 JSX 源码；`_headers` 用 `Vary: Sec-Fetch-Dest` 让两种请求分开缓存。
+- blob URL 没有可用的路径，所以相对 import 必须先改写；裸 import 不改，照样走 import map。每个源 URL 只编译一次，循环 import 会报出完整链路。
+- 编译选项只在 `shared/jsx.js` 里定义一次，页面 loader、import 扫描（`scripts/lib/imports.ts`）和测试共用。sucrase 保留行号，模块末尾带 `//# sourceURL=`，报错位置指向原文件。
+- `.jsx` 永远以 `text/jsx` 源码形式提供，`fetchSource` 和 “view source” 拿到的就是 JSX；Service Worker 只处理 `.ts`。
+- 测试里 sucrase 无法直接在浏览器加载（CommonJS 依赖多），`web-test-runner.config.js` 把 `sucrase` 解析到一个 stub，由它通过 server command 在 Node 里执行真正的 `transform`，`jsx_loader.ts` 本身不变。
 - `render/lib/jsx.ts` 是极小的 DOM 工厂：直接生成真实节点，没有虚拟 DOM。支持 `className`、`style` 对象（含 `--custom` 属性）、`on*` 事件、`ref`、children 数组、`Fragment`、函数组件和 `fluent-*` 等自定义元素；对象/数组值按 property 设置（例如给 loader 传 `entries`），其余按 attribute。
-- 元数据：`# 标题`、`@routable`、`@date`、`@tags`。只有写了 `@routable` 才会路由；`@hidden` 会强制不路由（不进 `index.json`、sitemap、feed），适合只被嵌入的组件。
+- 元数据：`# 标题`、`@routable`、`@date`、`@tags`、`@footer`。只有写了 `@routable` 才会路由；`@hidden` 会强制不路由（不进 `index.json`、sitemap、feed），适合只被嵌入的组件。
 
 ```jsx
 /**
@@ -367,24 +372,45 @@ posts.[slug]    只匹配 /posts/<one>/
 
 - `components/kipfel.jsx` 写了 `@hidden`，不进 `index.json`、sitemap、feed，只被首页嵌入；
 - 模型是 `components/kipfel/model/kipfel.glb`（仅限个人使用，许可见同目录 `readme.txt`），用 `three/addons` 的 `GLTFLoader` + `meshopt_decoder` 加载；
-- 它由 `scripts/optimize_model.ts` 从原始的 `Kipfel_Mobile_1.1.0_opti.glb`（2.4 MB，不入库）生成，约 290 KB：
+- 它由 `scripts/optimize_model.ts` 从原始的 `Kipfel_Mobile_1.1.0_opti.glb`（2.4 MB，不入库）生成，约 310 KB：
   - 保留两张 skin 共享的 146 根骨骼；
-  - 474 个 morph target 只留下动作用到的 `eye_close`、`eye_joy`、`mouth_ω`，同时绕开 WebGPU 默认的纹理层数限制；
+  - 474 个 morph target 只留下表情用到的 10 个（眨眼、笑眼、圆眼、四个视线方向、惊讶眉、`ω` / `○` 嘴），同时绕开 WebGPU 默认的纹理层数限制；
   - `weld` + meshopt `simplify` 减面，贴图缩到 1024² WebP，最后 meshopt 重新编码；
   - 更新模型：`node scripts/optimize_model.ts <原始.glb>`（devDependencies：`@gltf-transform/*`、`meshoptimizer`、`sharp`）；
-- 动作在 `components/kipfel_rig.js`：模型没有自带动画，所以按帧采样生成 `AnimationClip`，绑定到模型自带骨骼，由 `AnimationMixer` 播放：
-  - 姿势写成“围绕世界轴旋转静止姿势”，按 `P⁻¹·Δ·P·L` 换到每根骨骼的局部空间，不依赖导出时的骨骼朝向；
+- 骨骼驱动在 `components/kipfel_rig.js`：模型没有自带动画，每一帧直接写骨骼和 morph：
+  - 姿势写成“围绕静止姿势的模型轴旋转”，按 `P⁻¹·Δ·P·L` 换到每根骨骼的局部空间，不依赖导出时的骨骼朝向；
   - 骨骼名经过 `PropertyBinding.sanitizeNodeName`（GLTFLoader 会把 `UpperArm.L` 变成 `UpperArmL`）；
-  - `idle` 循环：呼吸、歪头、手臂放下、尾巴摆动、耳朵抖动、眨眼；
-  - `wave`（挥手 + 笑眼 + ω 嘴）和 `stretch`（伸懒腰 + 闭眼）每 9 秒轮流触发一次，点击模型立即触发，结束后淡回 `idle`；
+  - 另外提供髋部升降和头部包围球（含耳朵），供镜头取景；
   - 蒙皮网格的包围盒停在绑定姿势，所以关闭了视锥剔除；
+- 行为在 `components/kipfel_motion.js`，按时间实时求值而不是播放固定 clip，所以能对指针作出反应：
+  - `run`：从远处跑向镜头，双腿交替摆动、膝盖回收、手臂反向摆动、尾巴甩动、略微蛇行；镜头固定，她越跑越大；
+  - `brake`：急停，身体后仰、手臂张开保持平衡，眼睛睁圆；
+  - `peek`：凑近，镜头推进到头部（含耳朵）占满画布的短边；
+  - `watch`：好奇地观察——头和眼睛跟着整页的指针转（`eye_left/right/up/down` morph），随机歪头、眨眼（偶尔连眨两下），时不时睁圆眼、张嘴吃惊；
+  - 点击：跑步途中点击会重新跑一遍，之后点击会吓她一下；
+  - `prefers-reduced-motion` 下跳过跑步，直接停在特写，只在指针移动时更新视线；
+- 行为是纯函数式的状态机，`tests/kipfel_motion.test.ts` 用固定随机数验证跑步、特写、视线和吃惊；
 - `three`（固定版本）的 `three/webgpu`、`three/tsl`、`three/addons/...` 子路径由 import 扫描发现，照常打进 `vendor/`；
 - 用 `WebGPURenderer` 渲染（不支持 WebGPU 时自动回退 WebGL2），后处理用 TSL 写成 ASCII 着色器，思路来自 [ASCII characters are not pixels](https://alexharri.com/blog/ascii-rendering)：
   - 运行时在 canvas 上画出 95 个可打印 ASCII 字符作为字形图集，并计算每个字形在 6 个采样圆里的覆盖率（形状向量，按维度归一化）；
   - 第一个 pass 每个格子一个片元：在 6 个采样圆里采样场景亮度得到采样向量，做对比度增强（按最大分量归一化后取幂），再和所有字形的形状向量做最近邻匹配；
   - 第二个 pass 逐像素从图集取字形；颜色在 TSL 里转成 OKLCH，量化并提升 L / C，色相向金色偏移，再转回线性 sRGB，深浅色使用不同的亮度范围；
-- 左右缓慢摆动，`prefers-reduced-motion` 下静止在 `idle` 第一帧；
-- 首页底部有 Kipfel 的版权声明：模型 © もち山金魚，仅限个人使用，不适用本站的 MIT / CC BY-SA 许可；`ResizeObserver` 跟随尺寸；canvas 离开文档后停止动画并释放资源。
+- `ResizeObserver` 跟随尺寸；canvas 离开文档后停止动画并释放资源；
+- Kipfel 的版权声明写在 `main.jsx` 的 `@footer` 里，显示在站点 footer 右下角（见下文“页面 footer”）。
+
+### 页面 footer
+
+站点 footer 右侧的文字来自每个页面元数据的 `footer` 字段，构建时写进 sidecar（`meta/<stem>.json`）：
+
+| 源文件 | 写法 |
+|---|---|
+| `.jsx` / `.js` / `.pages.js` | JSDoc `@footer 文字`，可重复，每个一行 |
+| `.md` | frontmatter `footer:`（多行用 YAML 的 `\|`） |
+| `.html` | `<meta name="footer" content="...">` |
+
+- 行内的 `[文字](https://...)` 或 `[文字](/path)` 渲染成链接，外链在新标签页打开；
+- 只生成文本节点和 `<a>`，元数据里的 HTML 不会被解析；
+- 目录页（例如 `/` 渲染 `main.jsx`）使用其 `main.*` 的 footer；没有 footer 的页面、404 和错误页会清空。
 
 没有 adapter 认领的内容文件（图片、样式、模型，如 `imgs/avatar.png`、`components/home.css`）只作为静态资源提供，不生成元数据、不路由。
 
@@ -399,7 +425,7 @@ posts.[slug]    只匹配 /posts/<one>/
 
 - `.md` → `text/markdown`
 - `.js` / `.pages.js` → `text/javascript`
-- `.jsx` → `text/jsx`（`_headers` 显式设置，`scripts/dev.ts` 由 `mime` 包给出）
+- `.jsx` → `text/jsx`（`_headers` 显式设置，`scripts/dev.ts` 由 `mime` 包给出；页面 loader 同样拒绝 `text/html` 外壳）
 - `.json` → `application/json`
 - `.html` 是歧义的（外壳与真实 HTML 同为 `text/html`），所以带 `.html` 后缀的请求先核对 sidecar 变体。
 
@@ -436,6 +462,7 @@ posts.[slug]    只匹配 /posts/<one>/
   "author": "...",
   "tags": ["..."],
   "summary": "...",
+  "footer": "",
   "variants": [
     { "ext": "md", "file": "/posts/hello.md", "routable": true }
   ],

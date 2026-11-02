@@ -1,7 +1,6 @@
 import { esbuildPlugin } from "@web/dev-server-esbuild";
 import { chromeLauncher } from "@web/test-runner-chrome";
 import { transform } from "sucrase";
-import { compileJsx } from "./shared/jsx.js";
 import {
   jsxCheck,
   typescriptCheck,
@@ -11,42 +10,51 @@ import {
 const nodeChecks = {
   name: "node-checks",
 
-  async executeCommand({ command }) {
+  async executeCommand({ command, payload }) {
     if (command == "typescript-check") return typescriptCheck();
     if (command == "vendor-check") return vendorCheck();
     if (command == "jsx-check") return jsxCheck();
-  },
-};
-
-// Mirrors sw.js: `.jsx` module requests are compiled, plain fetches are not.
-const isJsxModule = (context) =>
-  context.path.endsWith(".jsx") &&
-  context.request.headers["sec-fetch-dest"] == "script";
-
-const jsxModules = {
-  name: "jsx-modules",
-
-  resolveMimeType(context) {
-    if (isJsxModule(context)) return "js";
-  },
-
-  transform(context) {
-    if (isJsxModule(context)) {
-      return { body: compileJsx(transform, String(context.body)) };
+    if (command == "sucrase-transform") {
+      return transform(payload.source, payload.options);
     }
   },
 };
 
-// The plain fetch and the module import share a URL, and the runner caches
-// files for a year; vary on the destination so the import is not served the
-// cached JSX source.
-const varyJsx = async (context, next) => {
-  await next();
-  if (context.path.endsWith(".jsx")) context.set("vary", "sec-fetch-dest");
+// Sucrase is CommonJS-heavy and the site serves it from vendor/, which the
+// runner does not build. Tests import a stub that runs the real transform
+// in Node, so render/lib/jsx_loader.ts is exercised unchanged.
+const sucraseStub = `
+import { executeServerCommand } from "@web/test-runner-commands";
+const results = new Map();
+export const prepare = async (source, options) => {
+  const result = await executeServerCommand("sucrase-transform", {
+    source,
+    options,
+  });
+  results.set(source, result);
+};
+export const transform = (source) => {
+  const result = results.get(source);
+  if (!result) throw new Error("sucrase stub: call prepare() first");
+  return result;
+};
+`;
+
+const sucraseModule = {
+  name: "sucrase-module",
+
+  resolveImport({ source }) {
+    if (source == "sucrase") return "/__sucrase.js";
+  },
+
+  serve(context) {
+    if (context.path == "/__sucrase.js") {
+      return { body: sucraseStub, type: "js" };
+    }
+  },
 };
 
 export default {
-  middleware: [varyJsx],
   files: ["tests/**/*.test.ts"],
   nodeResolve: true,
   browsers: [
@@ -58,7 +66,7 @@ export default {
     }),
   ],
   plugins: [
-    jsxModules,
+    sucraseModule,
     esbuildPlugin({ ts: true, target: "esnext" }),
     nodeChecks,
   ],

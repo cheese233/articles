@@ -10,6 +10,7 @@ import type {
   EntryMeta,
   Manifest,
 } from "../shared/types.ts";
+import { findMainEntry } from "../shared/directory.ts";
 import "./fluent.ts";
 import {
   defineLoaders,
@@ -58,6 +59,43 @@ const setDescription = (text?: string | null) => {
   }
 
   tag.setAttribute("content", content);
+};
+
+const footerNote = document.querySelector<HTMLElement>("[data-page-footer]");
+const footerLink = /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^)\s]+)\)/g;
+
+/**
+ * Page-specific footer text from the sidecar `footer` field. Built from
+ * text nodes, so metadata cannot inject markup; only http(s) and
+ * same-site links are recognised.
+ */
+const setFooter = (text?: string | null) => {
+  if (!footerNote) return;
+  const lines = (text ?? "").split("\n").filter((line) => line.trim());
+
+  footerNote.replaceChildren(...lines.map((line) => {
+    const row = document.createElement("span");
+    let last = 0;
+
+    for (const match of line.matchAll(footerLink)) {
+      const index = match.index ?? 0;
+      row.append(line.slice(last, index));
+
+      const link = document.createElement("a");
+      link.setAttribute("href", match[2] ?? "");
+      link.textContent = match[1] ?? "";
+      if (/^https?:/.test(match[2] ?? "")) {
+        link.setAttribute("target", "_blank");
+        link.setAttribute("rel", "noopener");
+      }
+      row.append(link);
+      last = index + match[0].length;
+    }
+
+    row.append(line.slice(last));
+    return row;
+  }));
+  footerNote.hidden = !lines.length;
 };
 
 const appendStyles = (target: HTMLElement | ShadowRoot) => {
@@ -194,6 +232,7 @@ const renderFile = async (
 
   setTitle(meta?.title);
   setDescription(meta?.summary);
+  setFooter(meta?.footer);
 };
 
 const renderDirectory = async (current: Manifest, route: string) => {
@@ -208,10 +247,16 @@ const renderDirectory = async (current: Manifest, route: string) => {
     entry: null,
   };
 
-  await mount(info.ext, file, route, context);
+  // A directory rendered through its `main.<ext>` uses that entry's footer.
+  const main = findMainEntry(route, current.entries);
+  const [meta] = await Promise.all([
+    main ? fetchEntry(main.stem) : null,
+    mount(info.ext, file, route, context),
+  ]);
 
   setTitle(route == "/" ? undefined : labelOf(route));
   setDescription(current.site.description);
+  setFooter(meta?.footer);
 };
 
 const renderNotFound = async (current: Manifest) => {
@@ -238,6 +283,7 @@ const renderNotFound = async (current: Manifest) => {
 
   setTitle("404");
   setDescription("找不到这个页面。");
+  setFooter(null);
 };
 
 const renderError = async (_current: Manifest, error: unknown) => {
@@ -263,6 +309,7 @@ const renderError = async (_current: Manifest, error: unknown) => {
   host.append(article);
 
   setTitle("出错了");
+  setFooter(null);
 };
 
 type Target =

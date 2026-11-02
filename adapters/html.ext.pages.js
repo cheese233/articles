@@ -124,6 +124,7 @@ export const parse = async (file) => {
     tags: tags.get("tags")?.split(",").map((tag) => tag.trim()),
     routable: tags.get("routable") != "false",
     summary: tags.get("description") ?? tags.get("og:description"),
+    footer: tags.get("footer"),
   };
 };
 

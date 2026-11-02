@@ -177,9 +177,26 @@ body.is-loading #main {
     font-size: 0.82rem;
 }
 
+/* Page-specific notice from the sidecar `footer` field, right aligned. */
 .footer-note {
-    font-variant: small-caps;
-    letter-spacing: 0.04em;
+    display: grid;
+    gap: 0.15rem;
+    margin-left: auto;
+    text-align: right;
+}
+
+.footer-note[hidden] {
+    display: none;
+}
+
+.footer-note a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+}
+
+.footer-note a:hover {
+    color: var(--foreground);
 }
 
 .fatal,

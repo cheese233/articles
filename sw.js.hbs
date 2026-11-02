@@ -1,9 +1,6 @@
-// The build injects the hashed /vendor URLs for ts-blank-space and sucrase.
+// The build injects the hashed /vendor URL for ts-blank-space.
 {{! @vendor ts-blank-space }}
-{{! @vendor sucrase }}
 import tsBlankSpace from "{{{ tsBlankSpaceUrl }}}";
-import { transform } from "{{{ sucraseUrl }}}";
-import { compileJsx } from "/shared/jsx.js";
 
 const javascript = (body) =>
   new Response(body, {
@@ -37,12 +34,9 @@ const blankTypes = (source, url) => {
   );
 };
 
-const transformJsx = (source) => compileJsx(transform, source);
-
 // Each compiled extension maps to its source transform.
 const compilers = new Map([
   [".ts", blankTypes],
-  [".jsx", transformJsx],
 ]);
 
 const compilerFor = (pathname) =>
@@ -73,9 +67,6 @@ self.addEventListener("fetch", (event) => {
 
   const compiler = compilerFor(url.pathname);
   if (!compiler) return;
-  // `.jsx` is compiled only for module imports, so fetchSource() and
-  // "view source" links still read the original JSX.
-  if (compiler == transformJsx && request.destination != "script") return;
 
   event.respondWith(compile(request, url, compiler));
 });

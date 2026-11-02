@@ -33,6 +33,7 @@ interface SourceRecord {
   author: string;
   tags: string[];
   summary: string;
+  footer: string;
   routable: boolean;
 }
 
@@ -131,6 +132,7 @@ export default async function (): Promise<SiteData> {
       author: (meta.author ?? config.author).trim(),
       tags: normalizeTags(meta.tags),
       summary: (meta.summary ?? "").trim(),
+      footer: (meta.footer ?? "").trim(),
       routable,
     };
 
@@ -175,6 +177,7 @@ export default async function (): Promise<SiteData> {
       author: canonical.author,
       tags: canonical.tags,
       summary: canonical.summary,
+      footer: canonical.footer,
       variants,
       prev: null,
       next: null,

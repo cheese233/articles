@@ -68,6 +68,7 @@ export const parse = async (file) => {
     tags: normalizeTags(data.tags),
     routable: data.routable === false ? false : true,
     summary: data.summary != null ? asText(data.summary) : summaryOf(body),
+    footer: data.footer != null ? asText(data.footer) : undefined,
   };
 };
 

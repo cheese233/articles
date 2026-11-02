@@ -24,6 +24,7 @@
     "pre-commit": "node scripts/sync_git_exclude.ts --staged"
   },
   "dependencies": {
+    "es-module-lexer": "3.0.4",
     "fast-xml-builder": "^1.3.1",
     "fluentui-webcomponents": "git+https://github.com/cheese233/fluentui-webcomponents.git#c094ae7",
     "parse5": "^8.0.1",
@@ -46,11 +47,11 @@
     "@gltf-transform/functions": "4.3.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.6.5",
+    "@types/three": "0.187.0",
     "@web/dev-server-esbuild": "^2.0.0",
     "@web/test-runner": "^1.0.0",
     "@web/test-runner-chrome": "^1.0.1",
     "@web/test-runner-commands": "^1.0.1",
-    "es-module-lexer": "^3.0.4",
     "handlebars": "^4.7.10",
     "meshoptimizer": "1.3.0",
     "mime": "^4.1.1",

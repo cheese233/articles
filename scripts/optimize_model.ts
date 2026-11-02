@@ -25,7 +25,18 @@ if (!source) {
 }
 
 /** Morph targets driven by components/kipfel.jsx. */
-const keptMorphs = new Set(["eye_close", "eye_joy", "mouth_ω"]);
+const keptMorphs = new Set([
+  "eye_close",
+  "eye_joy",
+  "eye_round",
+  "eye_left",
+  "eye_right",
+  "eye_up",
+  "eye_down",
+  "eyebrow_surprised",
+  "mouth_ω",
+  "mouth_○",
+]);
 
 await Promise.all([
   MeshoptDecoder.ready,

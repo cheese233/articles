@@ -6,7 +6,6 @@ import { paths } from "../lib/paths.ts";
 // Template variable -> vendored specifier, matching `@vendor` in sw.js.hbs.
 const urlNames = {
   tsBlankSpaceUrl: "ts-blank-space",
-  sucraseUrl: "sucrase",
 };
 
 export default async function (vendors: Map<string, string>) {

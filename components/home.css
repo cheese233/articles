@@ -263,24 +263,6 @@
     height: 18rem;
 }
 
-.home-credits {
-    margin-top: 3rem;
-    color: var(--muted);
-    font-size: 0.78rem;
-    line-height: 1.6;
-    text-align: center;
-}
-
-.home-credits p {
-    margin: 0;
-}
-
-.home-credits fluent-link {
-    --colorBrandForegroundLink: var(--muted);
-    --colorBrandForegroundLinkHover: var(--accent);
-    font-size: inherit;
-}
-
 @media (max-width: 720px) {
     .hero {
         padding-top: 0.5rem;

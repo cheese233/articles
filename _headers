@@ -24,5 +24,4 @@
 
 /*.jsx
   Content-Type: text/jsx; charset=utf-8
-  Vary: Sec-Fetch-Dest
   Cache-Control: public, max-age=60, stale-while-revalidate=3600

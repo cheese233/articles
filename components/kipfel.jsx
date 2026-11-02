@@ -50,6 +50,7 @@ import {
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import { createMotion } from "./kipfel_motion.js";
 import { createRig } from "./kipfel_rig.js";
 
 /**
@@ -60,11 +61,8 @@ import { createRig } from "./kipfel_rig.js";
  * acting as pixels. Glyph colors are shaped in OKLCH toward the gold palette.
  */
 
-// Optimized by scripts/optimize_model.ts: skeleton and three morphs kept.
+// Optimized by scripts/optimize_model.ts: skeleton and expression morphs.
 const modelUrl = "/components/kipfel/model/kipfel.glb";
-
-/** Seconds between automatic actions while idle. */
-const actionInterval = 9;
 const font = '600 {size}px ui-monospace, "Cascadia Code", monospace';
 
 /** Printable ASCII, space first. */
@@ -332,18 +330,42 @@ const loadModel = async (scene) => {
     object.frustumCulled = false;
   });
 
-  // Center the model and scale it to a unit-ish size.
+  // Feet on y = 0, scaled to unit height, so motion distances are in
+  // model heights.
   const box = new Box3().setFromObject(model);
   const size = box.getSize(new Vector3());
   const center = box.getCenter(new Vector3());
-  const scale = 1 / Math.max(size.x, size.y, size.z, 1e-6);
-  model.position.sub(center.multiplyScalar(scale));
+  const scale = 1 / Math.max(size.y, 1e-6);
   model.scale.setScalar(scale);
+  model.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
 
   const pivot = new Group();
   pivot.add(model);
   scene.add(pivot);
   return { pivot, rig: createRig(model) };
+};
+
+/**
+ * Camera framing. While she runs, a wide shot follows her; for the close-up
+ * the head sphere (ears included) is fitted to the shorter viewport side.
+ */
+const frame = (/** @type {PerspectiveCamera} */ camera,
+  /** @type {Vector3} */ subject, /** @type {Vector3} */ head,
+  /** @type {number} */ radius, /** @type {number} */ k) => {
+  const fov = (camera.fov * Math.PI) / 180;
+  const narrow = Math.min(1, camera.aspect);
+  // Distance where the sphere spans ~94% of the narrow side.
+  const fit = radius / Math.sin(Math.atan(Math.tan(fov / 2) * narrow) * 0.94);
+
+  // Fixed wide shot in front of the stop mark, so she grows as she runs
+  // in; only the aim drifts a little to keep her near the center.
+  const wide = new Vector3(0, 0.7, 3.4);
+  const wideLook = new Vector3(subject.x * 0.5, 0.45, subject.z * 0.35);
+  const close = new Vector3(head.x, head.y + radius * 0.05, head.z + fit);
+
+  const eased = k * k * (3 - 2 * k);
+  camera.position.lerpVectors(wide, close, eased);
+  camera.lookAt(wideLook.lerp(head, eased));
 };
 
 /**
@@ -374,36 +396,53 @@ export default async function (shadow) {
   sun.position.set(1.5, 2, 2.5);
   scene.add(sun);
 
-  const camera = new PerspectiveCamera(32, 2, 0.01, 20);
-  camera.position.set(0, 0.35, 2);
-  camera.lookAt(0, 0, 0);
+  const camera = new PerspectiveCamera(32, 2, 0.01, 40);
 
   const ascii = createAscii(renderer, scene, camera);
   const { pivot, rig } = await loadModel(scene);
-  pivot.rotation.set(0.12, 0, 0);
-  // Apply the first idle frame so reduced motion shows a relaxed pose
-  // instead of the bind T-pose.
-  rig.update(0);
+  const motion = createMotion();
+  const head = new Vector3();
+  const subject = new Vector3();
+
+  /** @param {number} delta */
+  const step = (delta) => {
+    const state = motion.update(delta);
+    pivot.position.set(state.x, 0, state.z);
+    pivot.rotation.y = state.heading;
+    rig.hipLift = state.lift;
+    rig.pose(state.pose);
+    rig.face(state.face);
+
+    pivot.updateMatrixWorld(true);
+    const radius = rig.headBounds(head);
+    frame(camera, subject.copy(pivot.position), head, radius, state.closeUp);
+    host.dataset.phase = state.phase;
+  };
+
+  // Reduced motion skips the run and shows the close-up.
+  if (reducedMotion.matches) motion.settle();
+  step(0);
 
   const timer = new Timer();
   let isDirty = true;
   let wasConnected = false;
-  let elapsed = 0;
-  let nextAction = actionInterval / 2;
-  let actionIndex = 0;
 
-  const playNext = () => {
-    const name = rig.names[actionIndex % rig.names.length];
-    if (name && rig.play(name)) {
-      actionIndex++;
-      host.dataset.action = name;
-    }
+  // Pointer anywhere on the page steers her gaze; she is curious about it.
+  /** @param {PointerEvent} event */
+  const onPointer = (event) => {
+    const box = canvas.getBoundingClientRect();
+    const x = ((event.clientX - box.left) / box.width) * 2 - 1;
+    const y = 1 - ((event.clientY - box.top) / box.height) * 2;
+    // Far-away pointers still register, but weaker.
+    motion.lookAt(x / Math.max(1, Math.abs(x) * 0.6), y / Math.max(1, Math.abs(y) * 0.6));
+    isDirty = true;
   };
+  window.addEventListener("pointermove", onPointer, { passive: true });
 
-  // Clicking the model triggers the next action right away.
+  // A tap startles her; a tap during the run starts it over.
   canvas.addEventListener("click", () => {
-    nextAction = elapsed + actionInterval;
-    playNext();
+    if (motion.time < 4) motion.reset();
+    else motion.poke();
   });
 
   const resize = () => {
@@ -428,8 +467,8 @@ export default async function (shadow) {
     renderer.setAnimationLoop(null);
     observer.disconnect();
     darkScheme.removeEventListener("change", onScheme);
+    window.removeEventListener("pointermove", onPointer);
     ascii.dispose();
-    rig.dispose();
     scene.traverse((object) => {
       const mesh = /** @type {any} */ (object);
       mesh.geometry?.dispose?.();
@@ -448,18 +487,14 @@ export default async function (shadow) {
     }
 
     timer.update(time);
+    // Clamp so a backgrounded tab does not fast-forward the run.
+    const delta = Math.min(timer.getDelta(), 0.1);
     if (!reducedMotion.matches) {
-      // Clamp so a backgrounded tab does not fast-forward the clips.
-      const delta = Math.min(timer.getDelta(), 0.1);
-      elapsed += delta;
-      // Gentle sway instead of a full spin keeps the actions readable.
-      pivot.rotation.y = Math.sin(elapsed * 0.25) * 0.55;
-      rig.update(delta);
-      if (!rig.isBusy && elapsed >= nextAction) {
-        nextAction = elapsed + actionInterval;
-        playNext();
-      }
+      step(delta);
       isDirty = true;
+    } else if (isDirty) {
+      // Still follow the pointer, but only when it moves.
+      step(0.05);
     }
     if (!isDirty) return;
     isDirty = false;
