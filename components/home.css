@@ -11,7 +11,6 @@
     --code-panel: #ffffff;
     --code-border: color-mix(in srgb, var(--line) 70%, #d1d9e0);
     --code-muted: color-mix(in srgb, var(--muted) 70%, #59636e);
-    --code-text: var(--accent);
     --code-switch: color-mix(in srgb, var(--line) 35%, #e6eaef);
 
     display: grid;
@@ -221,46 +220,15 @@
 }
 
 .code-body {
-    position: relative;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
     margin-top: -1px;
     border: 1px solid var(--code-border);
     border-radius: 0 0 6px 6px;
     overflow: hidden;
 }
 
-.code-lines,
-.code-text {
-    margin: 0;
-    padding: 0.5rem 0;
-    font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", monospace;
-    font-size: 12px;
-    line-height: 20px;
-}
-
-.code-lines {
-    padding-inline: 0.75rem 0.6rem;
-    color: var(--code-muted);
-    text-align: right;
-    user-select: none;
-    opacity: 0.7;
-}
-
-.code-text {
-    padding-inline: 0.6rem 1rem;
-    overflow-x: auto;
-    color: var(--code-text);
-}
-
-/* Slot below the text for embedded components such as kipfel.jsx. */
-.code-extra {
-    grid-column: 1 / -1;
-    border-top: 1px solid var(--code-border);
-}
-
+/* The embedded component (kipfel.jsx) is the whole file body. */
 .code-extra > jsx-loader {
-    height: 18rem;
+    height: 22rem;
 }
 
 @media (max-width: 720px) {
@@ -282,12 +250,5 @@
 
     .window {
         padding: 0.75rem;
-    }
-
-    /* Fit the 58-column banner on narrow screens instead of scrolling. */
-    .code-lines,
-    .code-text {
-        font-size: min(12px, 1.85vw);
-        line-height: 1.6;
     }
 }

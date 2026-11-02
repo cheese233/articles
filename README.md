@@ -366,9 +366,9 @@ posts.[slug]    只匹配 /posts/<one>/
 
 目录默认先找该目录下的 `main.<ext>`：存在就直接渲染它，不存在才列出目录。`main.*` 不会出现在目录列表里。
 
-首页 `/` 就是 `main.jsx`：Fluent 风格的亚克力卡片（背景模糊 + 色调 + 噪点、8px 圆角、多层阴影）显示头像、简介、宿主 `entries` 里的最近更新和链接；后面叠着一张仿 GitHub 文件视图的代码卡片（文件名、Code/Blame 切换、行号、等宽 ASCII art），鼠标悬停时随指针倾斜，`prefers-reduced-motion` 下不倾斜。样式在 `components/home.css`，颜色取自 `render/style.css` 的金棕色板，深浅色和窄屏都有适配。
+首页 `/` 就是 `main.jsx`：Fluent 风格的亚克力卡片（背景模糊 + 色调 + 噪点、8px 圆角、多层阴影）显示头像、简介、宿主 `entries` 里的最近更新和链接；后面叠着一张仿 GitHub 文件视图的代码卡片（文件名、Code/Blame 切换，正文就是嵌入的 Kipfel ASCII 渲染），鼠标悬停时随指针倾斜，`prefers-reduced-motion` 下不倾斜。样式在 `components/home.css`，颜色取自 `render/style.css` 的金棕色板，深浅色和窄屏都有适配。
 
-代码卡片底部嵌着 `<jsx-loader path="/components/kipfel.jsx">`：
+代码卡片的正文是 `<jsx-loader path="/components/kipfel.jsx">`：
 
 - `components/kipfel.jsx` 写了 `@hidden`，不进 `index.json`、sitemap、feed，只被首页嵌入；
 - 模型是 `components/kipfel/model/kipfel.glb`（仅限个人使用，许可见同目录 `readme.txt`），用 `three/addons` 的 `GLTFLoader` + `meshopt_decoder` 加载；

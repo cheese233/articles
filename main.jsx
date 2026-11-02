@@ -59,7 +59,7 @@ export default function (shadow) {
         </div>
         <div className="hero-back">
           <TiltWindow>
-            <CodeCard file="cheese233.txt" lines={banner}>
+            <CodeCard file="kipfel.jsx">
               <div className="code-extra">
                 <jsx-loader path="/components/kipfel.jsx"></jsx-loader>
               </div>
@@ -81,16 +81,6 @@ const links = [
     raw: false,
     external: true,
   },
-];
-
-const banner = [
-  "       _                             ____   _____  _____ ",
-  "  ___ | |__    ___   ___  ___   ___ |___ \\ |___ / |___ / ",
-  " / __|| '_ \\  / _ \\ / _ \\/ __| / _ \\  __) |  |_ \\   |_ \\ ",
-  "| (__ | | | ||  __/|  __/\\__ \\|  __/ / __/  ___) | ___) |",
-  " \\___||_| |_| \\___| \\___||___/ \\___||_____||____/ |____/ ",
-  "",
-  "  ~ under construction ~",
 ];
 
 /** Maximum tilt in degrees, split across both axes. */
@@ -166,16 +156,14 @@ const TiltWindow = ({ children }) => (
 );
 
 /**
- * GitHub-like file view: header with Code/Blame tabs, line-number gutter.
- * @param {{ file: string; lines: string[]; children?: Child[] }} props
+ * GitHub-like file view: file name header and Code/Blame tabs; the body is
+ * whatever component is embedded.
+ * @param {{ file: string; children?: Child[] }} props
  */
-const CodeCard = ({ file, lines, children }) => (
+const CodeCard = ({ file, children }) => (
   <figure className="code-card" aria-label={file}>
     <div className="code-meta">
       <span className="code-tab">{file}</span>
-      <span>
-        {lines.length} lines · {new Blob([lines.join("\n")]).size} Bytes
-      </span>
     </div>
     <div className="code-toolbar">
       <span className="code-switch">
@@ -184,12 +172,7 @@ const CodeCard = ({ file, lines, children }) => (
       </span>
       <span className="code-dots" aria-hidden="true">⋯</span>
     </div>
-    <div className="code-body">
-      <pre className="code-lines" aria-hidden="true">
-        {lines.map((_, index) => `${index + 1}\n`)}
-      </pre>
-      <pre className="code-text">{lines.join("\n")}</pre>
-      {children}
-    </div>
+    <div className="code-body">{children}</div>
+
   </figure>
 );
