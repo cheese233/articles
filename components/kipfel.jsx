@@ -52,6 +52,13 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { createMotion } from "./kipfel_motion.js";
 import { createRig } from "./kipfel_rig.js";
+import {
+  backgroundOf,
+  chromaRange,
+  goldHue,
+  hueSpread,
+  lightRangeFor,
+} from "./kipfel_tone.js";
 
 /**
  * ASCII post-processing after https://alexharri.com/blog/ascii-rendering:
@@ -91,8 +98,6 @@ const taps = [[0, 0], [0.6, 0], [-0.6, 0], [0, 0.6], [0, -0.6]];
 /** Global contrast exponent applied to normalized sampling vectors. */
 const contrast = 2.2;
 
-/** Gold hue in OKLCH (from #f5bc6f / #805611), in radians. */
-const goldHue = (75 / 180) * Math.PI;
 
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const darkScheme = matchMedia("(prefers-color-scheme: dark)");
@@ -198,9 +203,15 @@ const goldTone = Fn(([rgb, lightRange]) => {
   const steps = float(5);
   const level = floor(lightness.mul(steps)).add(0.5).div(steps);
   const outL = mix(lightRange.x, lightRange.y, level);
-  const outC = clamp(floor(chroma.mul(1.6).add(0.06).mul(20)).div(20), 0.05, 0.16);
+  const outC = clamp(
+    floor(chroma.mul(1.6).add(0.06).mul(20)).div(20),
+    chromaRange[0],
+    chromaRange[1],
+  );
   const delta = atan(sin(float(goldHue).sub(hue)), cos(float(goldHue).sub(hue)));
-  const outH = hue.add(delta.mul(0.7));
+  // Keep at most `hueSpread` away from gold; kipfel_tone.js checks contrast
+  // over exactly this hue band.
+  const outH = float(goldHue).sub(clamp(delta, -hueSpread, hueSpread));
 
   const lms = labToLms.mul(vec3(outL, outC.mul(cos(outH)), outC.mul(sin(outH))));
   return clamp(fromLms.mul(lms.mul(lms).mul(lms)), 0, 1);
@@ -214,7 +225,7 @@ const goldTone = Fn(([rgb, lightRange]) => {
 const createAscii = (renderer, scene, camera) => {
   const { atlas, vectors } = buildAtlas();
   const grid = uniform(new Vector2(1, 1));
-  const lightRange = uniform(new Vector2(0.36, 0.6));
+  const lightRange = uniform(new Vector2(...lightRangeFor([255, 255, 255])));
   const first = uniformArray(vectors.map((v) => new Vector3(v[0], v[1], v[2])));
   const second = uniformArray(vectors.map((v) => new Vector3(v[3], v[4], v[5])));
 
@@ -299,15 +310,15 @@ const createAscii = (renderer, scene, camera) => {
     cells.setSize(columns, rows);
   };
 
-  const setScheme = () => {
-    lightRange.value.set(...(darkScheme.matches ? [0.68, 0.9] : [0.36, 0.6]));
+  /** @param {[number, number, number]} background panel color, 0..255 */
+  const setBackground = (background) => {
+    lightRange.value.set(...lightRangeFor(background));
   };
-  setScheme();
 
   return {
     pipeline,
     resize,
-    setScheme,
+    setBackground,
     dispose: () => {
       pipeline.dispose();
       cells.dispose();
@@ -457,10 +468,16 @@ export default async function (shadow) {
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
 
+  // Glyph lightness follows the real panel color behind the canvas, so
+  // contrast holds in light, dark and wherever the component is embedded.
+  // The panel swaps colors via CSS, so re-read it after the scheme flips.
   const onScheme = () => {
-    ascii.setScheme();
-    isDirty = true;
+    requestAnimationFrame(() => {
+      ascii.setBackground(backgroundOf(host));
+      isDirty = true;
+    });
   };
+  onScheme();
   darkScheme.addEventListener("change", onScheme);
 
   const dispose = () => {
