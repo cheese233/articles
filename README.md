@@ -58,7 +58,7 @@ npm run deploy     # build + wrangler pages deploy .
 articles/
 ├─ adapters/                 # 每个 adapter 都是可被浏览器执行/加载的源文件
 │  ├─ js.ext.js              # JS 语言 class：只解析 JSDoc
-│  ├─ pages.js.ext.js        # PagesLoader class + compile
+│  ├─ pages.js.ext.js        # .pages.js：模块 handler + compile
 │  ├─ md.ext.pages.js        # .md 工厂：file -> function(shadow)
 │  ├─ html.ext.pages.js      # .html 工厂
 │  ├─ jsx.ext.pages.js       # .jsx 工厂：页面内编译后 import
@@ -163,7 +163,7 @@ render/index.html
 | 文件 | 负责 | 形态 |
 |---|---|---|
 | `js.ext.js` | `.js` | 语言 class：`parse`，不生成 loader |
-| `pages.js.ext.js` | `.pages.js` | `PagesLoader` class + `compile(child)` |
+| `pages.js.ext.js` | `.pages.js` | class：`parse` + 模块 handler + `compile(child)` |
 | `md.ext.pages.js` | `.md` | handler：`function(file)` → `function(shadow)` |
 | `html.ext.pages.js` | `.html` | handler + `compile(child)`：HTML body → handler |
 | `jsx.ext.pages.js` | `.jsx` | handler：import 模块，执行 `default(shadow)` |
@@ -193,39 +193,40 @@ const graph = buildAdapterGraph(index.adapters);
 const chain = adapterChain(ext, graph);
 ```
 
-`loadLoader` 沿 chain 依次 compile：
+`render/lib/adapters.ts` 的 `compileAdapter` 沿 chain 依次 compile，产物是一个普通的 `mount(file, shadow)`，**不是元素类**：
 
 ```ts
+let child = { meta, handler: chain[0].default, body };
 for (const node of chain) {
-  if (mod.compile) child = await mod.compile(child);
-  if (mod.Adapter) child.Adapter = mod.Adapter(child);
+  if (node.compile) child = await node.compile(child);
 }
+return { meta: child.meta, mount: (file, shadow) => child.handler(file)(shadow) };
 ```
 
-- `pages.js.compile`：handler → `HTMLElement` class
+- `pages.js.compile`：子代（md / html / jsx / 目录）保留自己的 handler；`.pages.js` 内容本身用模块 handler（import 文件、执行 `default(shadow)`）
 - `html.compile`：HTML body → handler
 - `md` / 目录：没有 `compile`
-- `js`: 没有 `compile`，`Adapter` 原样透传
+- `js`：语言根节点，只有 `parse`
 
-`js.ext.js` 导出 class，但不是 `HTMLElement`，也没有 `meta`：
+没有 adapter 定义自己的 `HTMLElement`。唯一的元素是下文的懒加载 shim，所有 adapter 都通过它渲染。
+
+`js.ext.js` 只负责 JSDoc：
 
 ```js
 export default class JavaScript {
   static parse = (file) => parseJsDoc(String(file));
-  static Adapter = (child) => child.Adapter;
 }
 ```
 
-`pages.js.ext.js` 是唯一生成 loader class 的薄层，也没有 `meta`：
+`pages.js.ext.js` 是 `.pages.js` 的 handler 和链上的 compile：
 
 ```js
-export default class PagesLoader extends HTMLElement {
+export default class PagesJs {
   static parse = ...;
-  static handler = ...;
-  static mount = ...;
+  static handler = (file) => (shadow) => import(file.path).then((m) => m.default(shadow));
   static compile = (child) => ({
-    meta: child.meta,
-    Adapter: wrap(child.handler),
+    ...child,
+    handler: child.handler ?? PagesJs.handler,
   });
 }
 ```
@@ -259,13 +260,27 @@ export default function (file) {
 
 loader 标签由 render 根据 `AdapterInfo.ext` 定义，adapter 自己不 define。
 
-### 懒加载 loader
+### 懒加载 shim（Proxy）
 
-启动时 `render/lib/loader_shim.ts` 的 `defineLoaders` 为 `meta/index.json` 里的每个 adapter 定义一个极小的 shim 元素（标签由 `shared/ext.ts` 的 `loaderTag` 统一推导：`md-loader`、`html-loader`、`jsx-loader`、`directory-loader`；`js.ext.js` 这种语言根节点不生成标签）。
+`render/lib/loader_shim.ts` 的 `defineLoaders(manifest)` 返回一个只读的 **adapter 注册表 Proxy**，按扩展名取值：`adapters.md`、`adapters.jsx`、`adapters["[...path]"]`（`js.ext.js` 这种语言根节点不在里面）。每个值本身也是一个 Proxy，代表还没加载的 compile 链：
 
-- 定义 shim 不 import 任何 adapter；
-- 实例连接到文档时才加载 `shared/adapter_graph.ts` 和 compile 链，结果按扩展名缓存；
-- 没有 `file` 时用 `render/lib/fetch.ts` 按 `path` 取源文件（同样检查 content-type）；
+| 属性 | 行为 |
+|---|---|
+| `ext` / `info` / `tag` / `read(path)` | 本地字段，不加载任何东西；`tag` 由 `shared/ext.ts` 的 `loaderTag` 推导 |
+| `loaded` | compile 链是否已加载 |
+| 其他任意属性（`mount`、`meta`…） | 异步转发：第一次调用时 import `adapters.ts` 并 compile 整条链，之后直接转发给编译结果 |
+
+- 编译结果按扩展名缓存，并发调用共用同一次 import；失败不会被缓存；
+- 注册表和每个 adapter Proxy 都拒绝写入、定义和删除属性；
+- `then` 永远是 `undefined`，所以误 `await` 一个 adapter Proxy 不会触发加载。
+
+**所有 adapter 都用这一个 shim**：
+
+- 每个 `<ext>-loader` 标签都是同一个 `LoaderShim` 的薄子类，只绑定自己的 adapter Proxy。定义标签不 import 任何 adapter；
+- 实例连接到文档时，用 `adapter.read(path)` 取源文件（`render/lib/fetch.ts`，检查 content-type），再 `adapter.mount(file, shadow)`；
+- 路由（`render/app.ts`）用 `adapters[ext].tag` 创建元素；
+- 目录 adapter 渲染 `main.*` 时，也通过宿主的 `adapters[main.ext].mount(...)`，不再自己 import compile 链；
+- 元素上的 `adapters` 字段就是这个注册表，内容里的脚本可以直接 `shadow.host.adapters.md.mount(file, shadow)`；
 - shim 负责 shadow root、注入 `shadow.css` / `markdown.css`，渲染完成派发 `rendered`，失败派发 `error`；
 - 宿主可以设置 `file` / `site` / `entries` / `route` / `entry`，默认值来自 manifest。
 
@@ -281,7 +296,7 @@ Markdown 管线保留原始 HTML（`allowDangerousHtml`），内容由仓库作�
 | 文件 | 元数据来源 | 渲染方式 |
 |---|---|---|
 | `js.ext.js` | JSDoc：`# 标题`、`@routable`、`@date`、`@tags [...]` | 语言 class，只做 parse |
-| `pages.js.ext.js` | 同上，但默认 routable | `PagesLoader`，负责生成 loader class |
+| `pages.js.ext.js` | 同上，但默认 routable | 模块 handler：import 文件，执行 `default(shadow)` |
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
 | `jsx.ext.pages.js` | JSDoc：同 `js.ext.js`，另有 `@hidden` | 模块默认导出 `function (shadow)`，返回的节点追加到 shadow |
@@ -573,7 +588,7 @@ export default function (shadow) {
 2. `export default function (file) { return function (shadow) {...}; }`；
 3. 不写 `meta`：`ext` / `lang` 全部从文件名解析，依赖树由 `shared/adapter_graph.ts` 校验。
 
-运行时通过 `meta/index.json` 里的 adapter 表发现它；`loadLoader` 沿文件名依赖链执行 `compile`，由 `pages.js` 生成最终 loader class，`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
+运行时通过 `meta/index.json` 里的 adapter 表发现它：`defineLoaders` 为它生成懒加载 Proxy 和 `<ext>-loader` 标签，第一次使用时 `compileAdapter` 沿文件名依赖链执行 `compile`，得到 `mount(file, shadow)`；`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
 
 ## 代码风格
 

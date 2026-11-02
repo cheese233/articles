@@ -16,22 +16,23 @@ const adapterInfo = (ext: string, lang: string) => ({
   pattern: "",
 });
 
-const MarkdownLoader = compilePages({
-  meta: adapterInfo("md", "pages.js"),
-  handler: MarkdownFactory,
-}).Adapter;
-
-const HtmlLoader = compilePages({
-  meta: adapterInfo("html", "pages.js"),
-  handler: HtmlFactory,
-}).Adapter;
-
 describe("adapters", () => {
-  it("wraps factories into loader classes", () => {
-    expect(MarkdownLoader.prototype).to.be.instanceOf(HTMLElement);
-    expect(HtmlLoader.prototype).to.be.instanceOf(HTMLElement);
-    expect(MarkdownLoader.meta?.ext).to.equal("md");
-    expect(HtmlLoader.meta?.ext).to.equal("html");
+  it("compiles to handlers, never to element classes", () => {
+    const markdown = compilePages({
+      meta: adapterInfo("md", "pages.js"),
+      handler: MarkdownFactory,
+    });
+    const html = compilePages({
+      meta: adapterInfo("html", "pages.js"),
+      handler: HtmlFactory,
+    });
+    const pages = compilePages({ meta: adapterInfo("pages.js", "js") });
+
+    // Children keep their own handler; the shim is the only element.
+    expect(markdown.handler).to.equal(MarkdownFactory);
+    expect(html.handler).to.equal(HtmlFactory);
+    expect(pages.handler).to.equal(PagesLoader.handler);
+    expect(PagesLoader.prototype).to.not.be.instanceOf(HTMLElement);
     expect(JavaScript.parse).to.be.a("function");
   });
 

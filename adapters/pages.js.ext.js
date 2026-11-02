@@ -1,62 +1,16 @@
-import { VFile } from "vfile";
 import { parseJsDoc } from "../shared/jsdoc.js";
 
-/** @typedef {import("../shared/types.ts").AdapterInfo} AdapterInfo */
+/** @typedef {import("vfile").VFile} VFile */
 /** @typedef {import("../shared/types.ts").ParsedMeta} ParsedMeta */
+/** @typedef {import("../render/lib/adapters.ts").Handler} Handler */
+/** @typedef {import("../render/lib/adapters.ts").CompileChild} CompileChild */
 
 /**
- * @typedef {(file: VFile) => (shadow: ShadowRoot) => unknown} Handler
+ * `.pages.js`: a module whose default export renders into a shadow root.
+ * The module is the only `<pages-js-loader>` behaviour; the element itself
+ * is the shared lazy shim in render/lib/loader_shim.ts, like every adapter.
  */
-
-/**
- * @typedef {{
- *   meta: AdapterInfo;
- *   handler?: Handler;
- *   Adapter?: typeof PagesLoader;
- * }} CompileChild
- */
-
-/** @type {Handler} */
-const identity = () => () => {};
-
-const isLoader = (/** @type {unknown} */ value) =>
-  typeof value == "function" &&
-  value.prototype instanceof HTMLElement;
-
-const wrap = (/** @type {Handler} */ handler) => {
-  const Adapter = class JSLoader extends HTMLElement {
-    /** @type {VFile | undefined} */
-    file;
-
-    constructor() {
-      super();
-      this.attachShadow({ mode: "open" });
-    }
-
-    async connectedCallback() {
-      try {
-        const file = this.file ??
-          new VFile({ path: this.getAttribute("path") ?? "" });
-        if (!file.path) throw new Error("loader has no path");
-
-        this.file = file;
-        const shadow = this.shadowRoot;
-        if (!shadow) throw new Error("loader has no shadow root");
-
-        await handler(file)(shadow);
-        this.dispatchEvent(new Event("rendered"));
-      } catch (error) {
-        console.error(error);
-        this.dispatchEvent(new Event("error"));
-      }
-    }
-  };
-
-  Adapter.mount = handler;
-  return Adapter;
-};
-
-export default class PagesLoader extends HTMLElement {
+export default class PagesJs {
   /** @param {VFile} file @returns {Promise<ParsedMeta>} */
   static async parse(file) {
     return {
@@ -65,76 +19,36 @@ export default class PagesLoader extends HTMLElement {
     };
   }
 
-  static handler = (/** @type {VFile} */ file) =>
-    async (/** @type {ShadowRoot} */ shadow) => {
-      const path = file.path;
-      if (!path) throw new Error("pages.js file has no path");
+  /** @type {Handler} */
+  static handler = (file) => async (shadow) => {
+    const path = file.path;
+    if (!path) throw new Error("pages.js file has no path");
 
-      const mod = await import(path);
-      if (typeof mod.default != "function")
-        throw new Error(`${path}: default export must be a function`);
+    const mod = await import(new URL(path, location.href).href);
+    if (typeof mod.default != "function")
+      throw new Error(`${path}: default export must be a function`);
 
-      await mod.default(shadow);
-    };
-
-  /** @param {VFile} file */
-  static mount(file) {
-    return async (/** @type {ShadowRoot} */ shadow) => {
-      await this.handler(file)(shadow);
-    };
-  }
+    await mod.default(shadow);
+  };
 
   /**
+   * Children of `pages.js` (md, html, jsx, directories) bring their own
+   * handler; `.pages.js` content itself uses the module handler above.
    * @param {CompileChild} child
-   * @returns {{
-   *   meta: AdapterInfo;
-   *   Adapter: import("../render/lib/adapters.ts").LoaderConstructor;
-   * }}
+   * @returns {CompileChild}
    */
   static compile(child) {
-    const handler = child.handler ?? identity;
-    const Adapter = /** @type {import("../render/lib/adapters.ts").LoaderConstructor} */ (
-      child.Adapter ??
-        (isLoader(handler)
-          ? /** @type {import("../render/lib/adapters.ts").LoaderConstructor} */ (
-            /** @type {unknown} */ (handler)
-          )
-          : wrap(/** @type {Handler} */ (handler)))
-    );
-
-    Adapter.meta = child.meta;
-
+    // For `.pages.js` content the chain starts at this module, so its
+    // default export (this class, not a handler) arrives as `handler`.
+    /** @type {unknown} */
+    const handler = child.handler;
     return {
-      meta: child.meta,
-      Adapter,
+      ...child,
+      handler: typeof handler == "function" && handler != PagesJs
+        ? /** @type {Handler} */ (handler)
+        : PagesJs.handler,
     };
-  }
-
-  /** @type {VFile | undefined} */
-  file;
-
-  #shadow;
-
-  constructor() {
-    super();
-    this.#shadow = this.attachShadow({ mode: "open" });
-  }
-
-  async connectedCallback() {
-    try {
-      const file = this.file ??
-        new VFile({ path: this.getAttribute("path") ?? "" });
-      if (!file.path) throw new Error("pages.js loader has no path");
-
-      this.file = file;
-      const Loader = /** @type {typeof PagesLoader} */ (this.constructor);
-      await Loader.mount(file)(this.#shadow);
-      this.dispatchEvent(new Event("rendered"));
-    } catch (error) {
-      console.error(error);
-      this.dispatchEvent(new Event("error"));
-    }
   }
 }
 
-export const compile = PagesLoader.compile;
+export const compile = PagesJs.compile;

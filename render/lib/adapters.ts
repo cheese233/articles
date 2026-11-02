@@ -1,31 +1,35 @@
-import { VFile } from "vfile";
+import type { VFile } from "vfile";
 import {
   adapterChain,
   buildAdapterGraph,
 } from "../../shared/adapter_graph.ts";
 import type { AdapterIndex, AdapterInfo } from "../../shared/types.ts";
 
-type Handler = (file: VFile) => (shadow: ShadowRoot) => unknown;
+/**
+ * Compile an adapter chain into a plain mount function. This module is only
+ * imported by the lazy shim (render/lib/loader_shim.ts) the first time an
+ * adapter is used; no adapter defines a custom element of its own.
+ */
 
-type CompileChild = {
+export type Handler = (file: VFile) => (shadow: ShadowRoot) => unknown;
+
+export interface CompileChild {
   meta: AdapterInfo;
   handler?: Handler;
   body?: string;
-  Adapter?: LoaderConstructor;
-};
+}
 
 type Compile = (
   child: CompileChild,
 ) => CompileChild | Promise<CompileChild>;
 
-export type LoaderConstructor = (new () => HTMLElement) & {
-  meta?: AdapterInfo;
-  parse?: (file: VFile) => unknown;
-  mount?: (file: VFile) => (shadow: ShadowRoot) => unknown;
-};
+export interface CompiledAdapter {
+  meta: AdapterInfo;
+  mount(file: VFile, shadow: ShadowRoot): Promise<unknown>;
+}
 
 // Promises are cached so concurrent loaders share one chain import.
-const cache = new Map<string, Promise<LoaderConstructor>>();
+const cache = new Map<string, Promise<CompiledAdapter>>();
 
 const loadAdapter = async (info: AdapterInfo) => {
   if (info.file.endsWith(".html")) {
@@ -37,10 +41,10 @@ const loadAdapter = async (info: AdapterInfo) => {
   return { mod: await import(info.file), body: "" };
 };
 
-export const loadLoader = (
+export const compileAdapter = (
   ext: string,
   index: AdapterIndex,
-): Promise<LoaderConstructor> => {
+): Promise<CompiledAdapter> => {
   const cached = cache.get(ext);
   if (cached) return cached;
 
@@ -50,36 +54,40 @@ export const loadLoader = (
   return pending;
 };
 
+/**
+ * Walk the filename chain (`md -> pages.js -> js`): the first module's
+ * default export is the handler, and every module's `compile(child)` may
+ * transform it. The result is the final handler, wrapped as `mount`.
+ */
 const compileChain = async (
   ext: string,
   index: AdapterIndex,
-): Promise<LoaderConstructor> => {
+): Promise<CompiledAdapter> => {
   const graph = buildAdapterGraph(index.adapters);
   const chain = adapterChain(ext, graph);
   const info = chain[0];
-  const { mod, body } = await loadAdapter(info);
+  if (!info) throw new Error(`no adapter for .${ext}`);
+
+  const modules = await Promise.all(chain.map(loadAdapter));
+  const first = modules[0];
 
   let child: CompileChild = {
     meta: info,
-    handler: mod?.default as Handler | undefined,
-    body,
+    handler: first?.mod?.default as Handler | undefined,
+    body: first?.body ?? "",
   };
 
-  for (const node of chain) {
-    const { mod, body } = await loadAdapter(node);
+  for (const { mod, body } of modules) {
     if (body) child = { ...child, body };
-
-    if (mod?.compile) {
-      child = await (mod.compile as Compile)(child);
-    }
-
-    if (mod?.Adapter) {
-      child.Adapter = (mod.Adapter as (child: CompileChild) => LoaderConstructor)(
-        child,
-      );
-    }
+    if (mod?.compile) child = await (mod.compile as Compile)(child);
   }
 
-  if (!child.Adapter) throw new Error(`adapter chain for .${ext} has no loader`);
-  return child.Adapter;
+  const handler = child.handler;
+  if (typeof handler != "function")
+    throw new Error(`adapter chain for .${ext} has no handler`);
+
+  return {
+    meta: child.meta,
+    mount: async (file, shadow) => await handler(file)(shadow),
+  };
 };

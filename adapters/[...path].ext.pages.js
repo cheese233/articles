@@ -1,6 +1,6 @@
-import { VFile } from "vfile";
-import { loadLoader } from "../render/lib/adapters.ts";
 import { findMainEntry, isMainEntry } from "../shared/directory.ts";
+
+/** @typedef {import("vfile").VFile} VFile */
 
 /** @typedef {import("../shared/types.ts").ManifestEntry} ManifestEntry */
 
@@ -36,29 +36,18 @@ const card = (/** @type {ManifestEntry} */ entry) => `
  * @param {VFile} _file
  */
 const factory = (_file) => async (/** @type {ShadowRoot} */ shadow) => {
-  const host = /** @type {HTMLElement & {
-   *   route?: string;
-   *   entries: ManifestEntry[];
-   *   site?: import("../shared/types.ts").SiteConfig;
-   * }} */ (shadow.host);
+  const host = /** @type {import("../render/lib/loader_shim.ts").LoaderElement} */ (
+    shadow.host
+  );
 
   const route = host.route ?? "/";
   const main = findMainEntry(route, host.entries);
 
   if (main) {
-    const response = await fetch("/meta/index.json");
-    if (!response.ok) throw new Error("metadata not found");
-    const index = await response.json();
-    const Loader = await loadLoader(main.ext, index);
-    const mount = /** @type {{ mount?: (file: VFile) => (shadow: ShadowRoot) => unknown }} */ (
-      Loader
-    ).mount;
-    if (!mount) throw new Error(`no mount for .${main.ext}`);
-
-    const source = await fetch(main.file);
-    if (!source.ok) throw new Error(`cannot load ${main.file}`);
-    const file = new VFile({ path: main.file, value: await source.text() });
-    await mount(file)(shadow);
+    // `main.*` goes through the same lazy shim registry as every loader.
+    const adapter = host.adapters[main.ext];
+    if (!adapter) throw new Error(`no adapter for .${main.ext}`);
+    await adapter.mount(await adapter.read(main.file), shadow);
     return;
   }
 

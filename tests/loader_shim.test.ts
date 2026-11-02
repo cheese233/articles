@@ -4,6 +4,7 @@ import { loaderTag, parseAdapterName } from "../shared/ext.ts";
 import type { Manifest } from "../shared/types.ts";
 import {
   defineLoaders,
+  type AdapterRegistry,
   type LoaderElement,
 } from "../render/lib/loader_shim.ts";
 
@@ -55,8 +56,11 @@ describe("lazy loader shim", () => {
     expect(loaderTag("posts.[slug]")).to.equal("posts-segment-loader");
   });
 
+  let adapters: AdapterRegistry;
+
   it("defines loaders without importing the adapter", () => {
-    const tags = defineLoaders(manifest);
+    adapters = defineLoaders(manifest);
+    const tags = Object.values(adapters).map((adapter) => adapter?.tag);
 
     expect(tags).to.include.members([
       "md-loader",
@@ -64,11 +68,37 @@ describe("lazy loader shim", () => {
       "probe-loader",
     ]);
     expect(tags).to.not.include("js-loader");
+    expect("js" in adapters).to.equal(false);
     expect(customElements.get("probe-loader")).to.be.a("function");
     expect(probe.__probeImports).to.equal(undefined);
 
     const element = document.createElement("probe-loader");
     expect(element.shadowRoot).to.be.instanceOf(ShadowRoot);
+    expect(probe.__probeImports).to.equal(undefined);
+  });
+
+  it("uses one shim class for every adapter", () => {
+    const base = (tag: string) =>
+      Object.getPrototypeOf(customElements.get(tag));
+
+    expect(base("probe-loader")).to.equal(base("md-loader"));
+    expect(base("md-loader")).to.equal(base("html-loader"));
+    expect(base("html-loader")).to.equal(base("pages-js-loader"));
+  });
+
+  it("is a read-only registry proxy", () => {
+    const probeAdapter = adapters.probe;
+    const writable = adapters as unknown as Record<string, unknown>;
+
+    expect(probeAdapter?.ext).to.equal("probe");
+    expect(probeAdapter?.loaded).to.equal(false);
+    expect(adapters.missing).to.equal(undefined);
+    expect(() => {
+      "use strict";
+      writable.probe = null;
+    }).to.throw(TypeError);
+    expect(adapters.probe).to.equal(probeAdapter);
+    // Property reads on the lazy proxy never import the chain.
     expect(probe.__probeImports).to.equal(undefined);
   });
 
@@ -81,6 +111,8 @@ describe("lazy loader shim", () => {
     await done;
 
     expect(probe.__probeImports).to.equal(1);
+    expect(adapters.probe?.loaded).to.equal(true);
+    expect(element.adapters).to.equal(adapters);
     expect(element.route).to.equal("/probe");
     expect(element.entries).to.equal(manifest.entries);
     expect(element.shadowRoot?.querySelector(".probe p")?.textContent)
@@ -114,6 +146,18 @@ describe("lazy loader shim", () => {
     expect(probe.__probeImports).to.equal(1);
 
     element.remove();
+  });
+
+  it("mounts through the registry without an element", async () => {
+    const host = document.createElement("div");
+    const shadow = host.attachShadow({ mode: "open" });
+    const file = new VFile({ path: "/direct", value: "<p>direct</p>" });
+
+    await adapters.probe?.mount(file, shadow);
+
+    expect(shadow.querySelector(".probe p")?.textContent).to.equal("direct");
+    // Same compiled chain as the element above.
+    expect(probe.__probeImports).to.equal(1);
   });
 
   it("dispatches error without a path", async () => {

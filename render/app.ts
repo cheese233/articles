@@ -1,7 +1,6 @@
 import { VFile } from "vfile";
 import {
   findDirectoryAdapter,
-  loaderTag,
   matchFileAdapter,
   stripExt,
 } from "../shared/ext.ts";
@@ -15,6 +14,7 @@ import "./fluent.ts";
 import {
   defineLoaders,
   shimStyles,
+  type AdapterRegistry,
   type LoaderElement,
 } from "./lib/loader_shim.ts";
 import {
@@ -116,9 +116,13 @@ const createHost = (route: string) => {
   return host;
 };
 
+/** Lazy adapter registry from `defineLoaders`, set at boot. */
+let adapters: AdapterRegistry = {};
+
 /**
- * Every adapter has a lazy `<ext>-loader` element defined at boot by
- * `defineLoaders`; the adapter chain is imported when the element connects.
+ * Every route mounts through the shared lazy shim: the registry Proxy gives
+ * the adapter's `<ext>-loader` tag, and the adapter chain is imported when
+ * the element connects.
  */
 const mount = async (
   ext: string,
@@ -127,10 +131,10 @@ const mount = async (
   context: AdapterContext,
 ) => {
   const host = createHost(route);
-  const tag = loaderTag(ext);
-  if (!customElements.get(tag)) throw new Error(`no loader for .${ext}`);
+  const adapter = adapters[ext];
+  if (!adapter) throw new Error(`no loader for .${ext}`);
 
-  const element = document.createElement(tag) as LoaderElement;
+  const element = document.createElement(adapter.tag) as LoaderElement;
   const path = file.path ?? route;
   element.file = file;
   element.setAttribute("path", path);
@@ -396,7 +400,7 @@ const navigate = async (path: string) => {
 
 const boot = async () => {
   const current = await getManifest();
-  defineLoaders(current);
+  adapters = defineLoaders(current);
 
   document.documentElement.lang = current.site.language;
   document.querySelectorAll<HTMLElement>("[data-site-title]").forEach((el) => {
