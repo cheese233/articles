@@ -57,6 +57,7 @@ import {
   chromaRange,
   goldHue,
   hueSpread,
+  isLightInk,
   lightRangeFor,
 } from "./kipfel_tone.js";
 
@@ -226,6 +227,10 @@ const createAscii = (renderer, scene, camera) => {
   const { atlas, vectors } = buildAtlas();
   const grid = uniform(new Vector2(1, 1));
   const lightRange = uniform(new Vector2(...lightRangeFor([255, 255, 255])));
+  /** 1 when glyphs are lighter than the panel, 0 when darker. */
+  const ink = uniform(0);
+  /** Minimum coverage inside the model, so it never dissolves to blanks. */
+  const inkFloor = float(0.12);
   const first = uniformArray(vectors.map((v) => new Vector3(v[0], v[1], v[2])));
   const second = uniformArray(vectors.map((v) => new Vector3(v[3], v[4], v[5])));
 
@@ -249,7 +254,14 @@ const createAscii = (renderer, scene, camera) => {
           0.5 - (cy + ty * circleRadius * (cell.width / cell.height)),
         );
         const sample = sceneColor.sample(center.add(local.mul(cellSize)));
-        const value = sqrt(luminance(sample.rgb)).mul(sample.a);
+        // Glyph coverage is ink. Light ink (dark panel) should be dense
+        // where the model is bright; dark ink (light panel) dense where it
+        // is dark, or a black hat turns into sparse `i`s. Empty space
+        // (alpha 0) stays blank either way.
+        const tone = sqrt(luminance(sample.rgb));
+        // A small floor keeps the silhouette where the ink would vanish.
+        const density = max(mix(float(1).sub(tone), tone, ink), inkFloor);
+        const value = density.mul(sample.a);
         sum.addAssign(value);
         color.addAssign(sample.rgb);
       }
@@ -312,7 +324,9 @@ const createAscii = (renderer, scene, camera) => {
 
   /** @param {[number, number, number]} background panel color, 0..255 */
   const setBackground = (background) => {
-    lightRange.value.set(...lightRangeFor(background));
+    const [low, high] = lightRangeFor(background);
+    lightRange.value.set(low, high);
+    ink.value = isLightInk([low, high]) ? 1 : 0;
   };
 
   return {

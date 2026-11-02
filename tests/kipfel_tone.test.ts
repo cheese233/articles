@@ -6,6 +6,7 @@ import {
   contrast,
   goldHue,
   hueSpread,
+  isLightInk,
   lightRangeFor,
   minContrast,
   oklchToLinear,
@@ -62,6 +63,13 @@ describe("kipfel tone", () => {
     const [darkLow] = lightRangeFor(panels.dark!);
     expect(lightHigh).to.be.below(0.5);
     expect(darkLow).to.be.above(0.5);
+  });
+
+  it("inverts glyph density with the ink direction", () => {
+    // Dark ink on the light panel: dark parts (the black cap) get dense
+    // glyphs. Light ink on the dark panel: bright parts do.
+    expect(isLightInk(lightRangeFor(panels.light!))).to.equal(false);
+    expect(isLightInk(lightRangeFor(panels.dark!))).to.equal(true);
   });
 
   it("reads the effective background through shadow roots", () => {

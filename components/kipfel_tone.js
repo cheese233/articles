@@ -113,6 +113,14 @@ export const lightRangeFor = (background) => {
   return [darkest, Math.min(high, darkest + span)];
 };
 
+/**
+ * Whether a range from `lightRangeFor` draws glyphs lighter than the panel.
+ * The shader then maps bright scene areas to dense glyphs; otherwise dark
+ * areas get the dense glyphs, since the ink itself is dark.
+ * @param {[number, number]} range
+ */
+export const isLightInk = ([low, high]) => low + high > 1;
+
 /** Best weakest-glyph contrast the shader can reach on `background`. */
 export const bestContrast = (/** @type {[number, number, number]} */ background) => {
   const [r = 0, g = 0, b = 0] = background;
