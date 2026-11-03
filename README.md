@@ -208,7 +208,7 @@ return { meta: child.meta, mount: (file, shadow) => child.handler(file)(shadow) 
 - `md` / 目录：没有 `compile`
 - `js`：语言根节点，只有 `parse`
 
-没有 adapter 定义自己的 `HTMLElement`。唯一的元素是下文的懒加载 shim，所有 adapter 都通过它渲染。
+没有 adapter 定义自己的 `HTMLElement`。唯一的元素类是下文的 `LoaderShim`，每个 adapter 都是它的 Proxy。
 
 `js.ext.js` 只负责 JSDoc：
 
@@ -260,26 +260,36 @@ export default function (file) {
 
 loader 标签由 render 根据 `AdapterInfo.ext` 定义，adapter 自己不 define。
 
-### 懒加载 shim（Proxy）
+### 懒加载 shim（class Proxy）
 
-`render/lib/loader_shim.ts` 的 `defineLoaders(manifest)` 返回一个只读的 **adapter 注册表 Proxy**，按扩展名取值：`adapters.md`、`adapters.jsx`、`adapters["[...path]"]`（`js.ext.js` 这种语言根节点不在里面）。每个值本身也是一个 Proxy，代表还没加载的 compile 链：
+`render/lib/loader_shim.ts` 里只有一个元素类 `LoaderShim`。**每个 adapter 都是这个 class 的 Proxy**，adapter 本身就是它的元素构造器：
 
-| 属性 | 行为 |
+```js
+customElements.define("md-loader", adapters.md); // defineLoaders 做的事
+new adapters.md();                               // 等同于 createElement("md-loader")
+await adapters.md.mount(file, shadow);           // 不建元素也能渲染
+```
+
+`defineLoaders(manifest)` 返回一个只读的注册表 Proxy，按扩展名取 adapter：`adapters.md`、`adapters.jsx`、`adapters["[...path]"]`（`js.ext.js` 这种语言根节点不在里面）。adapter Proxy 的静态成员：
+
+| 成员 | 行为 |
 |---|---|
-| `ext` / `info` / `tag` / `read(path)` | 本地字段，不加载任何东西；`tag` 由 `shared/ext.ts` 的 `loaderTag` 推导 |
+| `ext` / `info` / `tag` / `manifest` / `adapters` / `read(path)` | 本地字段，不加载任何东西；`tag` 由 `shared/ext.ts` 的 `loaderTag` 推导 |
 | `loaded` | compile 链是否已加载 |
-| 其他任意属性（`mount`、`meta`…） | 异步转发：第一次调用时 import `adapters.ts` 并 compile 整条链，之后直接转发给编译结果 |
+| class 自身的成员（`prototype`、`name`、`Symbol.hasInstance`…） | 原样透传，所以 `instanceof`、`customElements.define` 都正常 |
+| 其他任意静态成员（`mount`、`meta`…） | 异步转发：第一次调用时 import `adapters.ts` 并 compile 整条链，之后直接转发给编译结果 |
 
+- 不拦截构造：浏览器以 Proxy 作为 `new.target` 构造元素，`HTMLElement` 靠它找到定义，实例也靠它拿到自己的 adapter；
+- `customElements.define` 会读 `observedAttributes`、`formAssociated` 等静态属性，这些名字和 `then` 被保留为真实值（`undefined`），不会变成转发函数；误 `await` 一个 adapter 也不会触发加载；
 - 编译结果按扩展名缓存，并发调用共用同一次 import；失败不会被缓存；
-- 注册表和每个 adapter Proxy 都拒绝写入、定义和删除属性；
-- `then` 永远是 `undefined`，所以误 `await` 一个 adapter Proxy 不会触发加载。
+- 注册表和 adapter Proxy 都拒绝写入、定义和删除属性。
 
 **所有 adapter 都用这一个 shim**：
 
-- 每个 `<ext>-loader` 标签都是同一个 `LoaderShim` 的薄子类，只绑定自己的 adapter Proxy。定义标签不 import 任何 adapter；
+- 每个 `<ext>-loader` 的构造器就是对应的 adapter Proxy，背后都是同一个 `LoaderShim`。定义标签不 import 任何 adapter；
 - 实例连接到文档时，用 `adapter.read(path)` 取源文件（`render/lib/fetch.ts`，检查 content-type），再 `adapter.mount(file, shadow)`；
 - 路由（`render/app.ts`）用 `adapters[ext].tag` 创建元素；
-- 目录 adapter 渲染 `main.*` 时，也通过宿主的 `adapters[main.ext].mount(...)`，不再自己 import compile 链；
+- 目录 adapter 渲染 `main.*` 时，也通过宿主的 `adapters[main.ext].mount(...)`；
 - 元素上的 `adapters` 字段就是这个注册表，内容里的脚本可以直接 `shadow.host.adapters.md.mount(file, shadow)`；
 - shim 负责 shadow root、注入 `shadow.css` / `markdown.css`，渲染完成派发 `rendered`，失败派发 `error`；
 - 宿主可以设置 `file` / `site` / `entries` / `route` / `entry`，默认值来自 manifest。
@@ -588,7 +598,7 @@ export default function (shadow) {
 2. `export default function (file) { return function (shadow) {...}; }`；
 3. 不写 `meta`：`ext` / `lang` 全部从文件名解析，依赖树由 `shared/adapter_graph.ts` 校验。
 
-运行时通过 `meta/index.json` 里的 adapter 表发现它：`defineLoaders` 为它生成懒加载 Proxy 和 `<ext>-loader` 标签，第一次使用时 `compileAdapter` 沿文件名依赖链执行 `compile`，得到 `mount(file, shadow)`；`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
+运行时通过 `meta/index.json` 里的 adapter 表发现它：`defineLoaders` 把它包成 `LoaderShim` 的 Proxy 并注册为 `<ext>-loader`，第一次使用时 `compileAdapter` 沿文件名依赖链执行 `compile`，得到 `mount(file, shadow)`；`js.ext.js` 只负责 JSDoc。内容路径通过 `path` 属性传给 loader，例如 `<md-loader path="/hello.md">`。
 
 ## 代码风格
 

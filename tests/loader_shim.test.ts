@@ -77,13 +77,27 @@ describe("lazy loader shim", () => {
     expect(probe.__probeImports).to.equal(undefined);
   });
 
-  it("uses one shim class for every adapter", () => {
-    const base = (tag: string) =>
-      Object.getPrototypeOf(customElements.get(tag));
+  it("defines each adapter proxy as its own element", () => {
+    // The registry value is the element constructor itself.
+    expect(customElements.get("probe-loader")).to.equal(adapters.probe);
+    expect(customElements.get("md-loader")).to.equal(adapters.md);
 
-    expect(base("probe-loader")).to.equal(base("md-loader"));
-    expect(base("md-loader")).to.equal(base("html-loader"));
-    expect(base("html-loader")).to.equal(base("pages-js-loader"));
+    // All of them proxy the same shim class.
+    const prototype = (tag: string) => customElements.get(tag)?.prototype;
+    expect(prototype("probe-loader")).to.equal(prototype("md-loader"));
+    expect(prototype("md-loader")).to.equal(prototype("pages-js-loader"));
+  });
+
+  it("constructs elements from the adapter proxy", () => {
+    const Probe = adapters.probe!;
+    const element = new Probe();
+
+    expect(element.localName).to.equal("probe-loader");
+    expect(element).to.be.instanceOf(Probe);
+    expect(element).to.be.instanceOf(HTMLElement);
+    expect(element.adapters).to.equal(adapters);
+    expect(element.shadowRoot).to.be.instanceOf(ShadowRoot);
+    expect(probe.__probeImports).to.equal(undefined);
   });
 
   it("is a read-only registry proxy", () => {

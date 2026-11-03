@@ -10,43 +10,31 @@ import type {
 import type { CompiledAdapter } from "./adapters.ts";
 
 /**
- * Lazy adapters. `defineLoaders(manifest)` returns a registry Proxy keyed by
- * adapter extension (`adapters.md`, `adapters["[...path]"]`). Each value is
- * itself a Proxy standing in for the compiled adapter chain:
+ * Lazy adapters. There is one element class, `LoaderShim`. Every adapter is
+ * a Proxy of that class, so the adapter *is* its element constructor:
  *
- * - its own fields (`ext`, `info`, `tag`, `loaded`, `read`) are local and
- *   cost nothing;
- * - any other property (`mount`, `meta`, ...) is an async forwarder that
- *   imports and compiles the chain on first use, then calls through.
+ *   customElements.define("md-loader", adapters.md);
+ *   new adapters.md();              // same as createElement("md-loader")
+ *   await adapters.md.mount(file, shadow);
  *
- * Every adapter renders through this one shim: the `<ext>-loader` element
- * defined per adapter is a thin subclass of `LoaderShim`, the router mounts
- * through it, and the directory adapter mounts `main.*` through the same
- * registry. Adapters no longer define elements of their own, so defining
- * every tag at boot imports nothing, and content can embed any loader, for
- * example `<jsx-loader path="/x.jsx"></jsx-loader>`.
+ * The Proxy's own fields (`ext`, `info`, `tag`, `loaded`, `read`, ...) are
+ * local and cost nothing. Any other static member (`mount`, `meta`, ...) is
+ * an async forwarder that imports and compiles the adapter chain on first
+ * use, then calls through. Construction is not trapped: the browser builds
+ * the element with the Proxy as `new.target`, which is how `HTMLElement`
+ * finds the definition and how the instance finds its adapter.
+ *
+ * `defineLoaders(manifest)` returns a read-only registry Proxy keyed by
+ * extension (`adapters.md`, `adapters["[...path]"]`). The router, the
+ * directory adapter (for `main.*`) and embedded content all go through it,
+ * so defining every tag at boot imports nothing and content can embed any
+ * loader, for example `<jsx-loader path="/x.jsx"></jsx-loader>`.
  */
 
 export const shimStyles = ["/render/shadow.css", "/render/markdown.css"];
 
 export const renderedEvent = "rendered";
 export const errorEvent = "error";
-
-export interface LazyAdapter {
-  readonly ext: string;
-  readonly info: AdapterInfo;
-  readonly tag: string;
-  /** Whether the adapter chain has been imported and compiled. */
-  readonly loaded: boolean;
-  /** Read a content path the way this adapter expects it. */
-  read(path: string): Promise<VFile>;
-  /** Render `file` into `shadow`; loads the chain on first call. */
-  mount(file: VFile, shadow: ShadowRoot): Promise<unknown>;
-  /** Compiled chain metadata; loads the chain on first call. */
-  meta(): Promise<AdapterInfo>;
-}
-
-export type AdapterRegistry = Readonly<Record<string, LazyAdapter | undefined>>;
 
 export interface LoaderElement extends HTMLElement {
   file?: VFile;
@@ -59,6 +47,26 @@ export interface LoaderElement extends HTMLElement {
   /** Settles once the first render finished or failed. */
   ready: Promise<void>;
 }
+
+/** An adapter: a Proxy of the shim class with lazy static members. */
+export interface LazyAdapter {
+  new (): LoaderElement;
+  readonly ext: string;
+  readonly info: AdapterInfo;
+  readonly tag: string;
+  readonly manifest: Manifest;
+  readonly adapters: AdapterRegistry;
+  /** Whether the adapter chain has been imported and compiled. */
+  readonly loaded: boolean;
+  /** Read a content path the way this adapter expects it. */
+  read(path: string): Promise<VFile>;
+  /** Render `file` into `shadow`; loads the chain on first call. */
+  mount(file: VFile, shadow: ShadowRoot): Promise<unknown>;
+  /** Compiled chain metadata; loads the chain on first call. */
+  meta(): Promise<AdapterInfo>;
+}
+
+export type AdapterRegistry = Readonly<Record<string, LazyAdapter | undefined>>;
 
 const appendStyles = (target: ShadowRoot) => {
   for (const href of shimStyles) {
@@ -78,91 +86,8 @@ const readFile = async (info: AdapterInfo, path: string) => {
   return new VFile({ path, value: await fetchSource(path, info.ext) });
 };
 
-const createLazy = (info: AdapterInfo, manifest: Manifest) => {
-  let compiled: Promise<CompiledAdapter> | null = null;
-  let loaded = false;
-
-  const load = () =>
-    compiled ??= import("./adapters.ts")
-      .then(({ compileAdapter }) => compileAdapter(info.ext, manifest))
-      .then(
-        (adapter) => {
-          loaded = true;
-          return adapter;
-        },
-        (error: unknown) => {
-          // A failed import must not poison later attempts.
-          compiled = null;
-          throw error;
-        },
-      );
-
-  const own: Record<string, unknown> = {
-    ext: info.ext,
-    info,
-    tag: loaderTag(info.ext),
-    read: (path: string) => readFile(info, path),
-  };
-
-  const lazy = new Proxy(own, {
-    get(target, name) {
-      if (name == "loaded") return loaded;
-      // `then` stays undefined so awaiting the proxy itself is harmless.
-      if (typeof name == "symbol" || name == "then") return undefined;
-      if (Object.hasOwn(target, name)) return target[name];
-
-      return async (...args: unknown[]) => {
-        const adapter = await load() as unknown as Record<string, unknown>;
-        const value = adapter[name];
-        return typeof value == "function"
-          ? (value as (...args: unknown[]) => unknown).apply(adapter, args)
-          : value;
-      };
-    },
-    set: () => false,
-    defineProperty: () => false,
-    deleteProperty: () => false,
-  });
-
-  // Proxy cannot express its forwarded members in TypeScript; the
-  // interface above is the contract the traps implement.
-  return lazy as unknown as LazyAdapter;
-};
-
-const createRegistry = (manifest: Manifest) => {
-  const lazies = new Map<string, LazyAdapter>();
-
-  for (const info of manifest.adapters) {
-    // Language roots such as `js.ext.js` only parse; they never mount.
-    if (info.ext == info.lang) continue;
-    lazies.set(info.ext, createLazy(info, manifest));
-  }
-
-  const lookup = (name: string | symbol) =>
-    typeof name == "string" ? lazies.get(name) : undefined;
-
-  return new Proxy({}, {
-    get: (_, name) => lookup(name),
-    has: (_, name) => lookup(name) != null,
-    ownKeys: () => [...lazies.keys()],
-    getOwnPropertyDescriptor: (_, name) => {
-      const value = lookup(name);
-      return value
-        ? { value, enumerable: true, configurable: true, writable: false }
-        : undefined;
-    },
-    set: () => false,
-    defineProperty: () => false,
-    deleteProperty: () => false,
-  }) as AdapterRegistry;
-};
-
-/** The one loader element; each tag is a subclass bound to its adapter. */
+/** The one loader element. Instances learn their adapter from `new.target`. */
 class LoaderShim extends HTMLElement implements LoaderElement {
-  static adapter: LazyAdapter;
-  static adapters: AdapterRegistry;
-  static manifest: Manifest;
-
   file?: VFile;
   site?: SiteConfig;
   entries: ManifestEntry[];
@@ -171,15 +96,18 @@ class LoaderShim extends HTMLElement implements LoaderElement {
   adapters: AdapterRegistry;
   ready: Promise<void>;
 
+  private adapter: LazyAdapter;
   private settle: () => void = () => {};
   private started = false;
 
   constructor() {
     super();
-    const shim = this.constructor as typeof LoaderShim;
-    this.site = shim.manifest.site;
-    this.entries = shim.manifest.entries;
-    this.adapters = shim.adapters;
+    // The Proxy that was defined for this tag, not LoaderShim itself.
+    const adapter = new.target as unknown as LazyAdapter;
+    this.adapter = adapter;
+    this.site = adapter.manifest.site;
+    this.entries = adapter.manifest.entries;
+    this.adapters = adapter.adapters;
     this.ready = new Promise((resolve) => {
       this.settle = resolve;
     });
@@ -200,11 +128,10 @@ class LoaderShim extends HTMLElement implements LoaderElement {
       const path = this.file?.path ?? this.getAttribute("path") ?? "";
       if (!path) throw new Error(`<${this.localName}> has no path`);
 
-      const adapter = (this.constructor as typeof LoaderShim).adapter;
       this.route ??= path;
-      this.file ??= await adapter.read(path);
+      this.file ??= await this.adapter.read(path);
 
-      await adapter.mount(this.file, shadow);
+      await this.adapter.mount(this.file, shadow);
       this.dispatchEvent(new Event(renderedEvent));
     } catch (error) {
       console.error(error);
@@ -216,24 +143,119 @@ class LoaderShim extends HTMLElement implements LoaderElement {
 }
 
 /**
- * Build the lazy registry and define one `<ext>-loader` per adapter;
+ * Names `customElements.define` reads from a constructor. They must keep
+ * their real (undefined) value instead of becoming lazy forwarders, or
+ * `define` would try to read a function as `observedAttributes`.
+ */
+const reserved = new Set([
+  "observedAttributes",
+  "disabledFeatures",
+  "formAssociated",
+  // Awaiting an adapter must not look like a thenable and load it.
+  "then",
+]);
+
+const createAdapter = (
+  info: AdapterInfo,
+  manifest: Manifest,
+  registry: () => AdapterRegistry,
+) => {
+  let compiled: Promise<CompiledAdapter> | null = null;
+  let loaded = false;
+
+  const load = () =>
+    compiled ??= import("./adapters.ts")
+      .then(({ compileAdapter }) => compileAdapter(info.ext, manifest))
+      .then(
+        (adapter) => {
+          loaded = true;
+          return adapter;
+        },
+        (error: unknown) => {
+          // A failed import must not poison later attempts.
+          compiled = null;
+          throw error;
+        },
+      );
+
+  const own: Record<string, () => unknown> = {
+    ext: () => info.ext,
+    info: () => info,
+    tag: () => loaderTag(info.ext),
+    manifest: () => manifest,
+    adapters: registry,
+    loaded: () => loaded,
+    read: () => (path: string) => readFile(info, path),
+  };
+
+  const adapter = new Proxy(LoaderShim, {
+    get(target, name, receiver) {
+      if (typeof name == "string" && Object.hasOwn(own, name)) {
+        return own[name]?.();
+      }
+      // Real class members (`prototype`, `name`, `Symbol.hasInstance`, ...)
+      // and the names `define` reads stay untouched.
+      if (typeof name == "symbol" || name in target || reserved.has(name)) {
+        return Reflect.get(target, name, receiver);
+      }
+
+      return async (...args: unknown[]) => {
+        const chain = await load() as unknown as Record<string, unknown>;
+        const value = chain[name];
+        return typeof value == "function"
+          ? (value as (...args: unknown[]) => unknown).apply(chain, args)
+          : value;
+      };
+    },
+    has: (target, name) =>
+      (typeof name == "string" && Object.hasOwn(own, name)) ||
+      Reflect.has(target, name),
+    set: () => false,
+    defineProperty: () => false,
+    deleteProperty: () => false,
+  });
+
+  // Proxy cannot express its forwarded statics in TypeScript; LazyAdapter
+  // is the contract the traps implement.
+  return adapter as unknown as LazyAdapter;
+};
+
+const createRegistry = (manifest: Manifest) => {
+  const adapters = new Map<string, LazyAdapter>();
+  const registry = new Proxy({}, {
+    get: (_, name) => typeof name == "string" ? adapters.get(name) : undefined,
+    has: (_, name) => typeof name == "string" && adapters.has(name),
+    ownKeys: () => [...adapters.keys()],
+    getOwnPropertyDescriptor: (_, name) => {
+      const value = typeof name == "string" ? adapters.get(name) : undefined;
+      return value
+        ? { value, enumerable: true, configurable: true, writable: false }
+        : undefined;
+    },
+    set: () => false,
+    defineProperty: () => false,
+    deleteProperty: () => false,
+  }) as AdapterRegistry;
+
+  for (const info of manifest.adapters) {
+    // Language roots such as `js.ext.js` only parse; they never mount.
+    if (info.ext == info.lang) continue;
+    adapters.set(info.ext, createAdapter(info, manifest, () => registry));
+  }
+
+  return registry;
+};
+
+/**
+ * Build the registry and define every adapter as its own `<ext>-loader`;
  * already defined tags are kept.
  */
 export const defineLoaders = (manifest: Manifest) => {
   const adapters = createRegistry(manifest);
 
-  for (const entry of Object.values(adapters)) {
-    if (!entry || customElements.get(entry.tag)) continue;
-    const adapter: LazyAdapter = entry;
-
-    customElements.define(
-      adapter.tag,
-      class extends LoaderShim {
-        static adapter = adapter;
-        static adapters = adapters;
-        static manifest = manifest;
-      },
-    );
+  for (const adapter of Object.values(adapters)) {
+    if (!adapter || customElements.get(adapter.tag)) continue;
+    customElements.define(adapter.tag, adapter);
   }
 
   return adapters;
