@@ -50,5 +50,3 @@ export default class PagesJs {
     };
   }
 }
-
-export const compile = PagesJs.compile;

@@ -197,11 +197,15 @@ const chain = adapterChain(ext, graph);
 
 ```ts
 let child = { meta, handler: chain[0].default, body };
-for (const node of chain) {
-  if (node.compile) child = await node.compile(child);
+for (const mod of chain) {
+  // 具名 export，或 class 默认导出上的 static compile
+  const compile = mod.compile ?? mod.default?.compile;
+  if (compile) child = await compile(child);
 }
 return { meta: child.meta, mount: (file, shadow) => child.handler(file)(shadow) };
 ```
+
+`compile` 和构建期的 `parse` 一样，两种写法任选其一：函数式 adapter 用具名 `export const compile`（如 `html.ext.pages.js`），class adapter 直接写 `static compile`（如 `pages.js.ext.js`），不需要再额外导出一份。
 
 - `pages.js.compile`：子代（md / html / jsx / 目录）保留自己的 handler；`.pages.js` 内容本身用模块 handler（import 文件、执行 `default(shadow)`）
 - `html.compile`：HTML body → handler

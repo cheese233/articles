@@ -3,9 +3,9 @@ import { VFile } from "vfile";
 import HtmlFactory, * as Html from "../adapters/html.ext.pages.js";
 import JavaScript from "../adapters/js.ext.js";
 import MarkdownFactory, * as Markdown from "../adapters/md.ext.pages.js";
-import PagesLoader, {
-  compile as compilePages,
-} from "../adapters/pages.js.ext.js";
+import PagesLoader from "../adapters/pages.js.ext.js";
+
+const compilePages = PagesLoader.compile;
 
 const adapterInfo = (ext: string, lang: string) => ({
   ext,

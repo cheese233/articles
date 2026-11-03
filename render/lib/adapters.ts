@@ -55,6 +55,16 @@ export const compileAdapter = (
 };
 
 /**
+ * An adapter's compile step: a named `compile` export, or a static
+ * `compile` on a class default export (as `parse` is read at build time).
+ */
+const compileOf = (mod: Record<string, unknown> | null) => {
+  const compile = mod?.compile ??
+    (mod?.default as { compile?: unknown } | undefined)?.compile;
+  return typeof compile == "function" ? compile as Compile : null;
+};
+
+/**
  * Walk the filename chain (`md -> pages.js -> js`): the first module's
  * default export is the handler, and every module's `compile(child)` may
  * transform it. The result is the final handler, wrapped as `mount`.
@@ -79,7 +89,8 @@ const compileChain = async (
 
   for (const { mod, body } of modules) {
     if (body) child = { ...child, body };
-    if (mod?.compile) child = await (mod.compile as Compile)(child);
+    const compile = compileOf(mod);
+    if (compile) child = await compile(child);
   }
 
   const handler = child.handler;
