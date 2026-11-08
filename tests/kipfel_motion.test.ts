@@ -188,11 +188,18 @@ describe("kipfel motion", () => {
     expect(gestureNames(after)).to.include("shake");
   });
 
-  it("grooms or yawns when left alone", () => {
+  it("grooms or yawns once she has been left alone a while", () => {
     const motion = create();
     settle(motion);
+
+    const early = new Set<string>();
+    run(motion, 6, undefined, (frame) => {
+      gestureNames(frame).forEach((name) => early.add(name));
+    });
+    expect(early.has("groom") || early.has("yawn")).to.equal(false);
+
     const seen = new Set<string>();
-    run(motion, 8, undefined, (frame) => {
+    run(motion, 12, undefined, (frame) => {
       gestureNames(frame).forEach((name) => seen.add(name));
     });
 

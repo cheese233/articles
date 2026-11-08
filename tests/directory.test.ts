@@ -1,43 +1,31 @@
 import { expect } from "@esm-bundle/chai";
-import { findMainEntry, isMainEntry } from "../shared/directory.ts";
-import type { ManifestEntry } from "../shared/types.ts";
+import { findMain, isMainEntry } from "../shared/directory.ts";
+import type { MainFile } from "../shared/types.ts";
 
-const entry = (file: string, route: string): ManifestEntry => ({
-  stem: route.replace(/^\//, ""),
-  route,
-  ext: file.split(".").slice(1).join("."),
-  file,
-  title: route,
-  date: "",
-  updated: "",
-  author: "",
-  tags: [],
+const main = (dir: string, ext: string): MainFile => ({
+  dir,
+  ext,
+  file: `${dir}main.${ext}`,
+  footer: "",
 });
 
 describe("directory main", () => {
-  it("finds main in a directory", () => {
-    const entries = [
-      entry("/posts/a.md", "/posts/a"),
-      entry("/posts/main.md", "/posts/main"),
-    ];
+  it("finds the main file of a directory", () => {
+    const mains = [main("/posts/", "md"), main("/", "jsx")];
 
-    expect(findMainEntry("/posts/", entries)?.file).to.equal("/posts/main.md");
-    expect(findMainEntry("/posts", entries)?.file).to.equal("/posts/main.md");
-  });
-
-  it("finds root main and ignores nested main files", () => {
-    const entries = [
-      entry("/main.md", "/main"),
-      entry("/posts/main.md", "/posts/main"),
-    ];
-
-    expect(findMainEntry("/", entries)?.file).to.equal("/main.md");
-    expect(findMainEntry("/posts/", entries)?.file).to.equal("/posts/main.md");
+    expect(findMain("/", mains)?.file).to.equal("/main.jsx");
+    expect(findMain("/posts/", mains)?.file).to.equal("/posts/main.md");
+    expect(findMain("/posts", mains)?.file).to.equal("/posts/main.md");
   });
 
   it("returns null when the directory has no main", () => {
-    const entries = [entry("/posts/a.md", "/posts/a")];
-    expect(findMainEntry("/posts/", entries)).to.equal(null);
+    expect(findMain("/", [main("/posts/", "md")])).to.equal(null);
+    expect(findMain("/posts/", [])).to.equal(null);
+  });
+
+  it("carries the directory footer", () => {
+    const mains = [{ ...main("/", "jsx"), footer: "credit" }];
+    expect(findMain("/", mains)?.footer).to.equal("credit");
   });
 
   it("recognizes main entries for listing filters", () => {

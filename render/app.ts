@@ -9,14 +9,14 @@ import type {
   EntryMeta,
   Manifest,
 } from "../shared/types.ts";
-import { findMainEntry } from "../shared/directory.ts";
+import { findMain } from "../shared/directory.ts";
 import "./fluent.ts";
 import {
   defineLoaders,
   shimStyles,
   type AdapterRegistry,
-  type LoaderElement,
 } from "./lib/loader_shim.ts";
+import { mountElement } from "./lib/mount.ts";
 import {
   fetchEntry,
   fetchManifest,
@@ -120,9 +120,9 @@ const createHost = (route: string) => {
 let adapters: AdapterRegistry = {};
 
 /**
- * Every route mounts through the shared lazy shim: the registry Proxy gives
- * the adapter's `<ext>-loader` tag, and the adapter chain is imported when
- * the element connects.
+ * Every route mounts through its loader element: the registry gives the
+ * adapter's `<ext>-loader`, and the element imports the adapter chain and
+ * renders into its own shadow root when it connects.
  */
 const mount = async (
   ext: string,
@@ -130,49 +130,26 @@ const mount = async (
   route: string,
   context: AdapterContext,
 ) => {
-  const host = createHost(route);
   const adapter = adapters[ext];
   if (!adapter) throw new Error(`no loader for .${ext}`);
 
-  const element = document.createElement(adapter.tag) as LoaderElement;
-  const path = file.path ?? route;
-  element.file = file;
-  element.setAttribute("path", path);
-  element.site = context.site;
-  element.entries = context.entries;
-  element.route = context.route;
-  element.entry = context.entry;
-
-  const shadow = element.shadowRoot;
-  if (!shadow) throw new Error("missing loader shadow root");
-
-  let timeout = 0;
-
-  const rendered = new Promise<void>((resolve, reject) => {
-    element.addEventListener("rendered", () => resolve(), { once: true });
-    element.addEventListener(
-      "error",
-      () => reject(new Error(`failed to render ${route}`)),
-      { once: true },
-    );
-
-    timeout = window.setTimeout(
-      () => reject(new Error(`render timeout: ${route}`)),
-      15000,
-    );
-  });
-
+  const host = createHost(route);
   document.body.classList.add("is-loading");
 
   try {
-    host.append(element);
-    await rendered;
+    const element = await mountElement(adapter, host, {
+      file,
+      path: file.path ?? route,
+      route,
+      entry: context.entry,
+    });
+
+    const shadow = element.shadowRoot;
+    if (!shadow) throw new Error("missing loader shadow root");
+    return shadow;
   } finally {
-    window.clearTimeout(timeout);
     document.body.classList.remove("is-loading");
   }
-
-  return shadow;
 };
 
 const escapeHtml = (value: string) =>
@@ -251,16 +228,14 @@ const renderDirectory = async (current: Manifest, route: string) => {
     entry: null,
   };
 
-  // A directory rendered through its `main.<ext>` uses that entry's footer.
-  const main = findMainEntry(route, current.entries);
-  const [meta] = await Promise.all([
-    main ? fetchEntry(main.stem) : null,
-    mount(info.ext, file, route, context),
-  ]);
+  // A directory rendered through its `main.<ext>` uses that file's footer.
+  const main = findMain(route, current.mains);
+
+  await mount(info.ext, file, route, context);
 
   setTitle(route == "/" ? undefined : labelOf(route));
   setDescription(current.site.description);
-  setFooter(meta?.footer);
+  setFooter(main?.footer);
 };
 
 const renderNotFound = async (current: Manifest) => {

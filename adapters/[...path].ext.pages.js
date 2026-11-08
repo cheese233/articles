@@ -1,4 +1,5 @@
-import { findMainEntry, isMainEntry } from "../shared/directory.ts";
+import { findMain, isMainEntry } from "../shared/directory.ts";
+import { mountElement } from "../render/lib/mount.ts";
 
 /** @typedef {import("vfile").VFile} VFile */
 
@@ -41,13 +42,14 @@ const factory = (_file) => async (/** @type {ShadowRoot} */ shadow) => {
   );
 
   const route = host.route ?? "/";
-  const main = findMainEntry(route, host.entries);
+  const main = findMain(route, host.mains);
 
   if (main) {
-    // `main.*` goes through the same lazy shim registry as every loader.
+    // The directory's `main.*` renders through its own loader element, so the
+    // page keeps a normal loader shadow root, its own styles and its metadata.
     const adapter = host.adapters[main.ext];
     if (!adapter) throw new Error(`no adapter for .${main.ext}`);
-    await adapter.mount(await adapter.read(main.file), shadow);
+    await mountElement(adapter, shadow, { path: main.file, route });
     return;
   }
 

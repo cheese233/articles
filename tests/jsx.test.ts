@@ -28,6 +28,7 @@ const manifest: Manifest = {
     adapter("jsx.ext.pages.js"),
   ],
   entries: [],
+  mains: [],
   dirs: [],
 };
 

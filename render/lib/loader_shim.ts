@@ -3,6 +3,7 @@ import { loaderTag } from "../../shared/ext.ts";
 import type {
   AdapterInfo,
   EntryMeta,
+  MainFile,
   Manifest,
   ManifestEntry,
   SiteConfig,
@@ -40,6 +41,7 @@ export interface LoaderElement extends HTMLElement {
   file?: VFile;
   site?: SiteConfig;
   entries: ManifestEntry[];
+  mains: MainFile[];
   route?: string;
   entry: EntryMeta | null;
   /** Every adapter, so content can mount others without importing them. */
@@ -91,6 +93,7 @@ class LoaderShim extends HTMLElement implements LoaderElement {
   file?: VFile;
   site?: SiteConfig;
   entries: ManifestEntry[];
+  mains: MainFile[];
   route?: string;
   entry: EntryMeta | null = null;
   adapters: AdapterRegistry;
@@ -107,6 +110,7 @@ class LoaderShim extends HTMLElement implements LoaderElement {
     this.adapter = adapter;
     this.site = adapter.manifest.site;
     this.entries = adapter.manifest.entries;
+    this.mains = adapter.manifest.mains;
     this.adapters = adapter.adapters;
     this.ready = new Promise((resolve) => {
       this.settle = resolve;
@@ -260,3 +264,4 @@ export const defineLoaders = (manifest: Manifest) => {
 
   return adapters;
 };
+

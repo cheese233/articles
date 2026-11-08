@@ -5,7 +5,6 @@ import { isMainEntry } from "./shared/directory.ts";
 
 /**
  * # 主页
- * @routable
  * @date 2026-11-01
  * @footer 3D 模型 [キプフェル Kipfel](https://booth.pm/ja/items/5813187) © もち山金魚
  * @footer 仅限个人使用，见 [利用规约](https://mochiyama.com/license_en)；不适用本站许可
@@ -58,13 +57,11 @@ export default function (shadow) {
           </AcrylicCard>
         </div>
         <div className="hero-back">
-          <TiltWindow>
-            <CodeCard file="kipfel.jsx">
-              <div className="code-extra">
-                <jsx-loader path="/components/kipfel.jsx"></jsx-loader>
-              </div>
-            </CodeCard>
-          </TiltWindow>
+          <CodeCard file="kipfel.jsx">
+            <div className="code-extra">
+              <jsx-loader path="/components/kipfel.jsx"></jsx-loader>
+            </div>
+          </CodeCard>
         </div>
       </div>
     </>
@@ -82,9 +79,6 @@ const links = [
     external: true,
   },
 ];
-
-/** Maximum tilt in degrees, split across both axes. */
-const tiltRange = 12;
 
 /** @param {{ children?: Child[] }} props */
 const AcrylicCard = ({ children }) => (
@@ -108,51 +102,6 @@ const Recent = ({ entries }) => (
       )
       : <p className="empty">这里还没有内容。</p>}
   </section>
-);
-
-/**
- * Perspective tilt that follows the pointer. Skipped entirely when the
- * reader prefers reduced motion.
- * @param {HTMLElement} element
- */
-const tilt = (element) => {
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-  /** @param {string} transform @param {number} duration @param {string} easing */
-  const animate = (transform, duration, easing) =>
-    element.animate([{ transform }], {
-      duration,
-      easing,
-      fill: "forwards",
-    });
-
-  element.addEventListener("pointermove", (event) => {
-    if (event.pointerType != "mouse") return;
-    const box = element.getBoundingClientRect();
-    const x = (event.clientX - box.left) / box.width;
-    const y = (event.clientY - box.top) / box.height;
-    const rotateY = (tiltRange / 2 - x * tiltRange).toFixed(2);
-    const rotateX = (y * tiltRange - tiltRange / 2).toFixed(2);
-    animate(
-      `perspective(${box.width}px) rotateX(${rotateX}deg) ` +
-        `rotateY(${rotateY}deg)`,
-      300,
-      "ease-out",
-    );
-  });
-
-  element.addEventListener("pointerleave", () => {
-    animate(
-      `perspective(${element.clientWidth}px) rotateX(0deg) rotateY(0deg)`,
-      600,
-      "cubic-bezier(0.34, 1.56, 0.64, 1)",
-    );
-  });
-};
-
-/** @param {{ children?: Child[] }} props */
-const TiltWindow = ({ children }) => (
-  <div className="window" ref={tilt}>{children}</div>
 );
 
 /**

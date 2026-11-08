@@ -1,10 +1,12 @@
 import { mkdir, readFile, rm, stat } from "node:fs/promises";
 import * as path from "node:path";
+import { isMainEntry } from "../../shared/directory.ts";
 import { matchFileAdapter, stripExt } from "../../shared/ext.ts";
 import { linkTimeline, sortEntries } from "../../shared/order.ts";
 import type {
   AdapterInfo,
   EntryMeta,
+  MainFile,
   Manifest,
   ManifestEntry,
   ParsedMeta,
@@ -142,6 +144,7 @@ export default async function (): Promise<SiteData> {
   }
 
   const entries: EntryMeta[] = [];
+  const mains: MainFile[] = [];
   const dirs = new Set<string>(["/"]);
 
   for (const [stem, records] of groups) {
@@ -152,6 +155,21 @@ export default async function (): Promise<SiteData> {
         `multiple routable variants for ${stem}: ` +
           routable.map((record) => record.info.ext).join(", "),
       );
+
+    // A directory's `main.*` renders that directory without being routable
+    // itself, so it never becomes an entry, sidecar, sitemap or feed item.
+    const main = routable[0] ?? records[0];
+    if (isMainEntry(main.file)) {
+      const dir = `/${stem.slice(0, -"main".length)}`;
+      mains.push({
+        dir,
+        ext: main.info.ext,
+        file: main.file,
+        footer: main.footer,
+      });
+      dirs.add(dir);
+    }
+
     if (!routable.length) continue;
 
     const canonical = routable[0];
@@ -214,6 +232,7 @@ export default async function (): Promise<SiteData> {
       file: encodePath(adapter.file),
     })),
     entries: manifestEntries,
+    mains: mains.sort((a, b) => (a.dir < b.dir ? -1 : a.dir > b.dir ? 1 : 0)),
     dirs: [...dirs].sort(),
   };
 

@@ -44,11 +44,25 @@ export interface ManifestEntry {
   tags: string[];
 }
 
+/**
+ * A directory's `main.<ext>`: rendered whenever that directory is requested,
+ * never routed on its own (`@routable` stays off).
+ */
+export interface MainFile {
+  /** Directory route with a trailing slash: `/` or `/posts/`. */
+  dir: string;
+  ext: string;
+  file: string;
+  /** Page footer for the directory, from the file's `@footer`. */
+  footer: string;
+}
+
 export interface Manifest {
   v: number;
   site: SiteConfig;
   adapters: AdapterInfo[];
   entries: ManifestEntry[];
+  mains: MainFile[];
   dirs: string[];
 }
 

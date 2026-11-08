@@ -1,21 +1,14 @@
-import type { ManifestEntry } from "./types.ts";
+import type { MainFile } from "./types.ts";
 
 export const isMainEntry = (file: string) =>
   /(^|\/)main\.[^/]+$/.test(file);
 
 /**
- * A directory route renders `main.<ext>` when it exists; otherwise the
- * directory adapter lists the directory.
+ * A directory route renders its `main.<ext>` when the build recorded one;
+ * otherwise the directory adapter lists the directory. `main.*` is not an
+ * entry of its own, so it is only reachable through the directory route.
  */
-export const findMainEntry = (
-  route: string,
-  entries: ManifestEntry[],
-) => {
+export const findMain = (route: string, mains: MainFile[]) => {
   const dir = route.endsWith("/") ? route : `${route}/`;
-
-  return entries.find((entry) => {
-    if (!entry.file.startsWith(`${dir}main.`)) return false;
-    const tail = entry.file.slice(`${dir}main.`.length);
-    return !tail.includes("/");
-  }) ?? null;
+  return mains.find((main) => main.dir == dir) ?? null;
 };

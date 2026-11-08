@@ -63,7 +63,7 @@ articles/
 │  ├─ html.ext.pages.js      # .html 工厂
 │  ├─ jsx.ext.pages.js       # .jsx 工厂：页面内编译后 import
 │  └─ [...path].ext.pages.js # 目录工厂
-├─ main.jsx                  # 首页
+├─ main.jsx                  # 首页：目录的 main，不单独路由
 ├─ components/               # 被嵌入的组件与样式（home.css、kipfel.jsx、kipfel/model/）
 ├─ 404.md                    # 404 中间件
 ├─ README.md                 # 仓库说明（带 frontmatter，路由 /README）
@@ -123,7 +123,7 @@ Thumbs.db
 项目**不打包自己的代码**；只有 `node_modules` 里的依赖会被 Rolldown 打包到 `vendor/`，包括 `fluentui-webcomponents`。
 
 ```text
-render/index.html
+index.html（由 render/index.hbs 生成）
   └─ render/boot.js               # 注册 sw.js，等待它接管页面
        └─ import("/render/app.ts")
             └─ Service Worker 拦截 .ts 请求
@@ -138,6 +138,8 @@ render/index.html
 - 裸 import（`vfile`、`yaml`、`unified` 等）由构建生成的 import map 指向 `vendor/*.js`。
 - `sw.js.hbs` 构建时注入 `ts-blank-space` 的哈希 URL，生成 `sw.js`。
 - `ts-blank-space` 只擦除类型，不做降级；本项目遵守 `erasableSyntaxOnly`。
+
+`index.html` 只有外壳和一个空的 `#main`：`render/app.ts` 决定当前 URL 对应哪个 adapter 后，用 `mountElement` 直接创建那个 `<ext>-loader` 元素插进 `#main`，内容由元素自己的 shadow root 渲染，外壳从不拼接页面内容。
 
 ## UI 与配色
 
@@ -292,11 +294,11 @@ await adapters.md.mount(file, shadow);           // 不建元素也能渲染
 
 - 每个 `<ext>-loader` 的构造器就是对应的 adapter Proxy，背后都是同一个 `LoaderShim`。定义标签不 import 任何 adapter；
 - 实例连接到文档时，用 `adapter.read(path)` 取源文件（`render/lib/fetch.ts`，检查 content-type），再 `adapter.mount(file, shadow)`；
-- 路由（`render/app.ts`）用 `adapters[ext].tag` 创建元素；
-- 目录 adapter 渲染 `main.*` 时，也通过宿主的 `adapters[main.ext].mount(...)`；
+- `render/lib/mount.ts` 的 `mountElement(adapter, target, { path, file, route, entry })` 是唯一的挂载入口（`loader_shim.ts` 只负责定义元素和注册表）：创建 `<ext>-loader`、设好字段、插进 target，等第一个 `rendered`（失败或 15 秒超时则 reject）后把元素交回去；
+- 路由（`render/app.ts`）和目录 adapter 渲染 `main.*` 时都只调 `mountElement`，所以首页内容和别的页面一样，活在自己的 loader shadow root 里；
 - 元素上的 `adapters` 字段就是这个注册表，内容里的脚本可以直接 `shadow.host.adapters.md.mount(file, shadow)`；
 - shim 负责 shadow root、注入 `shadow.css` / `markdown.css`，渲染完成派发 `rendered`，失败派发 `error`；
-- 宿主可以设置 `file` / `site` / `entries` / `route` / `entry`，默认值来自 manifest。
+- 宿主可以设置 `file` / `site` / `entries` / `mains` / `route` / `entry`，默认值来自 manifest。
 
 所以正文（md / html / jsx）可以直接嵌入其他 loader，按需加载：
 
@@ -314,7 +316,7 @@ Markdown 管线保留原始 HTML（`allowDangerousHtml`），内容由仓库作�
 | `md.ext.pages.js` | YAML frontmatter / 第一个 `#` 标题 | 工厂函数渲染 markdown |
 | `html.ext.pages.js` | `<meta name="title/date/tags/description">` | 工厂函数渲染 HTML |
 | `jsx.ext.pages.js` | JSDoc：同 `js.ext.js`，另有 `@hidden` | 模块默认导出 `function (shadow)`，返回的节点追加到 shadow |
-| `[...path].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表 |
+| `[...path].ext.pages.js` | — | 工厂函数用 loader 实例字段渲染列表；目录有 `main.*` 时创建对应的 `<ext>-loader` 元素渲染它 |
 
 ### JSX
 
@@ -336,7 +338,7 @@ Markdown 管线保留原始 HTML（`allowDangerousHtml`），内容由仓库作�
 - `.jsx` 永远以 `text/jsx` 源码形式提供，`fetchSource` 和 “view source” 拿到的就是 JSX；Service Worker 只处理 `.ts`。
 - 测试里 sucrase 无法直接在浏览器加载（CommonJS 依赖多），`web-test-runner.config.js` 把 `sucrase` 解析到一个 stub，由它通过 server command 在 Node 里执行真正的 `transform`，`jsx_loader.ts` 本身不变。
 - `render/lib/jsx.ts` 是极小的 DOM 工厂：直接生成真实节点，没有虚拟 DOM。支持 `className`、`style` 对象（含 `--custom` 属性）、`on*` 事件、`ref`、children 数组、`Fragment`、函数组件和 `fluent-*` 等自定义元素；对象/数组值按 property 设置（例如给 loader 传 `entries`），其余按 attribute。
-- 元数据：`# 标题`、`@routable`、`@date`、`@tags`、`@footer`。只有写了 `@routable` 才会路由；`@hidden` 会强制不路由（不进 `index.json`、sitemap、feed），适合只被嵌入的组件。
+- 元数据：`# 标题`、`@routable`、`@date`、`@tags`、`@footer`。只有写了 `@routable` 才会路由；`@hidden` 会强制不路由（不进 `index.json`、sitemap、feed），适合只被嵌入的组件。目录的 `main.*` 两个都不用写：它由目录路由渲染，不需要自己成为一页。
 
 ```jsx
 /**
@@ -393,9 +395,9 @@ posts.[slug]    只匹配 /posts/<one>/
 
 文件名里的点会变成路径分隔符，再按 `*` / `**` 段匹配。
 
-目录默认先找该目录下的 `main.<ext>`：存在就直接渲染它，不存在才列出目录。`main.*` 不会出现在目录列表里。
+目录默认先找该目录下的 `main.<ext>`：存在就直接渲染它，不存在才列出目录。`main.*` 不写 `@routable`（首页的 `main.jsx` 就是这样），所以它没有 entry、没有 sidecar，`/main` 是 404，只能经由目录路由渲染；构建把它的 `dir` / `ext` / `file` / `footer` 写进 `meta/index.json` 的 `mains`，目录 adapter 用它找到文件、站点 footer 用它取文字。`main.*` 不会出现在目录列表里。
 
-首页 `/` 就是 `main.jsx`：Fluent 风格的亚克力卡片（背景模糊 + 色调 + 噪点、8px 圆角、多层阴影）显示头像、简介、宿主 `entries` 里的最近更新和链接；后面叠着一张仿 GitHub 文件视图的代码卡片（文件名、Code/Blame 切换，正文就是嵌入的 Kipfel ASCII 渲染），鼠标悬停时随指针倾斜，`prefers-reduced-motion` 下不倾斜。样式在 `components/home.css`，颜色取自 `render/style.css` 的金棕色板，深浅色和窄屏都有适配。
+首页 `/` 就是 `main.jsx`：Fluent 风格的亚克力卡片（背景模糊 + 色调 + 噪点、8px 圆角、多层阴影）显示头像、简介、宿主 `entries` 里的最近更新和链接；后面叠着一张仿 GitHub 文件视图的代码卡片（文件名、Code/Blame 切换，正文就是嵌入的 Kipfel ASCII 渲染）。样式在 `components/home.css`，卡片本身取自 `render/style.css` 的金棕色板，深浅色和窄屏都有适配；代码卡片直接用 GitHub 的调色板，深色下（`#151b23` 标题栏、`#0d1117` 面板、`#3d444d` 描边、`#f0f6fc` 文字、`#9198a1` 次要文字、`rgba(101, 108, 118, 0.2)` 的分段背景）与 github.com 的 blob 视图一致。
 
 代码卡片的正文是 `<jsx-loader path="/components/kipfel.jsx">`：
 
@@ -452,7 +454,7 @@ posts.[slug]    只匹配 /posts/<one>/
 
 - 行内的 `[文字](https://...)` 或 `[文字](/path)` 渲染成链接，外链在新标签页打开；
 - 只生成文本节点和 `<a>`，元数据里的 HTML 不会被解析；
-- 目录页（例如 `/` 渲染 `main.jsx`）使用其 `main.*` 的 footer；没有 footer 的页面、404 和错误页会清空。
+- 目录页（例如 `/` 渲染 `main.jsx`）使用 `mains` 里记录的 `main.*` footer：它随 `index.json` 一起下发，所以 `main.*` 不需要 routable，也不生成 sidecar；没有 footer 的页面、404 和错误页会清空。
 
 没有 adapter 认领的内容文件（图片、样式、模型，如 `imgs/avatar.png`、`components/home.css`）只作为静态资源提供，不生成元数据、不路由。
 
@@ -485,6 +487,9 @@ posts.[slug]    只匹配 /posts/<one>/
   "entries": [
     { "stem": "hello", "route": "/hello", "ext": "md", "file": "/hello.md", "title": "...", "date": "...", "updated": "...", "author": "...", "tags": [] }
   ],
+  "mains": [
+    { "dir": "/", "ext": "jsx", "file": "/main.jsx", "footer": "..." }
+  ],
   "dirs": ["/", "/posts/"]
 }
 ```
@@ -516,7 +521,7 @@ posts.[slug]    只匹配 /posts/<one>/
 - 键是**去掉扩展名的 stem**，避免“要先知道 suffix 才能取 metadata”的循环。
 - 同一个 stem 可以有多个变体，但**最多一个 routable**；否则构建失败。
 - `prev` 是更旧的一篇，`next` 是更新的一篇；有了它们，整条时间线只靠 sidecar 就能走完。
-- 非 routable 的内容不写入 sidecar，也不进 `index.json`、sitemap、feed。
+- 非 routable 的内容不写入 sidecar，也不进 sitemap、feed；唯一的例外是目录的 `main.*`：它以 `mains` 的形式留在 `index.json` 里（只有 `dir` / `ext` / `file` / `footer`），仍然不是 entry、不参与排序和时间线。
 
 另外生成 `sitemap.xml`（只做 SEO，不当客户端路由表）、`atom.xml`、`feed.json`、`robots.txt`。
 

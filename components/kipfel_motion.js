@@ -320,7 +320,7 @@ export const createMotion = ({ tracks, random = Math.random }) => {
   let queue = [];
   let swipeCooldown = 0;
   let nextFlick = 1.5;
-  let nextBored = 5;
+  let nextBored = 10;
   let hasNoticed = false;
 
   const busy = () => active.some((g) => !earFlicks.includes(g.name));
@@ -400,13 +400,13 @@ export const createMotion = ({ tracks, random = Math.random }) => {
 
     if (watchTime >= nextFlick) {
       play(random() < 0.5 ? "ear_flick_l" : "ear_flick_r");
-      nextFlick = watchTime + 1.2 + random() * 3.5;
+      nextFlick = watchTime + 3 + random() * 6;
     }
 
-    // Left alone she gets on with cat things.
-    if (stillFor > 4 && watchTime >= nextBored && !busy()) {
+    // Left alone she gets on with cat things, at her own pace.
+    if (stillFor > 8 && watchTime >= nextBored && !busy()) {
       play(random() < 0.6 ? "groom" : "yawn");
-      nextBored = watchTime + 6 + random() * 5;
+      nextBored = watchTime + 18 + random() * 12;
     }
 
     const next = queue[0];

@@ -7,6 +7,7 @@ import {
   type AdapterRegistry,
   type LoaderElement,
 } from "../render/lib/loader_shim.ts";
+import { mountElement } from "../render/lib/mount.ts";
 
 const adapter = (name: string, dir = "/adapters") =>
   parseAdapterName(name, `${dir}/${name}`);
@@ -28,6 +29,7 @@ const manifest: Manifest = {
     adapter("probe.ext.pages.js", "/tests/fixtures"),
   ],
   entries: [],
+  mains: [],
   dirs: [],
 };
 
@@ -172,6 +174,26 @@ describe("lazy loader shim", () => {
     expect(shadow.querySelector(".probe p")?.textContent).to.equal("direct");
     // Same compiled chain as the element above.
     expect(probe.__probeImports).to.equal(1);
+  });
+
+  it("creates the loader element for a path", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: "open" });
+
+    const element = await mountElement(adapters.probe!, shadow, {
+      path: "/probe",
+      file: new VFile({ path: "/probe", value: "<p>element</p>" }),
+    });
+
+    expect(element.localName).to.equal("probe-loader");
+    expect(shadow.querySelector("probe-loader")).to.equal(element);
+    expect(element.route).to.equal("/probe");
+    expect(element.mains).to.equal(manifest.mains);
+    expect(element.shadowRoot?.querySelector(".probe p")?.textContent)
+      .to.equal("element");
+
+    host.remove();
   });
 
   it("dispatches error without a path", async () => {
