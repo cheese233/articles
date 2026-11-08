@@ -2,14 +2,14 @@ import { PropertyBinding, Quaternion, Vector3 } from "three/webgpu";
 
 /**
  * Pose driver for the Kipfel avatar's own skeleton (Hips -> Spine -> Chest
- * -> ..., shared by both skinned meshes). Poses are plain data written every
- * frame by components/kipfel_motion.js, so behaviour can react to input
- * instead of replaying fixed clips.
+ * -> ..., shared by both skinned meshes). The baked clips set the body pose
+ * (components/kipfel_clips.js); `turn` layers pointer reactions from
+ * components/kipfel_motion.js on top, and `face` sets the morphs.
  *
- * A pose turns bones about the axes of the model's rest pose (the model
- * faces +z, the arms rest in a T-pose along ±x). `apply` maps that into each
- * bone's local frame, so poses do not depend on how the exporter oriented
- * the bones.
+ * A turn rotates a bone about the axes of the model's rest pose (the model
+ * faces +z, the arms rest in a T-pose along ±x), mapped into each bone's
+ * local frame, so turns do not depend on how the exporter oriented the
+ * bones. scripts/blender/kipfel_actions.py uses the same convention.
  */
 
 const axes = {
@@ -67,33 +67,12 @@ export const createRig = (root) => {
     bones.get(PropertyBinding.sanitizeNodeName(name));
 
   const head = find("Head");
-  const hips = find("Hips");
-  if (!head || !hips) throw new Error("kipfel: missing skeleton");
-  const hipsRest = hips.bone.position.clone();
+  if (!head) throw new Error("kipfel: missing skeleton");
 
   const delta = new Quaternion();
   const step = new Quaternion();
   /** @type {Set<BoneEntry>} */
-  let touched = new Set();
-
-  /**
-   * Local quaternion after a rest-space turn: L' = P⁻¹ · Δ · P · L.
-   * @param {BoneEntry} entry
-   * @param {Turn} turn
-   */
-  const apply = (entry, turn) => {
-    delta.identity();
-    for (const [axis, angle] of Object.entries(turn)) {
-      if (!angle) continue;
-      step.setFromAxisAngle(axes[/** @type {Axis} */ (axis)], angle);
-      delta.premultiply(step);
-    }
-    entry.bone.quaternion
-      .copy(entry.parentInverse)
-      .multiply(delta)
-      .multiply(entry.parent)
-      .multiply(entry.rest);
-  };
+  const touched = new Set();
 
   /** @type {Map<string, number>[]} */
   const morphs = meshes.map((mesh) =>
@@ -102,25 +81,36 @@ export const createRig = (root) => {
   const headTop = new Vector3();
 
   return {
-    /** Bones missing from the pose return to rest. @param {Pose} pose */
-    pose(pose) {
-      /** @type {Set<BoneEntry>} */
-      const next = new Set();
+    /**
+     * Put bones turned last frame back to rest. Call before the clip mixer
+     * writes the frame, so bones no clip drives do not accumulate turns.
+     */
+    relax() {
+      for (const entry of touched) entry.bone.quaternion.copy(entry.rest);
+      touched.clear();
+    },
+
+    /**
+     * Layer rest-space turns over whatever the bones hold now (the clip
+     * mixer output). In the parent's rest frame a turn Δ maps the local
+     * rotation L to P⁻¹ · Δ · P · L.
+     * @param {Pose} pose
+     */
+    turn(pose) {
       for (const [name, turn] of Object.entries(pose)) {
         const entry = find(name);
         if (!entry) continue;
-        apply(entry, turn);
-        next.add(entry);
+        delta.identity();
+        for (const [axis, angle] of Object.entries(turn)) {
+          if (!angle) continue;
+          step.setFromAxisAngle(axes[/** @type {Axis} */ (axis)], angle);
+          delta.premultiply(step);
+        }
+        entry.bone.quaternion.premultiply(
+          step.copy(entry.parentInverse).multiply(delta).multiply(entry.parent),
+        );
+        touched.add(entry);
       }
-      for (const entry of touched) {
-        if (!next.has(entry)) entry.bone.quaternion.copy(entry.rest);
-      }
-      touched = next;
-    },
-
-    /** Vertical hip offset for bobbing and crouching, in model units. */
-    set hipLift(/** @type {number} */ lift) {
-      hips.bone.position.set(hipsRest.x, hipsRest.y + lift, hipsRest.z);
     },
 
     /** Morph influences by name; unknown names reset to 0. @param {Faces} faces */

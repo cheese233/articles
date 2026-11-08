@@ -405,20 +405,33 @@ posts.[slug]    只匹配 /posts/<one>/
   - 保留两张 skin 共享的 146 根骨骼；
   - 474 个 morph target 只留下表情用到的 10 个（眨眼、笑眼、圆眼、四个视线方向、惊讶眉、`ω` / `○` 嘴），同时绕开 WebGPU 默认的纹理层数限制；
   - `weld` + meshopt `simplify` 减面，贴图缩到 1024² WebP，最后 meshopt 重新编码；
-  - 更新模型：`node scripts/optimize_model.ts <原始.glb>`（devDependencies：`@gltf-transform/*`、`meshoptimizer`、`sharp`）；
-- 骨骼驱动在 `components/kipfel_rig.js`：模型没有自带动画，每一帧直接写骨骼和 morph：
-  - 姿势写成“围绕静止姿势的模型轴旋转”，按 `P⁻¹·Δ·P·L` 换到每根骨骼的局部空间，不依赖导出时的骨骼朝向；
+  - 帽子原本只蒙皮在 `Cap.Root`（头部）上，猫耳有一部分在静止姿势里就露在帽子外面，一动更明显；`scripts/bind_cap.ts` 分四步处理：耳朵附近的帽子顶点按到猫耳的距离混入耳骨权重，帽子像布一样跟着耳朵撑起、压平；露在帽子外的耳朵顶点拉回帽面下方一点；帽子下的耳朵顶点改用正上方帽面的插值权重，于是任何姿势里都和帽子一起动；帽子下的头发也按同样比例跟随，不会从鼓起的地方透出来；它只能在 `optimize_model.ts` 的输出上跑一次（文件里有标记，重复运行会报错）；
+  - 更新模型：`node scripts/optimize_model.ts <原始.glb>`，然后 `node scripts/bind_cap.ts`（devDependencies：`@gltf-transform/*`、`meshoptimizer`、`sharp`）；
+- 身体动作在 Blender 里做成关键帧 clip，放在 `components/kipfel/model/kipfel_clips.glb`（约 260 KB，只有骨骼旋转和根运动）：
+  - `scripts/blender/kipfel_actions.py` 在 Blender 里导入 `kipfel.glb`，逐帧烘焙 15 个 action（`run`、`halt`、`idle`、`hunt`、`nuzzle`、`notice`、左右 `ear_flick`、`shake`、`groom`、左右 `swipe`、`startle`、`yawn` 和参考姿势 `base`），再只导出骨架；可以通过 Blender MCP、文本编辑器或 `blender -b -P` 运行，`preview()` 能渲染单个姿势用来调角度；
+  - 上半身不是关键帧之间的插值：每根骨骼用按重量调过的阻尼弹簧追目标姿势（脊柱硬、头软一些，耳朵、呆毛、尾巴、头发更松），所以动作有先后、拖拽和回弹；
+  - 腿由 `scripts/blender/kipfel_gait.py` 解算：每个 clip 有一份脚步计划（哪只脚何时落地、落在哪、何时抬起），落地的脚原地不动，双骨 IK 摆出膝盖和脚踝，蹬地时脚绕前掌翻起；
+  - 根运动是脚步计划算出来的，每帧的前进距离和身体高度写进动画 extras（`travel` / `ground`），页面就按它移动模型，所以脚不会在地上滑；
+  - `scripts/optimize_clips.ts` 删掉位移、缩放和始终停在静止姿势的通道，`resample` 后用 meshopt 压缩，extras 原样保留；
+  - 更新动作：在 Blender 里运行脚本，然后 `node scripts/optimize_clips.ts`；
+- `components/kipfel_clips.js` 用 `AnimationMixer` 按骨骼名把 clip 套到优化后的模型上，时间和权重每帧由行为模块给出，并把每个 clip 的长度和根运动交给行为模块：
+  - `run` / `halt` 和三种心情 `idle` / `hunt` / `nuzzle` 正常混合；
+  - 其他动作相对 `base` 姿势转成 additive clip，所以能叠在任何心情上；
+- 骨骼驱动在 `components/kipfel_rig.js`：在 clip 的结果上再叠加指针反应，并写 morph：
+  - 旋转写成“围绕静止姿势的模型轴旋转”，按 `P⁻¹·Δ·P·L` 换到每根骨骼的局部空间，不依赖导出时的骨骼朝向，Blender 脚本用同一套约定；
   - 骨骼名经过 `PropertyBinding.sanitizeNodeName`（GLTFLoader 会把 `UpperArm.L` 变成 `UpperArmL`）；
-  - 另外提供髋部升降和头部包围球（含耳朵），供镜头取景；
+  - 另外提供头部包围球（含耳朵），供镜头取景；
   - 蒙皮网格的包围盒停在绑定姿势，所以关闭了视锥剔除；
-- 行为在 `components/kipfel_motion.js`，按时间实时求值而不是播放固定 clip，所以能对指针作出反应：
-  - `run`：从远处跑向镜头，双腿交替摆动、膝盖回收、手臂反向摆动、尾巴甩动、略微蛇行；镜头固定，她越跑越大；
-  - `brake`：急停，身体后仰、手臂张开保持平衡，眼睛睁圆；
-  - `peek`：凑近，镜头推进到头部（含耳朵）占满画布的短边；
-  - `watch`：好奇地观察——头和眼睛跟着整页的指针转（`eye_left/right/up/down` morph），随机歪头、眨眼（偶尔连眨两下），时不时睁圆眼、张嘴吃惊；
-  - 点击：跑步途中点击会重新跑一遍，之后点击会吓她一下；
-  - `prefers-reduced-motion` 下跳过跑步，直接停在特写，只在指针移动时更新视线；
-- 行为是纯函数式的状态机，`tests/kipfel_motion.test.ts` 用固定随机数验证跑步、特写、视线和吃惊；
+- 行为在 `components/kipfel_motion.js`，决定每帧播哪些 clip、叠加哪些转动和表情：
+  - `run`：小步快跑，从画面左侧外沿着曲线跑进来，转弯时身体向内倾；沿路径走过的距离正好等于 clip 的根运动；
+  - `halt`：一步刹住，另一只脚收到旁边，膝盖一沉再弹起踮脚，爪子举到胸前，歪头看向镜头；镜头同时推进到头部（含耳朵）占满画布的短边；
+  - `watch`：像趴在窗边的猫——眼睛按扫视一跳一跳地落到指针上（大幅转移时顺带眨眼），头用弹簧追过去、略微转过头再回来，身体再慢半拍跟上；耳朵朝指针转、指针一动就竖起；刚停下时先“咦”地竖耳歪头一下；随机歪头、眨眼；
+  - 指针快速乱晃会让她压低身体、尾巴放低、瞳孔放大（`hunt`），然后用指针那一侧的爪子扑过去；
+  - 指针在头上慢慢来回划就是摸头：她蹭过来、飞机耳、笑眼、`ω` 嘴，眨眼变成慢眨；
+  - 点击是点鼻子：先吓一跳（耳朵压平、缩肩），再甩甩头；摸头时点击只甩头；跑步途中点击会重新跑一遍；
+  - 指针不动时她会抖耳朵、舔爪子洗脸或者伸懒腰打哈欠；
+  - `prefers-reduced-motion` 下跳过跑步，直接停在特写，只在指针移动时更新；
+- 行为是纯函数式的状态机，`tests/kipfel_motion.test.ts` 用固定随机数和仿照烘焙结果的根运动，验证入场、走过的距离等于根运动、停下、视线和回弹、扑击、摸头、点鼻子和无聊时的动作；
 - `three`（固定版本）的 `three/webgpu`、`three/tsl`、`three/addons/...` 子路径由 import 扫描发现，照常打进 `vendor/`；
 - 用 `WebGPURenderer` 渲染（不支持 WebGPU 时自动回退 WebGL2），后处理用 TSL 写成 ASCII 着色器，思路来自 [ASCII characters are not pixels](https://alexharri.com/blog/ascii-rendering)：
   - 运行时在 canvas 上画出 95 个可打印 ASCII 字符作为字形图集，并计算每个字形在 6 个采样圆里的覆盖率（形状向量，按维度归一化）；

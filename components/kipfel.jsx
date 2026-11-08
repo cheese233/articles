@@ -50,6 +50,7 @@ import {
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import { createClips } from "./kipfel_clips.js";
 import { createMotion } from "./kipfel_motion.js";
 import { createRig } from "./kipfel_rig.js";
 import {
@@ -71,6 +72,9 @@ import {
 
 // Optimized by scripts/optimize_model.ts: skeleton and expression morphs.
 const modelUrl = "/components/kipfel/model/kipfel.glb";
+// Baked in Blender by scripts/blender/kipfel_actions.py, then
+// scripts/optimize_clips.ts: bone rotations only.
+const clipsUrl = "/components/kipfel/model/kipfel_clips.glb";
 const font = '600 {size}px ui-monospace, "Cascadia Code", monospace';
 
 /** Printable ASCII, space first. */
@@ -346,7 +350,10 @@ const createAscii = (renderer, scene, camera) => {
 const loadModel = async (scene) => {
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
-  const gltf = await loader.loadAsync(modelUrl);
+  const [gltf, baked] = await Promise.all([
+    loader.loadAsync(modelUrl),
+    loader.loadAsync(clipsUrl),
+  ]);
   const model = gltf.scene;
 
   // Skinned meshes keep their bind-pose bounds; the animated arms would
@@ -367,7 +374,8 @@ const loadModel = async (scene) => {
   const pivot = new Group();
   pivot.add(model);
   scene.add(pivot);
-  return { pivot, rig: createRig(model) };
+  const clips = createClips(model, baked.animations);
+  return { pivot, rig: createRig(model), clips };
 };
 
 /**
@@ -382,10 +390,11 @@ const frame = (/** @type {PerspectiveCamera} */ camera,
   // Distance where the sphere spans ~94% of the narrow side.
   const fit = radius / Math.sin(Math.atan(Math.tan(fov / 2) * narrow) * 0.94);
 
-  // Fixed wide shot in front of the stop mark, so she grows as she runs
-  // in; only the aim drifts a little to keep her near the center.
+  // Fixed wide shot in front of the stop mark, so she dashes in from
+  // outside the frame and grows as she comes closer; the aim only drifts a
+  // little so the entrance still starts off screen.
   const wide = new Vector3(0, 0.7, 3.4);
-  const wideLook = new Vector3(subject.x * 0.5, 0.45, subject.z * 0.35);
+  const wideLook = new Vector3(subject.x * 0.15, 0.45, subject.z * 0.3);
   const close = new Vector3(head.x, head.y + radius * 0.05, head.z + fit);
 
   const eased = k * k * (3 - 2 * k);
@@ -424,18 +433,24 @@ export default async function (shadow) {
   const camera = new PerspectiveCamera(32, 2, 0.01, 40);
 
   const ascii = createAscii(renderer, scene, camera);
-  const { pivot, rig } = await loadModel(scene);
-  const motion = createMotion();
+  const { pivot, rig, clips } = await loadModel(scene);
+  const motion = createMotion({ tracks: clips.tracks });
   const head = new Vector3();
   const subject = new Vector3();
+  // Heading about y, then the lean into a turn about her forward axis.
+  pivot.rotation.order = "YXZ";
 
   /** @param {number} delta */
   const step = (delta) => {
     const state = motion.update(delta);
-    pivot.position.set(state.x, 0, state.z);
+    // Root motion baked with the clips: feet stay where they planted.
+    pivot.position.set(state.x, state.lift, state.z);
     pivot.rotation.y = state.heading;
-    rig.hipLift = state.lift;
-    rig.pose(state.pose);
+    pivot.rotation.z = state.roll;
+    // Baked clips first, then the pointer reactions on top.
+    rig.relax();
+    clips.apply([...state.clips, ...state.gestures]);
+    rig.turn(state.turns);
     rig.face(state.face);
 
     pivot.updateMatrixWorld(true);
@@ -464,11 +479,25 @@ export default async function (shadow) {
   };
   window.addEventListener("pointermove", onPointer, { passive: true });
 
-  // A tap startles her; a tap during the run starts it over.
-  canvas.addEventListener("click", () => {
-    if (motion.time < 4) motion.reset();
-    else motion.poke();
-  });
+  // Without a pointer she settles back to looking ahead.
+  const onLeave = () => {
+    motion.leave();
+    isDirty = true;
+  };
+  document.documentElement.addEventListener("pointerleave", onLeave);
+
+  // A tap boops her nose; a tap during the run starts it over.
+  /** @param {MouseEvent} event */
+  const onClick = (event) => {
+    if (!motion.isSettled) {
+      motion.reset();
+      return;
+    }
+    onPointer(/** @type {PointerEvent} */ (event));
+    motion.poke();
+    isDirty = true;
+  };
+  canvas.addEventListener("click", onClick);
 
   const resize = () => {
     const width = Math.max(1, canvas.clientWidth);
@@ -499,6 +528,8 @@ export default async function (shadow) {
     observer.disconnect();
     darkScheme.removeEventListener("change", onScheme);
     window.removeEventListener("pointermove", onPointer);
+    document.documentElement.removeEventListener("pointerleave", onLeave);
+    canvas.removeEventListener("click", onClick);
     ascii.dispose();
     scene.traverse((object) => {
       const mesh = /** @type {any} */ (object);
